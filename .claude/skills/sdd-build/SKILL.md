@@ -104,11 +104,11 @@ If `BLOCKED` (CRITICAL findings), loop up to **3 iterations**:
 
 1. Fix each `CRITICAL` finding directly, yourself, in the integration
    branch's working tree — apply the same skill routing `implementer` uses
-   (`onion-architecture` for `server/` layering,
+   (`supabase-backend` for RLS/migrations/functions,
    `mobile-architecture` for `mobile/` placement and the iOS/Android parity rule,
-   `shared/` boundary rules). Leave `WARNING`/`INFO` for the
+   `shared/` runtime-neutrality rules). Leave `WARNING`/`INFO` for the
    user to triage later.
-2. Re-run `pnpm typecheck` in every package you touched.
+2. Re-run `pnpm typecheck` in every pnpm package you touched (and `supabase test db` if SQL/policies changed).
 3. Re-dispatch `architecture-reviewer` on the same scope.
 4. `PASS` → exit the loop, continue to Step 5.
 5. Still `BLOCKED` after 3 iterations → **stop the pipeline**. Report which

@@ -1,5 +1,6 @@
+# supabase/ is a Supabase CLI project (SQL + Deno edge functions), not a pnpm package.
+# Add `web` here when the website is started.
 packages:
   - mobile
-  - server
   - shared
   - e2e

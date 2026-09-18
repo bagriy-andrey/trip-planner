@@ -25,7 +25,7 @@ If project 1 is missing, say so — don't create a second one.
 1. Draft a short title (≤70 chars) + body using the issue template fields
    (What / Why / Platforms / Area / Done when). Don't invent details the user didn't give;
    leave optional fields out.
-2. Labels: one or more of `idea, design, mobile, server, shared, e2e, release`, plus
+2. Labels: one or more of `idea, design, mobile, backend, shared, web, e2e, release`, plus
    `ios-only` if the behavior is iOS-only. Default `idea` when unsure.
 3. `gh issue create --repo bagriy-andrey/trip-planner --title … --body … --label …`
 4. Add to the board AND set status explicitly (new items get NO status by default):

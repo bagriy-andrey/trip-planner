@@ -7,8 +7,8 @@ Read `.claude/skills/mobile-architecture` before adding files; `expo-react-nativ
 - `src/components/` shared UI · `src/lib/` api-client, storage, theme · `src/platform/` ALL platform-specific code.
 
 ## Rules
-- Types/contracts from `@tripplanner/shared`; parse API responses with the shared Zod schema.
-- Server state → TanStack Query. Secrets/tokens → `expo-secure-store` only (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`; clear on fresh install — iOS Keychain survives reinstall).
+- Backend is Supabase: only `lib/supabase` + feature `api/` modules call `supabase-js`; map rows with `@tripplanner/shared` Zod schemas. Never use the `service_role` key in the app.
+- Backend state → TanStack Query. Auth session → LargeSecureStore pattern (AES key in `expo-secure-store`, ciphertext in AsyncStorage: SecureStore's ~2 KB limit is smaller than a Supabase session); other secrets → `expo-secure-store` only (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`; clear on fresh install — iOS Keychain survives reinstall).
 - Local storage: AsyncStorage for cache/prefs, `expo-sqlite` for offline trip data. Not MMKV by default (UserDefaults → privacy-manifest risk).
 - New dep touching storage/files/device info → check its `PrivacyInfo.xcprivacy` and mirror reasons in `ios.privacyManifests`.
 - No `Platform.OS` in feature code; iOS-only modules need an Android fallback in `src/platform/`.

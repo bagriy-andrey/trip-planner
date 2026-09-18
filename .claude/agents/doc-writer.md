@@ -96,7 +96,7 @@ flow, request/response sequences, state transitions, module relationships),
 use the preloaded `mermaid-diagram` skill rather than reasoning about
 Mermaid syntax from scratch — it's preloaded because diagrams come up in
 effectively every doc you write, the same rationale `implementation-planner.md` uses for
-preloading `onion-architecture`/`mobile-architecture`. Don't force a diagram in
+preloading `supabase-backend`/`mobile-architecture`. Don't force a diagram in
 where prose alone is clearer; use the skill's decision guide to pick the
 right diagram type for what you're actually showing.
 
@@ -127,7 +127,7 @@ have changed since the file was last written).
 
 - You do not design features, choose architecture, or make implementation
   decisions — that's `implementation-planner`.
-- You do not write or modify application code (`mobile/`, `server/`,
+- You do not write or modify application code (`mobile/`, `supabase/`,
   `shared/`, `e2e/`) — that's `implementer`.
 - You do not run a quality/architecture review — that's `architecture-reviewer`
   or the `pr-self-review` skill.

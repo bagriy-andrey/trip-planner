@@ -6,7 +6,7 @@ description: "Mobile app code organization for mobile/ (Expo + React Native + ex
 # Mobile architecture (`mobile/`)
 
 Feature-based structure on top of expo-router. Screens are thin; features own
-their logic. Server-layer rules live in `onion-architecture` — this skill
+their logic. Backend rules live in `supabase-backend` — this skill
 covers `mobile/` only.
 
 ## Layout
@@ -19,8 +19,8 @@ mobile/
     features/<feature>/     # one folder per product feature (trips, itinerary, map, auth…)
       components/           # feature-private UI
       hooks/                # feature hooks (useTrip, useCreateTrip) — TanStack Query lives here
-      api/                  # typed calls to the server; only place that touches the network client
-      store/                # feature-local client state (only if server-state/hooks aren't enough)
+      api/                  # the ONLY place that calls Supabase (via lib/supabase); maps rows → domain types with shared Zod schemas
+      store/                # feature-local client state (only if query/hooks state isn't enough)
       types.ts  constants.ts  utils.ts
       index.ts              # PUBLIC surface of the feature — other features import only from here
     components/             # shared, feature-agnostic UI primitives (Button, Sheet, Screen)
@@ -39,15 +39,17 @@ mobile/
 3. **Business logic in hooks / pure functions**, never inline in components.
    Pure functions (itinerary date math, budget totals, sorting) go in
    `utils.ts` and get unit-tested without rendering.
-4. **Network only through `features/*/api/` + `lib/api-client`.** Request and
-   response types come from `@tripplanner/shared` (Zod schemas) — never
-   redeclare a contract in `mobile/`. Parse responses with the shared schema.
-5. **Server state ≠ client state.** Server data → TanStack Query. Only true
+4. **Backend access only through `features/*/api/` + `lib/supabase`.** Row/DTO types
+   come from `@tripplanner/shared` (generated DB types + Zod schemas) — never
+   redeclare them in `mobile/`. Components and screens never import `supabase-js`.
+   Product rules shared with other clients (conflict detection, timezone/money math)
+   live in `shared/`, not in a feature.
+5. **Backend state ≠ client state.** Backend data → TanStack Query. Only true
    UI/session state (draft form, selected tab) → local state / small store.
 6. **Split a component when** it exceeds ~150 lines, has 2+ unrelated
    responsibilities, or a subtree re-renders independently (extract + memo).
 7. **Constants/types:** feature-specific → the feature folder; shared by 2+
-   features → `src/lib/` or `@tripplanner/shared` if the server needs it too.
+   features → `src/lib/`, or `@tripplanner/shared` if other clients or Edge Functions need it too.
 8. **Offline-aware by default:** anything the user edits on a trip must
    tolerate no connectivity (optimistic update + retry, or explicit "needs
    connection" state). Decide per feature in the spec.

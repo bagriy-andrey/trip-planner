@@ -1,12 +1,16 @@
-# shared/ — API contracts (`@tripplanner/shared`)
+# shared/ — contracts and domain logic (`@tripplanner/shared`)
 
-Zod schemas + inferred types used by `server/` AND `mobile/`. Real workspace package (not vendored).
+Zod schemas, generated DB types (`src/db/database.types.ts`), and pure domain logic used by `mobile/`,
+the future `web/`, and Supabase Edge Functions. Real workspace package (not vendored).
 
 ## Rules
-- Runtime-neutral: must run in Hermes (React Native) and Node. No `react-native`, Fastify, Node-only APIs.
-- Only contracts and pure helpers. No I/O, no framework code.
+- Runtime-neutral: must run in Hermes (React Native), browsers, Deno (Edge Functions) and Node.
+  No `react-native`, no `supabase-js`, no Node-only or DOM-only APIs, no I/O. Pure TS + Zod.
+- Home of logic that must behave the same on every client: conflict detection between bookings,
+  timezone/date math, money totals. Don't re-implement it in a client or a function.
 - Dates over the wire: ISO-8601 UTC strings + IANA timezone id where local time matters.
-- A contract change updates server AND mobile in the same plan.
+- A contract change updates every consumer (mobile, functions, later web) in the same plan.
+- Tests: vitest, pure unit tests (always cover day/timezone boundaries).
 
 ## Status
 Not scaffolded yet.

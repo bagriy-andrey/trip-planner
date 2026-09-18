@@ -11,11 +11,9 @@ Reusable AI skills that provide specialized knowledge and workflows. Canonical l
 | [react-native-testing](react-native-testing/SKILL.md) | Mobile | Jest + jest-expo + RNTL, mocking native modules, Maestro e2e |
 | [mobile-release](mobile-release/SKILL.md) | Mobile | EAS, TestFlight/App Store checklist (privacy manifest, permissions, account rules), Android path |
 | [react-best-practices](react-best-practices/SKILL.md) | Mobile | React hooks/state anti-patterns (apply to RN; ignore web-only bits) |
-| [fastify-best-practices](fastify-best-practices/SKILL.md) | Backend | Fastify routes, plugins, validation, error handling |
-| [drizzle-orm-patterns](drizzle-orm-patterns/SKILL.md) | Backend | Drizzle schema, queries, relations, migrations |
+| [supabase-backend](supabase-backend/SKILL.md) | Backend | Supabase: migrations, RLS, Auth, Storage, Edge Functions, account deletion, CLI |
 | [postgresql-table-design](postgresql-table-design/SKILL.md) | Backend | Postgres schema design, types, indexing |
-| [onion-architecture](onion-architecture/SKILL.md) | Backend | Layers, dependency rule, ports/adapters for `server/` |
-| [zod](zod/SKILL.md) | Full-stack | Zod schemas for `shared/` contracts |
+| [zod](zod/SKILL.md) | Full-stack | Zod schemas for `shared/` contracts and Edge Function input |
 | [typescript-expert](typescript-expert/SKILL.md) | Full-stack | Type-level programming, tooling |
 | [security](security/SKILL.md) | Full-stack | OWASP, auth, secrets, injection |
 | [mermaid-diagram](mermaid-diagram/SKILL.md) | Shared | Mermaid diagrams |

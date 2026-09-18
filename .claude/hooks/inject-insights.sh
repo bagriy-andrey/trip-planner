@@ -30,7 +30,7 @@ lc="$(printf '%s' "$prompt" | tr '[:upper:]' '[:lower:]')"
 # --- keyword -> module insights.md (word-boundary the short, ambiguous tokens) ---
 m() { printf '%s' "$lc" | grep -Eq "$1"; }
 files=""
-if m 'server|fastify|drizzle|migration|postgres|backend|(^|[^a-z])api([^a-z]|$)';  then files="$files server/insights.md"; fi
+if m 'supabase|backend|migration|postgres|(^|[^a-z])rls([^a-z]|$)|policy|edge function|auth|storage|(^|[^a-z])sql([^a-z]|$)|(^|[^a-z])api([^a-z]|$)';  then files="$files supabase/insights.md"; fi
 if m 'mobile|expo|react native|react-native|ios|android|screen|expo-router|simulator|(^|[^a-z])eas([^a-z]|$)|(^|[^a-z])ui([^a-z]|$)'; then files="$files mobile/insights.md"; fi
 if m 'shared|contract|schema|zod';                                                 then files="$files shared/insights.md"; fi
 if m 'e2e|maestro|(^|[^a-z])flow([^a-z]|$)';                                       then files="$files e2e/insights.md"; fi

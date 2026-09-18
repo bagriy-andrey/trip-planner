@@ -27,7 +27,7 @@ body:
     attributes:
       label: Area
       multiple: true
-      options: [mobile, server, shared, e2e, design, release]
+      options: [mobile, backend, shared, web, e2e, design, release]
   - type: textarea
     id: done
     attributes:

@@ -1,6 +1,6 @@
 ---
 name: engineering-insights
-description: "Captures durable, non-obvious engineering learnings into the touched module's insights.md (mobile/, server/, shared/, e2e/, or root for cross-cutting). Use at the START of work to read the relevant module's insights as high-confidence guidance, AS-YOU-GO when something non-obvious surfaces, and at the END of a substantive session to append what was learned. Append-only, deduplicated, substance over volume."
+description: "Captures durable, non-obvious engineering learnings into the touched module's insights.md (mobile/, supabase/, shared/, e2e/, or root for cross-cutting). Use at the START of work to read the relevant module's insights as high-confidence guidance, AS-YOU-GO when something non-obvious surfaces, and at the END of a substantive session to append what was learned. Append-only, deduplicated, substance over volume."
 ---
 
 # Engineering Insights — capture-learnings loop
@@ -14,11 +14,11 @@ so a future session starts already knowing what this one discovered. (Manual RAG
 
 ## Where to write — pick the file by the module the learning belongs to
 - `mobile/insights.md` — Expo / React Native app: expo-router, native modules, EAS builds, simulators, platform quirks (iOS vs Android).
-- `server/insights.md` — Fastify API, Drizzle, DI/container, third-party API adapters.
-- `shared/insights.md` — Zod contracts shared by server and mobile.
+- `supabase/insights.md` — Postgres schema, RLS policies, Auth, Storage, Edge Functions, Supabase CLI.
+- `shared/insights.md` — Zod contracts, DB types, domain logic shared by mobile, Edge Functions and web.
 - `e2e/insights.md` — Maestro flows.
 - `insights.md` (repo root) — cross-cutting / monorepo facts: pnpm workspace setup, `scripts/dev.sh`,
-  release/EAS process, the `.it.test.ts` test split.
+  release/EAS process, backend/ADR decisions.
 
 If one task touches several modules, write each insight to the file it actually belongs to.
 

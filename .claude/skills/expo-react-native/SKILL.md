@@ -45,7 +45,10 @@ Apply together with `react-best-practices` (hooks/state rules still hold) and
   `allowFontScaling` without reason); labels via `accessibilityLabel`/`role`.
 
 ## Data, storage, network
-- Tokens & secrets: `expo-secure-store` ONLY. Never AsyncStorage for secrets;
+- Supabase auth session: `expo-secure-store` values are limited to ~2 KB and a Supabase session
+  is larger → use the LargeSecureStore pattern (random AES-256 key in SecureStore, encrypted
+  session in AsyncStorage). Wire `AppState` to start/stop token auto-refresh.
+- Other tokens & secrets: `expo-secure-store` ONLY. Never AsyncStorage for secrets;
   never put secrets in `EXPO_PUBLIC_*` env (those are bundled into the app).
   - iOS Keychain data SURVIVES app uninstall/reinstall (same bundle ID): keep a
     "first launch" flag in AsyncStorage and clear stored tokens when it's absent.
@@ -64,9 +67,9 @@ Apply together with `react-best-practices` (hooks/state rules still hold) and
   of static CocoaPods, so app-level duplication is the safe path).
 - No app-level encryption of local files is needed: iOS Data Protection encrypts
   app files at rest automatically. Don't roll custom crypto for cache/SQLite.
-- TanStack Query for server state with `NetInfo`-aware `onlineManager` and
+- TanStack Query for backend state with `NetInfo`-aware `onlineManager` and
   `focusManager` wired to `AppState`; persist the cache if trips must open offline.
-- Validate every API response with the shared Zod schema at the boundary.
+- Map every Supabase row to a domain type with the shared Zod schema at the `api/` boundary.
 
 ## Native capabilities
 - **Permissions:** request in context, right before use, with a pre-prompt
@@ -85,4 +88,4 @@ Apply together with `react-best-practices` (hooks/state rules still hold) and
   or a styling lib chosen once for the project.
 - `console.log` left in; unhandled promise rejections; `any` on API data.
 - Platform forks in feature code (see `mobile-architecture` parity rule).
-- Storing derived server data in global state; duplicating query data in state.
+- Storing derived backend data in global state; duplicating query data in state.

@@ -1,6 +1,6 @@
 ---
 name: implementer
-description: "Implements ONE execution step of a Planner-produced Development Plan (a specs/*.md file). Handles mobile (mobile/), backend (server/) and shared-contract (shared/) code, applying a different skill set depending on which package the step's files belong to. Designed to be launched multiple times in parallel, one instance per non-overlapping plan step. Use when a plan step needs to actually be built, not designed."
+description: "Implements ONE execution step of a Planner-produced Development Plan (a specs/*.md file). Handles mobile (mobile/), backend (supabase/) and shared-contract (shared/) code, applying a different skill set depending on which package the step's files belong to. Designed to be launched multiple times in parallel, one instance per non-overlapping plan step. Use when a plan step needs to actually be built, not designed."
 tools: Read, Write, Edit, Bash, Grep, Glob
 isolation: worktree
 model: sonnet
@@ -24,7 +24,7 @@ silently — it likely means the plan's step boundaries were wrong.
 # Before implementing — read insights scoped to YOUR step only
 
 Read `insights.md` only for the package(s) your step's file list actually
-touches (`mobile/insights.md`, `server/insights.md`, `shared/insights.md`,
+touches (`mobile/insights.md`, `supabase/insights.md`, `shared/insights.md`,
 `e2e/insights.md`). This is deliberately narrow: the Planner already read
 every touched module's insights when designing the whole feature, so you
 only need the slice relevant to your own step, not the rest of the
@@ -39,10 +39,10 @@ repository.
 | `mobile/src/platform/**`, `*.ios.*`, `*.android.*` | `mobile-architecture` (parity rule), `expo-react-native` |
 | `mobile/app.config.*`, `mobile/eas.json` | `mobile-release`, `security` |
 | `mobile/**/*.test.*`, `*.spec.*` | `react-native-testing` |
-| `server/**` routes/plugins | `fastify-best-practices`, `onion-architecture`, `security` |
-| `server/**/db/**` | `drizzle-orm-patterns`, `postgresql-table-design` |
-| `server/**` other | `onion-architecture`, `typescript-expert` |
-| `shared/**` | `zod`, `typescript-expert` (must stay runtime-neutral: runs in Hermes and Node) |
+| `supabase/migrations/**`, `supabase/seed.sql` | `supabase-backend`, `postgresql-table-design`, `security` |
+| `supabase/functions/**` | `supabase-backend`, `security`, `typescript-expert` |
+| `supabase/tests/**` | `supabase-backend` (pgTAP; every RLS policy needs a test) |
+| `shared/**` | `zod`, `typescript-expert` (must stay runtime-neutral: Hermes, browser, Deno and Node) |
 | any file with `z.object(` / `z.string(` | `zod` |
 | always, every step | `security` (secrets, injection sinks) |
 
@@ -51,7 +51,7 @@ routing rules.)
 
 # After implementing — code and tests only
 
-1. Run the touched package's `pnpm typecheck` — must be clean.
+1. Run the touched package's `pnpm typecheck` — must be clean (for `supabase/`: `supabase test db` when the step touches SQL/policies and Docker is available; Deno `check`/tests for Edge Functions).
 2. Run the tests relevant to your step (existing tests that cover the files
    you touched, plus any new tests the step's test criteria called for) —
    all must pass. This is your whole verification bar: you are NOT running

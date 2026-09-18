@@ -10,10 +10,10 @@ what to do or avoid.
 
 | ❌ Vague (noise — don't write) | ✅ Useful (actionable cold) |
 |---|---|
-| "Promises can be tricky." | "Geocoding all stops with `Promise.all()` trips the places API rate limit after ~10 items — batch with `Promise.allSettled()` in groups of 5 (`server/src/modules/places/geocode.ts`)." |
+| "Promises can be tricky." | "Geocoding all stops with `Promise.all()` trips the places API rate limit after ~10 items — batch with `Promise.allSettled()` in groups of 5 (`supabase/functions/geocode/index.ts`)." |
 | "Be careful with async." | "Draft-trip state must go through the trip store (`mobile/src/features/trips/store`) — 3 screens share it; local React state silently desyncs them." |
 | "Tests are flaky." | "Maestro flows assume the seeded test account has exactly one trip; a dev DB with more trips lands them on the wrong screen — use `./scripts/e2e.sh`." |
-| "Drizzle has quirks." | "A DB-backed test MUST use the `*.it.test.ts` suffix or the unit/integration split silently runs it in the hermetic pool with no Postgres." |
+| "RLS is confusing." | "A policy using `auth.uid()` unwrapped is re-evaluated per row — write `(select auth.uid())`; and a new table with RLS on but no policy returns zero rows to clients, not an error (`supabase/migrations/…_trips.sql`)." |
 
 Lead with the fact, then the *why / evidence* as `file:line`. Keep it one declarative line.
 
@@ -23,10 +23,10 @@ Lead with the fact, then the *why / evidence* as `file:line`. Keep it one declar
   cross-timezone trips sort correctly (`shared/src/trip.ts`)."
 - **What Doesn't Work** — "Requesting location permission at app launch — App Review rejected it and
   users denied it; ask in context on the 'add nearby stop' action."
-- **Codebase Patterns** — "A server feature = `modules/<name>/{routes,service,repository}.ts` + ONE
-  entry in `modules/index.ts`. Registration is static, not filesystem autoload."
-- **Tool & Library Notes** — "`fastify-type-provider-zod`: the route's Zod schema validates the
-  request AND serializes the response — don't hand-roll `Schema.parse` in the handler."
+- **Codebase Patterns** — "A backend feature = ONE migration (table + RLS + policies) + a pgTAP test + regenerated
+  `shared` DB types; never dashboard edits."
+- **Tool & Library Notes** — "`supabase-js` returns `{ data, error }` and does NOT throw on RLS/constraint failures — every call
+  site must check `error`; wrap in the feature's `api/` module so components never see it."
 - **Recurring Errors & Fixes** — "Metro can't resolve `@tripplanner/shared` after adding a dep →
   clear cache: `npx expo start -c`; check `metro.config.js` watchFolders."
 - **Session Notes** — "- 2026-06-20: traced why the map screen re-rendered on every GPS tick — the

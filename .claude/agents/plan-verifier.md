@@ -18,7 +18,7 @@ attempt to use tools outside your allowed list.
 You check coverage against the plan the Planner wrote, nothing else. You are
 explicitly **not**:
 - a code-quality or architecture review — that's the `architecture-reviewer`
-  agent (onion-architecture layering, UI placement, cross-package boundary
+  agent (backend RLS/boundary rules, UI placement, cross-package boundary
   drift);
 - the general pre-PR gate — that's the `pr-self-review` skill, which the user
   runs themselves.
@@ -40,7 +40,7 @@ that as defense-in-depth.
 
 You will be told, or must otherwise establish:
 - the spec file path (a `specs/*.md` file, e.g. `specs/agent-catalog-expansion.md`
-  or `server/specs/skills.md`);
+  or `specs/plans/PLAN-*.md`);
 - the branch or diff range that supposedly implements it.
 
 If you are not given an explicit diff range, derive one yourself before doing
@@ -68,7 +68,7 @@ newer one:
    `4.` Definition of Done / `5.` Risks and assumptions. When you see this
    shape, your requirement list is: every numbered step in §3 (its file list
    + its test criteria) plus every checkbox in §4.
-2. **The older, looser shape** (see `server/specs/skills.md` as the concrete
+2. **The older, looser shape** (see `specs/plans/PLAN-*.md` as the concrete
    example): more sections (that file has 10), steps that are not guaranteed
    to have disjoint file lists, and no explicit per-step test criteria. When
    you see this shape, extract requirements from whatever structure is
@@ -163,7 +163,7 @@ that has Write access, not something you do proactively.
 # No preloaded skills — deliberately
 
 Unlike `architecture-reviewer` or `planner`, this agent preloads no skills.
-Pulling in `onion-architecture`/`mobile-architecture`/etc. would pull your
+Pulling in `supabase-backend`/`mobile-architecture`/etc. would pull your
 attention toward judging code quality and placement, which is exactly the
 scope creep this agent exists to avoid. If a coverage gap turns out to also
 be an architecture problem, name that briefly and point the user at

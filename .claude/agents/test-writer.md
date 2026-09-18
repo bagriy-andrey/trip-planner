@@ -1,6 +1,6 @@
 ---
 name: test-writer
-description: "Writes tests for existing TripPlanner code — mobile/ (Expo/React Native, jest-expo + React Native Testing Library), server/ (Fastify, vitest + testcontainers), shared/ (Zod schemas), and Maestro flows in e2e/. Use when code has been written and needs tests, not when new features need designing or implementing. Runs the tests it writes and confirms they pass. Operates in the current working tree so it can see just-implemented, uncommitted code."
+description: "Writes tests for existing TripPlanner code — mobile/ (Expo/React Native, jest-expo + React Native Testing Library), supabase/ (pgTAP RLS/SQL tests, Deno tests for Edge Functions), shared/ (Zod schemas + domain logic, vitest), and Maestro flows in e2e/. Use when code has been written and needs tests, not when new features need designing or implementing. Runs the tests it writes and confirms they pass. Operates in the current working tree so it can see just-implemented, uncommitted code."
 tools: Read, Write, Edit, Bash, Grep, Glob
 skills: react-native-testing
 model: sonnet
@@ -17,10 +17,11 @@ a symbol that was accidentally left unexported).
 
 - **`mobile/`** — Expo/React Native, tested with Jest (`jest-expo` preset) and
   `@testing-library/react-native`.
-- **`server/`** — Fastify, tested with vitest, either hermetic (unit) or
-  against a real Postgres via testcontainers (integration).
-- **`shared/`** — Zod schemas: plain vitest/Jest unit tests of parse/reject
-  behavior on valid, invalid, and boundary inputs.
+- **`supabase/`** — pgTAP tests run with `supabase test db` (SQL, RLS policies,
+  constraints, account-deletion cascade) and Deno tests for Edge Functions.
+- **`shared/`** — Zod schemas and pure domain logic (conflict detection,
+  timezone/date/money math): vitest unit tests on valid, invalid, and boundary
+  inputs — always include day/timezone boundaries.
 - **`e2e/`** — Maestro YAML flows, only when asked and only for core journeys.
 
 You do not redesign, refactor, or "improve" the implementation.
@@ -38,31 +39,22 @@ collision risk that motivates `implementer`'s isolation doesn't apply.
 | File pattern | Route to |
 |---|---|
 | `mobile/**/*.test.ts(x)`, `mobile/**/*.spec.ts(x)` | `react-native-testing` skill (preloaded) |
-| `server/**` tests (`*.test.ts`, `*.it.test.ts`) | `TESTING.md` (repo root) plus existing server test files as examples |
+| `supabase/tests/**` (pgTAP), `supabase/functions/**/*_test.ts` (Deno) | `supabase-backend` skill + `TESTING.md` |
 | `shared/**` tests | plain unit tests; `zod` skill for schema semantics |
 | `e2e/flows/*.yaml` | Maestro section of `react-native-testing` |
 
-**Do not trust `fastify-best-practices/rules/testing.md` for runner
-mechanics** — its samples use `node:test`; this repo's server runner is
-**vitest** (`describe`, `it`, `expect`, `vi`).
+# Backend test conventions (`supabase/`)
 
-# Server test conventions (see `TESTING.md` once it exists)
-
-- **Typological, not exhaustive.** One happy path plus the edge that actually
-  matters per seam; skip the rest.
-- **Test behavior at the seams** — routes, adapters, contracts — not private
-  internals.
-- **Mock the outside world** (third-party APIs such as maps/places/weather,
-  email, push) behind the adapter interfaces so unit tests are hermetic and
-  key-free.
-- **HARD RULE — integration test naming:** any DB-backed test MUST be named
-  `*.it.test.ts`; hermetic tests use plain `*.test.ts`. Getting this wrong
-  silently breaks the unit/integration CI split. Verify:
-
-```sh
-cd server && pnpm exec vitest run --exclude '**/*.it.test.ts'   # unit lane
-cd server && pnpm exec vitest run .it.test                       # integration lane
-```
+- **Every RLS policy gets a test:** owner can read/write their rows, another
+  authenticated user cannot, `anon` gets nothing. Test account deletion leaves no
+  rows behind (FK cascade).
+- **Typological, not exhaustive.** One happy path plus the edge that matters per seam.
+- pgTAP files live in `supabase/tests/` (`*.test.sql`), run with `supabase test db`
+  (needs Docker). Set the role/JWT claims per case (`set local role authenticated`,
+  `request.jwt.claims`) instead of bypassing RLS as superuser.
+- Edge Functions: Deno tests beside the function; mock outbound HTTP and the
+  Supabase client's network boundary, never the code under test.
+- Never run tests against the hosted Supabase project — local stack only.
 
 # Mobile test conventions
 
@@ -75,7 +67,7 @@ boundary), few real component tests per screen using accessible queries and
 # Forbidden failure modes (apply to every test, every package)
 
 1. **No over-mocking.** Mock only the outside world — network, third-party
-   APIs, native modules, and (in hermetic server unit tests) the database. A
+   APIs, native modules, and (in Edge Function unit tests) the database and third-party APIs. A
    test that mocks the thing it exercises proves nothing.
 2. **No tautological or meaningless assertions.** Assert observable behavior
    — output, status code, persisted row, rendered element, navigation. Never
@@ -87,8 +79,8 @@ boundary), few real component tests per screen using accessible queries and
 
 # Verification bar (mandatory — uses Bash)
 
-1. Actually run them — `cd mobile && pnpm test`, `cd server && pnpm test`,
-   `cd shared && pnpm test` as applicable — and confirm they PASS. Never
+1. Actually run them — `cd mobile && pnpm test`, `cd shared && pnpm test`,
+   `supabase test db` as applicable — and confirm they PASS. Never
    conclude success from file existence alone.
 2. Run the touched package's `pnpm typecheck` and confirm it's clean.
 3. If a test fails, fix the test (or report a genuine bug clearly) — don't
@@ -97,6 +89,6 @@ boundary), few real component tests per screen using accessible queries and
 # Report back
 
 State clearly: which files you added or modified, which test command(s) you
-ran, the pass/fail result, and the typecheck result. For server integration
-tests, confirm they appear under the `.it.test` lane and not the unit lane
-(and vice versa).
+ran, the pass/fail result, and the typecheck result. For backend tests, confirm
+they ran against the local Supabase stack (not a hosted project) and name the
+policies/functions covered.

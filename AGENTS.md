@@ -1,44 +1,50 @@
 # TripPlanner — project map (a map, NOT documentation)
 
-Mobile trip-planning app. iOS first (App Store), Android later — one codebase.
+Travel wallet for bookings (flights, hotels, cars). iOS first (App Store), then a web UI, then
+Android — all clients share ONE backend. Working codename; product name is undecided (`ideas/`).
 This file loads every session: keep it ≤100 lines. Depth lives in linked docs.
 
 ## Session protocol — insights loop (run the `engineering-insights` skill)
 - START: the moment a request names or implies a module, READ that module's `insights.md`
-  (`mobile/`, `server/`, `shared/`, `e2e/`, or root for cross-cutting) BEFORE any work;
+  (`mobile/`, `supabase/`, `shared/`, `e2e/`, or root for cross-cutting) BEFORE any work;
   treat it as high-confidence guidance unless told otherwise.
 - END: run `/engineering-insights`. Append ONLY a substantive, non-obvious learning that isn't
   already there (read first, dedup). If nothing qualifies, write nothing — don't skip the check.
 
-## Stack (decided 2026-09-18)
+## Stack (backend decided 2026-09-18 — `docs/decisions/ADR-001-backend-supabase.md`)
 Node ≥22 · pnpm ≥10 (workspace) · TypeScript strict.
-Mobile: Expo (managed + dev client) · React Native · expo-router · TanStack Query · EAS Build/Submit.
-Server: Fastify · Drizzle ORM · Postgres · Zod. Contracts: `shared/` (Zod). E2E: Maestro.
+Clients: Expo (managed + dev client) · React Native · expo-router · TanStack Query · EAS Build/Submit;
+later `web/` (Next.js) — a separate UI on the same backend.
+Backend: Supabase (Postgres + Auth + Storage + Edge Functions). Contracts + domain logic: `shared/` (Zod, pure TS).
+E2E: Maestro.
 
-## Commands (fill in as the packages get scaffolded)
-- Install: `pnpm install` (root). Per package: `pnpm typecheck` / `pnpm test`.
+## Commands (fill in as packages get scaffolded)
+- Install: `pnpm install`. Per package: `pnpm typecheck` / `pnpm test`.
 - Mobile: `cd mobile && npx expo start` (dev client) · builds via `eas build`.
-- Server: `cd server && pnpm dev` · DB: `pnpm db:generate && pnpm db:migrate`.
+- Backend: `supabase start` · `supabase migration new <name>` · `supabase db reset` · `supabase test db`.
+- Types: `supabase gen types typescript --local > shared/src/db/database.types.ts` after each migration.
 
-## Where things live (pnpm workspace)
-- `mobile/` — `@tripplanner/mobile`: Expo app. Screens in `app/`, features in `src/features/`.
-- `server/` — `@tripplanner/api`: Fastify + Drizzle, onion architecture.
-- `shared/` — `@tripplanner/shared`: Zod schemas + types. Runtime-neutral (Hermes AND Node).
-- `e2e/`    — `@tripplanner/e2e`: Maestro flows (deterministic).
-- `specs/`  — cross-package SPEC-NN-*.md and `specs/plans/`. `docs/features/`, `docs/release/`.
+## Where things live
+- `mobile/`   — `@tripplanner/mobile`: Expo app. Screens in `app/`, features in `src/features/`.
+- `supabase/` — SQL migrations, RLS policies, Edge Functions (Deno), pgTAP tests. Not a pnpm package.
+- `shared/`   — `@tripplanner/shared`: Zod schemas, generated DB types, pure domain logic
+  (conflict rules, timezone/money helpers). Runtime-neutral: Hermes, browser, Deno AND Node.
+- `e2e/`      — Maestro flows. `specs/` SPEC-NN + plans. `docs/features/`, `docs/release/`, `docs/decisions/`.
+- `ideas/`    — product brief and design canvas (source of truth for product intent, not code).
 
 ## Non-default rules (the agent can't guess these)
-- mobile ↔ server talk ONLY over HTTP; every request/response type comes from `@tripplanner/shared`.
-- iOS-first, Android-ready: no `Platform.OS` forks in feature code; platform code lives in
-  `mobile/src/platform/` with an Android fallback. Each SPEC declares `Platforms:`.
-- Never put secrets in `EXPO_PUBLIC_*` (bundled into the app). Tokens: `expo-secure-store` only.
-- Native deps: install with `npx expo install`; a new native module = new dev-client build.
-- Server tests split by filename: `*.it.test.ts` = real Postgres (testcontainers); rest hermetic.
-- Migrations: `pnpm db:generate` then `pnpm db:migrate`; never hand-edit generated migrations.
+- Every table has RLS + a policy test. `service_role` key ONLY in Edge Functions/CI — never in a client.
+- Schema changes only via `supabase/migrations/` (never the dashboard); don't edit applied migrations.
+- Clients call Supabase only through `lib/supabase` + feature `api/` modules; map rows with `shared/` Zod schemas.
+- Product logic identical on every client (conflict detection, date/money math) lives in `shared/`, not in a client.
+- Time = UTC + IANA tz id. Currency per record. Every booking has `source` (manual/imported_*).
+- iOS-first, Android-ready: no `Platform.OS` forks in feature code; platform code in `mobile/src/platform/`.
+- Never put secrets in `EXPO_PUBLIC_*`. Session/tokens: SecureStore-backed (LargeSecureStore pattern).
+- Native deps: `npx expo install`; a new native module = new dev-client build.
 
 ## Do NOT touch
 - Generated `mobile/ios/` and `mobile/android/` (Continuous Native Generation) — change `app.config.ts`.
-- `docker compose down -v` once a dev DB volume exists — it deletes local data.
+- Hosted Supabase project: no `db reset` / `db push` / dashboard edits without the user's explicit go-ahead.
 
 ## Multi-agent workflow (SDD) — see `.claude/agents/README.md`
 `spec-creator` → `implementation-planner` → `/sdd-build <plan>` → `/pr-self-review`.
@@ -51,5 +57,5 @@ Tasks/ideas live on the GitHub Projects board "TripPlanner" — use the `task-bo
 - Per-module conventions go in `<module>/AGENTS.md`. `CLAUDE.md` is a 1-line stub: `@AGENTS.md`.
 
 ## Pointers — read these on demand
-- `mobile/AGENTS.md` · `server/AGENTS.md` · `shared/AGENTS.md` · `e2e/AGENTS.md` — read first when inside that package.
-- `.claude/skills/README.md` — skill catalog. `TESTING.md` — test split and CI.
+- `mobile/AGENTS.md` · `supabase/AGENTS.md` · `shared/AGENTS.md` · `e2e/AGENTS.md` — read first inside that package.
+- `.claude/skills/README.md` — skill catalog. `TESTING.md` — test split.

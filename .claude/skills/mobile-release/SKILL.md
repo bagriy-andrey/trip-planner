@@ -38,8 +38,9 @@ Used by the `release-manager` agent and by anyone touching release config.
 - [ ] **Encryption export compliance:** `ios.config.usesNonExemptEncryption` set
       deliberately (standard HTTPS/Keychain only → typically `false`); confirm on
       the first TestFlight upload.
-- [ ] **Account deletion** removes server-side data too (cascade in Postgres, plus
-      any third-party processors), not just the local session.
+- [ ] **Account deletion** removes backend data too: an Edge Function deletes the
+      `auth.users` row with the service-role client (clients can't), and FK cascades
+      remove all user rows/storage objects — tested end-to-end; third-party processors covered.
 - [ ] **Account deletion** available in-app if accounts can be created.
 - [ ] **Sign in with Apple** offered if any third-party/social login is offered.
 - [ ] Privacy policy URL + support URL live; terms if subscriptions/UGC.
@@ -50,8 +51,9 @@ Used by the `release-manager` agent and by anyone touching release config.
 - [ ] Tested on a real device from a **release** build via TestFlight; no crashes
       on cold start, offline, permission-denied paths.
 - [ ] Accessibility pass: VoiceOver labels, Dynamic Type, contrast, dark mode.
-- [ ] Backend production env: HTTPS only, rate limits, migrations applied,
-      monitoring/crash reporting on.
+- [ ] Backend production env (hosted Supabase): all migrations applied, RLS enabled +
+      policy-tested on every table, no `service_role` key in the app bundle, Auth
+      providers/redirect URLs configured, backups on, monitoring/crash reporting on.
 
 ## Android later (Google Play) — keep it cheap
 - Keep `app.config.ts` Android fields filled in early (package name, adaptive

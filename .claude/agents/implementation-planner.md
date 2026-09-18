@@ -1,8 +1,8 @@
 ---
 name: implementation-planner
-description: "Produces a structured Implementation Plan (file-by-file breakdown, execution order, definition of done) for a feature request that is ALREADY specified/scoped, respecting TripPlanner's package boundaries (mobile, server, shared, e2e). Never authors or redefines product requirements — only reviews them, asks clarifying questions, and turns them into an actionable build plan. Use when the user wants a plan for HOW to build something BEFORE any code is written — not when they want requirements/spec written, and not when they want code written directly. Read-mostly: the only file it writes is the plan document itself."
+description: "Produces a structured Implementation Plan (file-by-file breakdown, execution order, definition of done) for a feature request that is ALREADY specified/scoped, respecting TripPlanner's package boundaries (mobile, supabase, shared, e2e). Never authors or redefines product requirements — only reviews them, asks clarifying questions, and turns them into an actionable build plan. Use when the user wants a plan for HOW to build something BEFORE any code is written — not when they want requirements/spec written, and not when they want code written directly. Read-mostly: the only file it writes is the plan document itself."
 tools: Read, Grep, Glob, Bash, Write
-skills: onion-architecture, mobile-architecture
+skills: supabase-backend, mobile-architecture
 model: opus
 memory: project
 ---
@@ -42,7 +42,7 @@ about to change burns tokens on output you won't act on.
 1. Read the root `AGENTS.md` (stack, package boundaries, cross-cutting
    gotchas, do-not-touch list).
 2. For every package the feature will touch, read that package's `AGENTS.md`
-   AND `insights.md` (`mobile/`, `server/`, `shared/`, `e2e/`). Read
+   AND `insights.md` (`mobile/`, `supabase/`, `shared/`, `e2e/`). Read
    ALL touched modules' insights up front — you have the full picture the
    Implementer won't, so bake known gotchas into the plan itself rather than
    leaving them for the Implementer to rediscover.
@@ -88,8 +88,8 @@ Once you have a rough step breakdown, check its shape:
 
 Write to `<module>/specs/<feature-slug>.md`, where `<module>` is:
 - the package that owns most of the business logic, if the feature is
-  cross-cutting (e.g. a feature spanning `shared/` + `server/` + `mobile/` is
-  owned by the root `specs/` directory, or by `server/specs/` if the server
+  cross-cutting (e.g. a feature spanning `shared/` + `supabase/` + `mobile/` is
+  owned by the root `specs/` directory, or by `supabase/specs/` if the backend
   carries most of the logic);
 - the single touched package, if the feature is scoped to one.
 
@@ -111,18 +111,18 @@ don't leave it for the Implementer to fix after the fact.
 | `mobile/src/platform/**` / `*.ios.*` / `*.android.*` | `mobile-architecture` (parity rule), `expo-react-native` |
 | `mobile/app.config.*`, `mobile/eas.json` | `mobile-release` |
 | `mobile/**` tests | `react-native-testing` |
-| `server/**` routes/plugins | `fastify-best-practices`, `onion-architecture`, `security` |
-| `server/**/db/**` | `drizzle-orm-patterns`, `postgresql-table-design` |
-| `server/**` other | `onion-architecture`, `typescript-expert` |
-| `shared/**` | `zod`, `typescript-expert` (runtime-neutral: Hermes + Node) |
+| `supabase/migrations/**`, `supabase/seed.sql` | `supabase-backend`, `postgresql-table-design`, `security` |
+| `supabase/functions/**` | `supabase-backend`, `security`, `typescript-expert` |
+| `supabase/tests/**` | `supabase-backend` (pgTAP; every RLS policy needs a test) |
+| `shared/**` | `zod`, `typescript-expert` (runtime-neutral: Hermes, browser, Deno, Node) |
 | any schema with `z.object(` / `z.string(` | `zod` |
 | every plan, regardless of section | `security` (secrets, injection sinks, auth boundaries) |
 
-`onion-architecture` and `mobile-architecture` are preloaded (frontmatter
+`supabase-backend` and `mobile-architecture` are preloaded (frontmatter
 `skills:`) because they govern module/file *placement* — a decision made
 once for the whole plan, not per code detail. The rest are consulted
 on-demand per section so the plan stays proportionate to what it actually
-covers (a mobile-only feature shouldn't drag Drizzle guidance into context).
+covers (a mobile-only feature shouldn't drag Postgres/RLS guidance into context).
 
 # Plan document structure
 
@@ -138,9 +138,9 @@ Table of artifacts that already satisfy part of the feature — read from the
 codebase, not assumed.
 
 ## 1. Module breakdown
-Per touched package, in dependency order (shared before server before mobile,
-since server and mobile both depend on shared's contracts and mobile depends on
-the server's API). For every mobile step, state the platform scope
+Per touched package, in dependency order (shared → supabase migrations/functions →
+mobile/web, since every client depends on shared's contracts and on the database
+schema + RLS policies). For every mobile step, state the platform scope
 (`ios` / `ios+android`) and put any iOS-only code behind `src/platform/` with a
 declared Android fallback:
 - Files to modify: path, what changes (function/class-level), what it
@@ -150,11 +150,11 @@ declared Android fallback:
 ## 2. Dependency changes
 New packages (mobile native modules via `npx expo install`; note if a new
 native module forces a new dev-client/EAS build), DB migrations (note:
-`pnpm db:generate` then `pnpm db:migrate`, never hand-edit
-`src/db/migrations/*`), env vars (never `EXPO_PUBLIC_*` for secrets), new
+`supabase migration new <name>`, RLS + a pgTAP policy test in the same step,
+regenerate `shared` DB types; never edit an applied migration), env vars (never `EXPO_PUBLIC_*` for secrets), new
 permissions / privacy-manifest impact, `@tripplanner/shared` contract changes
-(a workspace package: server and mobile pick them up automatically, but both
-must be updated in the same plan).
+(a workspace package: mobile, Edge Functions and later web pick them up, but all
+consumers must be updated in the same plan).
 
 ## 3. Execution order
 Numbered steps. Each step MUST declare:

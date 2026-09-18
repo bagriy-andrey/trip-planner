@@ -35,9 +35,9 @@ Each changed file belongs to one or more buckets. Evaluate path patterns in orde
 | `mobile-tests` | `mobile/**/*.test.*`, `mobile/**/*.spec.*` |
 | `mobile-config` | `mobile/app.config.*`, `mobile/eas.json`, `mobile/package.json` (release-relevant) |
 | `mobile-other` | `mobile/**/*.ts` (not test, not config) |
-| `server-routes` | `server/src/**/*route*.ts`, `server/src/**/*plugin*.ts` |
-| `server-db` | `server/src/db/**/*.ts` |
-| `server-other` | `server/src/**/*.ts` (not db, not routes) |
+| `backend-sql` | `supabase/migrations/**/*.sql`, `supabase/seed.sql` |
+| `backend-functions` | `supabase/functions/**` |
+| `backend-tests` | `supabase/tests/**` |
 | `shared` | `shared/**/*.ts` |
 | `e2e-flows` | `e2e/**` (Maestro YAML, scripts) |
 | `zod-schemas` | any file whose diff contains `z.object(` or `z.string(` |
@@ -47,7 +47,7 @@ Each changed file belongs to one or more buckets. Evaluate path patterns in orde
 
 ## Step 3 — Baseline checks (run before skills)
 
-For each package (`mobile/`, `server/`, `shared/`) that contains at least one changed file:
+For each pnpm package (`mobile/`, `shared/`) that contains at least one changed file:
 
 ```bash
 cd <package-dir> && pnpm typecheck 2>&1
@@ -69,9 +69,9 @@ Apply each skill **only if its bucket has ≥ 1 file**. Analyse the diff content
 | `mobile-tests` | `react-native-testing` |
 | `mobile-config` | `mobile-release` (permissions strings, privacy manifest, versioning, EAS profiles, secrets in `EXPO_PUBLIC_*`) |
 | `mobile-other` | `mobile-architecture`, `typescript-expert` |
-| `server-routes` | `fastify-best-practices`, `onion-architecture`, `security` |
-| `server-db` | `drizzle-orm-patterns`, `postgresql-table-design` |
-| `server-other` | `onion-architecture`, `typescript-expert` |
+| `backend-sql` | `supabase-backend`, `postgresql-table-design`, `security` (RLS enabled + policy on every new table; no `service_role` exposure) |
+| `backend-functions` | `supabase-backend`, `security`, `typescript-expert` |
+| `backend-tests` | `supabase-backend` |
 | `shared` | `zod`, `typescript-expert` |
 | `e2e-flows` | `react-native-testing` |
 | `zod-schemas` | `zod` |
@@ -119,7 +119,7 @@ Suggestion: <specific action>
 | Package       | Files reviewed | Critical | Warning | Info |
 |---------------|----------------|----------|---------|------|
 | mobile/       | 2              | 0        | 1       | 0    |
-| server/       | 3              | 2        | 0       | 1    |
+| supabase/     | 3              | 2        | 0       | 1    |
 
 **Decision: ❌ BLOCKED** — do not open the PR until all CRITICAL issues above are resolved.
 Re-run `/pr-self-review` after fixing.

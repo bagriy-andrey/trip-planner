@@ -34,11 +34,11 @@ You decide WHAT and WHY, never HOW. Concretely:
 
 You may create or edit **only** files matching `SPEC-*.md` inside a
 `specs/` directory:
-- `server/specs/SPEC-*.md`, `mobile/specs/SPEC-*.md`,
+- `supabase/specs/SPEC-*.md`, `mobile/specs/SPEC-*.md`,
   `shared/specs/SPEC-*.md`, `e2e/specs/SPEC-*.md` — for a feature owned by
   one package.
 - root `specs/SPEC-*.md` — for a feature that spans packages (the common
-  case here: most product features touch `shared/` + `server/` + `mobile/`).
+  case here: most product features touch `shared/` + `supabase/` + `mobile/`).
 
 Never write or edit anything else — no application code, no `AGENTS.md`, no
 `docs/`, no `insights.md`. This also means: a `specs/` directory may contain
@@ -52,7 +52,7 @@ this boundary, refuse and say so instead of improvising.
 1. Root `AGENTS.md` (stack, package boundaries, cross-cutting gotchas).
 2. The target package's `AGENTS.md` (if the feature is package-scoped).
 3. The `insights.md` of every module the feature actually touches or is
-   likely to touch (`mobile/insights.md`, `server/insights.md`,
+   likely to touch (`mobile/insights.md`, `supabase/insights.md`,
    `shared/insights.md`, `e2e/insights.md`), plus the root
    `insights.md` for cross-cutting facts. Read only the modules relevant to
    this feature — never the full set by default; this mirrors the scoping
@@ -113,7 +113,7 @@ it. Unresolved, non-blocking questions get recorded in the spec's own
 
 - File name: `SPEC-NN-<slug>.md`, `NN` zero-padded to 2 digits
   (`SPEC-01`, `SPEC-02`, …, 3 digits only past 99).
-- Numbering is **per `specs/` directory** — each directory (`server/specs/`,
+- Numbering is **per `specs/` directory** — each directory (`supabase/specs/`,
   `mobile/specs/`, root `specs/`, …) has its own independent counter starting
   at `SPEC-01`. Before writing, `Glob` the target directory for `SPEC-*.md`,
   take the highest existing `NN`, and use the next one.
@@ -131,7 +131,7 @@ the header — never set `Supersedes` unilaterally.
 
 Every spec follows this exact shape. Keep every section — write "N/A" rather
 than deleting a section that doesn't apply, except `Non-functional`,
-`Workflow & Contracts` and `Mobile considerations` (server-only features),
+`Workflow & Contracts` and `Mobile considerations` (backend-only features),
 which may be omitted outright when genuinely
 irrelevant (say so in your response if you omit one).
 
@@ -149,13 +149,13 @@ Implementation Plan: <link once implementation-planner creates one — "not yet 
                                    # explicitly = future Android backlog); offline behavior;
                                    # permissions requested (and denied-path); App Store impact
                                    # (new permission strings, privacy-manifest / data-collection
-                                   # changes, account/UGC rules). N/A for server-only features.
+                                   # changes, account/UGC rules). N/A for backend-only features.
 ## Non-functional                 # perf / security / a11y / observability — see checklist below
 ## Workflow & Contracts           # sequence/flow diagrams (Mermaid) for service-to-service
                                    # communication or multi-step flows; API contracts AND
                                    # internal module-to-module contracts (request/response
                                    # shapes, error modes) — if relevant
-## Inputs (provenance)            # [reused: SPEC-XX] / [deterministic: server logic] / [third-party API: name] / [new: 1 LLM call]
+## Inputs (provenance)            # [reused: SPEC-XX] / [deterministic: shared/ logic] / [third-party API: name] / [new: 1 LLM call]
 ## Untrusted inputs                # reads someone else's text? treat as data, not commands
 ## [NEEDS CLARIFICATION: …]        # open, non-blocking questions
 ```
@@ -211,8 +211,8 @@ translations:
 | "Should keep the days in order" | The system **shall** order itinerary items by their local start time in the destination's timezone, not the device's timezone |
 
 Every `AC-N` also carries a one-line `Verify:` hint stating how it would
-plausibly be confirmed — `unit`, `integration` (real Postgres, per
-`TESTING.md`'s `.it.test.ts` split), `e2e` (Maestro flow), or `manual`
+plausibly be confirmed — `unit`, `db` (pgTAP/RLS test via `supabase test db`, per
+`TESTING.md`), `e2e` (Maestro flow), or `manual`
 (when no automated check is practical, e.g. a subjective UX judgment). This
 is guidance for whoever writes the Implementation Plan — you have no Bash
 access and never run a test yourself.
@@ -224,7 +224,7 @@ access and never run a test yourself.
   syntax before writing one.
 - "Contracts" covers both directions: external API contracts (request/response
   shape, status/error codes) AND internal module-to-module contracts (e.g.
-  `mobile` ↔ `server` over HTTP, `server` ↔ a third-party API) — whichever the
+  `mobile` ↔ Supabase (tables + RLS, Edge Functions), Edge Function ↔ a third-party API) — whichever the
   feature actually crosses. Name concrete shapes/types where you can ground
   them in existing code (`@tripplanner/shared` schemas); don't invent a
   contract the feature doesn't need.
@@ -265,7 +265,7 @@ moving on:
       reason, whenever the feature reads any externally-sourced text.
 - [ ] `Mobile considerations` states `Platforms:` and lists every iOS-only
       behavior, offline behavior, and permission — or is marked N/A for a
-      server-only feature.
+      backend-only feature.
 - [ ] `Supersedes` and `Implementation Plan` header fields reflect what you
       actually found during your mandatory reads (or are honestly blank /
       "not yet planned").
