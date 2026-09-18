@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.expo/
+dist/
+build/
+ios/
+android/
+*.log
+.DS_Store
+coverage/
+# local Claude Code state
+.claude/settings.local.json
+.idea/

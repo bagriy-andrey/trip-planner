@@ -1,0 +1,10 @@
+{
+  "name": "trip-planner",
+  "private": true,
+  "packageManager": "pnpm@10",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  }
+}

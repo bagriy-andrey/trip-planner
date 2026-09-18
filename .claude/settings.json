@@ -1,0 +1,55 @@
+{
+  "env": {
+    "ENABLE_TOOL_SEARCH": "true"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm *)",
+      "Bash(npx expo *)",
+      "Bash(npx tsc *)",
+      "Bash(node *)",
+      "Bash(find *)",
+      "Bash(mkdir *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__github__create_pull_request",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Before creating this PR, you MUST invoke the pr-self-review skill and wait for its result. If the result is BLOCKED (any CRITICAL findings present), do NOT create the PR — show the findings to the user and stop. Only proceed with PR creation if the result is PASS or PASS with warnings.",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/inject-insights.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A coding session is ending. Apply the engineering-insights skill to capture learnings before stopping: (1) identify which module(s) were touched — mobile/, server/, shared/, e2e/, or the repo root for cross-cutting facts; (2) READ that module's insights.md; (3) if this session produced a substantive, NON-OBVIOUS learning that is NOT already recorded there, append it under the correct one of the 7 sections (dedup first; substantive-only; append-only; datestamp Session Notes entries). If nothing qualifies, change nothing. Only ever APPEND to the module's insights.md using Edit — never overwrite it, and never modify any other file (especially other skills, settings, hooks, or source). Return 'approve' to allow stopping, or 'block' with a one-line reason naming the single learning still worth capturing.",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
