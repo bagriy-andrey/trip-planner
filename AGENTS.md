@@ -43,6 +43,7 @@ Server: Fastify · Drizzle ORM · Postgres · Zod. Contracts: `shared/` (Zod). E
 ## Multi-agent workflow (SDD) — see `.claude/agents/README.md`
 `spec-creator` → `implementation-planner` → `/sdd-build <plan>` → `/pr-self-review`.
 Release: `release-manager` agent + `mobile-release` skill.
+Tasks/ideas live on the GitHub Projects board "TripPlanner" — use the `task-board` skill ("запиши задачу: …").
 
 ## AGENTS.md rules (for whoever edits these files)
 - Map, not manual: stack, commands, layout, non-default conventions, do-not-touch. ≤100 lines.

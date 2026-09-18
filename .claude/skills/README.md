@@ -22,6 +22,7 @@ Reusable AI skills that provide specialized knowledge and workflows. Canonical l
 | [engineering-insights](engineering-insights/SKILL.md) | Meta | Per-module `insights.md` capture loop |
 | [pr-self-review](pr-self-review/SKILL.md) | Meta | Pre-PR gate; blocks on CRITICAL |
 | [sdd-build](sdd-build/SKILL.md) | Meta | Builds an approved plan: implementers → verify → bounded architecture fix-loop |
+| [task-board](task-board/SKILL.md) | Meta | Capture/manage tasks on the GitHub Projects board via `gh` (`запиши задачу: …`) |
 | [workflow-retro](workflow-retro/SKILL.md) | Meta | Retrospective over a multi-agent run (`/workflow-retro`) |
 
 ## What Are Skills?

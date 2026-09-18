@@ -1,0 +1,35 @@
+name: Task / idea
+description: Capture a task, idea, or design note so it isn't forgotten
+labels: ["idea"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+      description: The task or idea in a sentence or two
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why / context
+      description: Problem it solves, links to designs (Figma etc.)
+  - type: dropdown
+    id: platforms
+    attributes:
+      label: Platforms
+      options: [ios+android, ios (iOS-only, add label ios-only), android]
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options: [mobile, server, shared, e2e, design, release]
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when (optional)
+      description: Rough acceptance criteria. Becomes SPEC input when the task moves to Ready.
