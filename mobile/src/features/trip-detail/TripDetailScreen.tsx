@@ -40,8 +40,9 @@ export function TripDetailScreen({ tripId }: TripDetailScreenProps) {
   const router = useRouter();
   const locale = resolveLocale([i18n.language]);
 
-  // The id is data, not a path: encode it so it can never add path segments.
-  const base = `/trips/${encodeURIComponent(tripId)}`;
+  // The id is data, not a path: it goes through `params`, which expo-router encodes
+  // per segment, so it can never add path segments.
+  const params = { tripId };
   const { start, end, nights, cityKey } = TRIP_DETAIL_PLACEHOLDER;
   const dateLine = `${formatDateRange(locale, start, end)} · ${formatNights(locale, nights)}`;
 
@@ -60,7 +61,7 @@ export function TripDetailScreen({ tripId }: TripDetailScreenProps) {
         <BookingSection
           title={t("sections.flights")}
           addLabel={t("a11y.addFlight")}
-          onAdd={() => router.push(`${base}/flights/new`)}
+          onAdd={() => router.push({ pathname: "/trips/[tripId]/flights/new", params })}
           testID="section-flights"
           addTestID="add-flight"
         >
@@ -69,7 +70,10 @@ export function TripDetailScreen({ tripId }: TripDetailScreenProps) {
               key={flight.id}
               flight={flight}
               locale={locale}
-              onPress={() => router.push(`${base}/flights/${encodeURIComponent(flight.id)}`)}
+              onPress={() => router.push({
+                  pathname: "/trips/[tripId]/flights/[flightId]",
+                  params: { tripId, flightId: flight.id },
+                })}
               testID={`flight-card-${flight.id}`}
             />
           ))}
@@ -77,7 +81,7 @@ export function TripDetailScreen({ tripId }: TripDetailScreenProps) {
         <BookingSection
           title={t("sections.hotel")}
           addLabel={t("a11y.addHotel")}
-          onAdd={() => router.push(`${base}/hotels/new`)}
+          onAdd={() => router.push({ pathname: "/trips/[tripId]/hotels/new", params })}
           testID="section-hotel"
           addTestID="add-hotel"
         >
@@ -86,11 +90,11 @@ export function TripDetailScreen({ tripId }: TripDetailScreenProps) {
         <BookingSection
           title={t("sections.car")}
           addLabel={t("a11y.addCar")}
-          onAdd={() => router.push(`${base}/cars/new`)}
+          onAdd={() => router.push({ pathname: "/trips/[tripId]/cars/new", params })}
           testID="section-car"
           addTestID="add-car"
         >
-          <CarEmptySection onAdd={() => router.push(`${base}/cars/new`)} testID="car-empty-add" />
+          <CarEmptySection onAdd={() => router.push({ pathname: "/trips/[tripId]/cars/new", params })} testID="car-empty-add" />
         </BookingSection>
       </View>
     </Screen>

@@ -10,7 +10,7 @@ import { act, fireEvent, renderRouter, screen, waitFor, within } from "expo-rout
 import { i18n } from "@/lib/i18n";
 
 interface NavState {
-  routes: readonly { name: string; state?: NavState }[];
+  routes: readonly { name: string; params?: object; state?: NavState }[];
 }
 
 /**
@@ -140,6 +140,42 @@ describe("navigation topology", () => {
       await expectPath(path);
       expect(queryTab("Trips")).not.toBeOnTheScreen();
     }
+  });
+
+  it("opens the booking forms of the trip from the S7 buttons (typed object hrefs)", async () => {
+    await renderApp("/trips/trip-krakow");
+    fireEvent.press(screen.getByTestId("add-flight"));
+    await expectPath("/trips/trip-krakow/flights/new");
+    act(() => router.back());
+    await expectPath("/trips/trip-krakow");
+
+    fireEvent.press(screen.getByTestId("flight-card-flight-outbound"));
+    await expectPath("/trips/trip-krakow/flights/flight-outbound");
+    act(() => router.back());
+
+    fireEvent.press(screen.getByTestId("add-hotel"));
+    await expectPath("/trips/trip-krakow/hotels/new");
+    act(() => router.back());
+
+    fireEvent.press(screen.getByTestId("add-car"));
+    await expectPath("/trips/trip-krakow/cars/new");
+  });
+
+  it("keeps a hostile trip id inside its own path segment", async () => {
+    await renderApp("/trips/trip-krakow");
+    // What TripDetailScreen pushes for tripId "../../etc": expo-router must encode the param
+    // so it stays ONE segment (the unit test only checks the object handed to the router).
+    // `getPathname()` returns the decoded path, so assert on the matched route + its params.
+    act(() =>
+      router.push({ pathname: "/trips/[tripId]/flights/new", params: { tripId: "../../etc" } }),
+    );
+    await waitFor(() => {
+      const stack = current.getRouterState()?.routes[0]?.state?.routes ?? [];
+      const top = stack[stack.length - 1];
+      expect(top?.name).toBe("trips/[tripId]/flights/new");
+      // React Navigation types params as a bare `object`; read the entry without a cast.
+      expect(Object.fromEntries(Object.entries(top?.params ?? {})).tripId).toBe("../../etc");
+    });
   });
 
   it("AC-13: «Sign out» returns to /onboarding and leaves no tabs in the stack", async () => {

@@ -91,13 +91,21 @@ describe("TripDetailScreen (S7)", () => {
     const user = userEvent.setup();
     await renderWithProviders(<TripDetailScreen tripId="trip-krakow" />);
     await user.press(screen.getByTestId("add-flight"));
-    expect(mockRouter.push).toHaveBeenLastCalledWith("/trips/trip-krakow/flights/new");
+    expect(mockRouter.push).toHaveBeenLastCalledWith(
+      { pathname: "/trips/[tripId]/flights/new", params: { tripId: "trip-krakow" } },
+    );
     await user.press(screen.getByTestId("add-hotel"));
-    expect(mockRouter.push).toHaveBeenLastCalledWith("/trips/trip-krakow/hotels/new");
+    expect(mockRouter.push).toHaveBeenLastCalledWith(
+      { pathname: "/trips/[tripId]/hotels/new", params: { tripId: "trip-krakow" } },
+    );
     await user.press(screen.getByTestId("add-car"));
-    expect(mockRouter.push).toHaveBeenLastCalledWith("/trips/trip-krakow/cars/new");
+    expect(mockRouter.push).toHaveBeenLastCalledWith(
+      { pathname: "/trips/[tripId]/cars/new", params: { tripId: "trip-krakow" } },
+    );
     await user.press(screen.getByTestId("car-empty-add"));
-    expect(mockRouter.push).toHaveBeenLastCalledWith("/trips/trip-krakow/cars/new");
+    expect(mockRouter.push).toHaveBeenLastCalledWith(
+      { pathname: "/trips/[tripId]/cars/new", params: { tripId: "trip-krakow" } },
+    );
     expect(mockRouter.push).toHaveBeenCalledTimes(4);
   });
 
@@ -105,7 +113,10 @@ describe("TripDetailScreen (S7)", () => {
     const user = userEvent.setup();
     await renderWithProviders(<TripDetailScreen tripId="trip-krakow" />);
     await user.press(screen.getByTestId("flight-card-flight-outbound"));
-    expect(mockRouter.push).toHaveBeenCalledWith("/trips/trip-krakow/flights/flight-outbound");
+    expect(mockRouter.push).toHaveBeenCalledWith({
+      pathname: "/trips/[tripId]/flights/[flightId]",
+      params: { tripId: "trip-krakow", flightId: "flight-outbound" },
+    });
   });
 
   it("renders identically and without throwing for arbitrary trip ids", async () => {
@@ -122,7 +133,9 @@ describe("TripDetailScreen (S7)", () => {
     const user = userEvent.setup();
     await renderWithProviders(<TripDetailScreen tripId="../../etc" />);
     await user.press(screen.getByTestId("add-flight"));
-    expect(mockRouter.push).toHaveBeenCalledWith("/trips/..%2F..%2Fetc/flights/new");
+    expect(mockRouter.push).toHaveBeenCalledWith(
+      { pathname: "/trips/[tripId]/flights/new", params: { tripId: "../../etc" } },
+    );
   });
 
   it("gives every button a non-empty accessibility label (AC-19)", async () => {
