@@ -1,0 +1,8 @@
+# Maestro workspace config for e2e/flows/.
+#
+# The app id is NOT configurable here (Maestro reads `appId` only from each flow's own header).
+# Every flow therefore repeats `appId: com.anonymous.tripplanner` = `ios.bundleIdentifier` in
+# mobile/app.config.ts (a temporary placeholder, decision Q12). scripts/e2e.sh fails fast if the
+# two drift apart, so changing the bundle id means: app.config.ts + the `appId` line of each flow.
+flows:
+  - "*.yaml"

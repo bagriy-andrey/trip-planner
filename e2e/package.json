@@ -1,0 +1,11 @@
+{
+  "name": "@tripplanner/e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Maestro end-to-end flows. No TypeScript and no unit tests here, so typecheck/test are deliberate no-ops that keep `pnpm -r typecheck` / `pnpm -r test` green.",
+  "scripts": {
+    "test:e2e": "../scripts/e2e.sh",
+    "typecheck": "echo \"e2e: nothing to typecheck (Maestro YAML)\"",
+    "test": "echo \"e2e: no unit tests (run pnpm test:e2e <flow> --locale ru|en)\""
+  }
+}

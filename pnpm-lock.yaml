@@ -8,6 +8,8 @@ importers:
 
   .: {}
 
+  e2e: {}
+
   mobile:
     dependencies:
       '@expo-google-fonts/ibm-plex-mono':

@@ -1,0 +1,126 @@
+appId: com.anonymous.tripplanner
+name: Skeleton smoke - walk through all 12 screens (AC-5, AC-28)
+tags:
+  - smoke
+# Run through the runner, which supplies LOCALE and every UI string of that locale as env vars:
+#   ./scripts/e2e.sh skeleton-smoke [--locale ru|en] [--metro-url http://localhost:8081]
+#
+# Selection rules (AC-19): text / accessibility label only. No `id:` / testID anywhere.
+# Maestro `text:` is a full-string REGEX, so:
+#   - trip cards carry one long label ("City, date range, status") and are matched as ".*City.*";
+#   - strings with regex metacharacters are pre-escaped by the runner (e.g. "Forgot password\?").
+# Uniqueness: a label that appears twice on one screen (tab label == screen title on S4/S5/S6) is
+# only ever TAPPED from a screen where it is the tab alone (see the tab steps), and asserted with
+# `selected: true`, which only the active tab button carries.
+---
+- launchApp:
+    clearState: true
+    arguments:
+      "-AppleLanguages": "(${LOCALE})"
+
+# Dev-client builds land on the launcher; the runner passes DEV_CLIENT_LINK=none for standalone
+# (preview/release) builds, and an exp+<slug>://expo-development-client link otherwise.
+- runFlow:
+    when:
+      true: ${DEV_CLIENT_LINK != 'none'}
+    commands:
+      - openLink: ${DEV_CLIENT_LINK}
+      - tapOn:
+          text: "Open|Открыть"
+          optional: true
+      - tapOn:
+          text: "Continue|Продолжить"
+          optional: true
+
+# --- S1 onboarding (AC-1, AC-18: the first screen shows up stably after launch) -------------
+- extendedWaitUntil:
+    visible: "${ONBOARDING_TITLE}"
+    timeout: 60000
+- assertVisible: "${ONBOARDING_START}"
+- tapOn: "${ONBOARDING_START}"
+
+# --- S3 sign up + S11 / S12 legal + S2 sign in + S10 forgot password (AC-6) -----------------
+- assertVisible: "${SIGNUP_TITLE}"
+
+# S11 terms. The link text is identical to the S11 title in en, so assert the S11-only body text.
+- tapOn: "${SIGNUP_TERMS_LINK}"
+- assertVisible: "${LEGAL_BODY}"
+- tapOn: "${BACK}"
+- assertVisible: "${SIGNUP_TITLE}"
+
+# S12 privacy.
+- tapOn: "${SIGNUP_PRIVACY_LINK}"
+- assertVisible: "${LEGAL_BODY}"
+- tapOn: "${BACK}"
+- assertVisible: "${SIGNUP_TITLE}"
+
+# S2 sign in (footer link of S3), then S10 forgot password and back.
+- tapOn: "${SIGNUP_SIGNIN_LINK}"
+- assertVisible: "${SIGNIN_TITLE}"
+- tapOn: "${SIGNIN_FORGOT}"
+- assertVisible: "${FORGOT_TITLE}"
+- tapOn: "${BACK}"
+- assertVisible: "${SIGNIN_TITLE}"
+
+# Back to S3 through the "create account" link, then submit: the skeleton validates nothing (AC-7).
+- tapOn: "${SIGNIN_CREATE_LINK}"
+- assertVisible: "${SIGNUP_TITLE}"
+- tapOn: "${SIGNUP_SUBMIT}"
+
+# --- Tabs (AC-8): Trips -> History -> Profile -> Trips ---------------------------------------
+- assertVisible:
+    text: "${TAB_TRIPS}"
+    selected: true
+- tapOn: "${TAB_HISTORY}"
+- assertVisible:
+    text: "${TAB_HISTORY}"
+    selected: true
+- tapOn: "${TAB_PROFILE}"
+- assertVisible:
+    text: "${TAB_PROFILE}"
+    selected: true
+- tapOn: "${TAB_TRIPS}"
+- assertVisible:
+    text: "${TAB_TRIPS}"
+    selected: true
+
+# --- History card -> S7 -> back (AC-9, AC-10) -------------------------------------------------
+- tapOn: "${TAB_HISTORY}"
+- tapOn: ".*${CITY_ROME}.*"
+# S7 is recognised by its "add flight" button (the sample trip is always Krakow, whichever card opened it).
+- assertVisible: "${ADD_FLIGHT}"
+# AC-9: S7 has no tab bar, so none of the three tab labels is on screen.
+- assertNotVisible: "${TAB_TRIPS}"
+- assertNotVisible: "${TAB_HISTORY}"
+- assertNotVisible: "${TAB_PROFILE}"
+- tapOn: "${BACK}"
+# AC-10: back lands on History, with its tab still the active one.
+- assertVisible:
+    text: "${TAB_HISTORY}"
+    selected: true
+
+# --- Trips card -> S7 -> flight form (S9) -> cancel -> back ------------------------------------
+- tapOn: "${TAB_TRIPS}"
+- tapOn: ".*${CITY_KRAKOW}.*"
+- assertVisible: "${ADD_FLIGHT}"
+- tapOn: "${ADD_FLIGHT}"
+- assertVisible: "${FLIGHT_FORM_FROM}"
+- tapOn: "${CANCEL}"
+# AC-12: cancel closes the modal and we are on S7 again.
+- assertVisible: "${ADD_FLIGHT}"
+- tapOn: "${BACK}"
+
+# --- Floating "+" -> new trip modal (S8) -> cancel ---------------------------------------------
+- tapOn: "${NEW_TRIP_A11Y}"
+# The title "New trip" equals the "+" label, so assert the S8-only field caption instead.
+- assertVisible: "${NEW_TRIP_CITY_LABEL}"
+- tapOn: "${CANCEL}"
+- assertVisible:
+    text: "${TAB_TRIPS}"
+    selected: true
+
+# --- Profile -> sign out -> onboarding (AC-13) -------------------------------------------------
+- tapOn: "${TAB_PROFILE}"
+- assertVisible: "${LOGOUT}"
+- tapOn: "${LOGOUT}"
+- assertVisible: "${ONBOARDING_TITLE}"
