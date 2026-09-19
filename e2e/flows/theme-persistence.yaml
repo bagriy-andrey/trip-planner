@@ -1,0 +1,89 @@
+appId: com.anonymous.tripplanner
+name: Theme persistence - "Light" survives a full restart (AC-30)
+tags:
+  - theme
+# Run through the runner, which supplies LOCALE and every UI string of that locale as env vars:
+#   ./scripts/e2e.sh theme-persistence [--locale ru|en] [--metro-url http://localhost:8081]
+#
+# What proves "the screen is light" (chosen marker):
+#   The theme row is a radio group whose selected option carries `checked`. Automated assertion:
+#   after the restart "Light" is checked and "Dark" (the default) is not. That is the persisted
+#   preference the provider hands to every screen, but it is a proxy for the colours, so the flow
+#   also saves screenshots before and after the restart for a manual look (M16):
+#   .maestro/screenshots/theme-<locale>-{1-before-restart,2-after-restart}.png
+#   Screenshot comparison is manual: Maestro has no stable pixel/colour assertion for this.
+# Selectors: text / accessibility label only, no testID (AC-19).
+---
+- launchApp:
+    clearState: true
+    arguments:
+      "-AppleLanguages": "(${LOCALE})"
+
+- runFlow:
+    when:
+      true: ${DEV_CLIENT_LINK != 'none'}
+    commands:
+      - openLink: ${DEV_CLIENT_LINK}
+      - tapOn:
+          text: "Open|Открыть"
+          optional: true
+      - tapOn:
+          text: "Continue|Продолжить"
+          optional: true
+
+# Sign in (the skeleton validates nothing) -> Profile tab.
+- extendedWaitUntil:
+    visible: "${ONBOARDING_TITLE}"
+    timeout: 60000
+- tapOn: "${ONBOARDING_SIGNIN_LINK}"
+- assertVisible: "${SIGNIN_TITLE}"
+- tapOn: "${SIGNIN_SUBMIT}"
+- tapOn: "${TAB_PROFILE}"
+- assertVisible: "${THEME_LIGHT}"
+
+# Fresh install: dark is the default. Then pick Light.
+- assertVisible:
+    text: "${THEME_DARK}"
+    checked: true
+- tapOn: "${THEME_LIGHT}"
+- assertVisible:
+    text: "${THEME_LIGHT}"
+    checked: true
+- takeScreenshot: .maestro/screenshots/theme-${LOCALE}-1-before-restart
+
+# Full restart WITHOUT clearState: only the stored preference can carry the choice over.
+- stopApp
+- launchApp:
+    arguments:
+      "-AppleLanguages": "(${LOCALE})"
+
+- runFlow:
+    when:
+      true: ${DEV_CLIENT_LINK != 'none'}
+    commands:
+      - openLink: ${DEV_CLIENT_LINK}
+      - tapOn:
+          text: "Open|Открыть"
+          optional: true
+      - tapOn:
+          text: "Continue|Продолжить"
+          optional: true
+
+# The app has no session yet, so a cold start is onboarding again: sign in, open Profile.
+- extendedWaitUntil:
+    visible: "${ONBOARDING_TITLE}"
+    timeout: 60000
+- tapOn: "${ONBOARDING_SIGNIN_LINK}"
+- assertVisible: "${SIGNIN_TITLE}"
+- tapOn: "${SIGNIN_SUBMIT}"
+- tapOn: "${TAB_PROFILE}"
+- assertVisible: "${THEME_LIGHT}"
+
+# The persisted choice, not the dark default, is applied.
+- assertVisible:
+    text: "${THEME_LIGHT}"
+    checked: true
+- assertNotVisible:
+    text: "${THEME_DARK}"
+    checked: true
+- takeScreenshot: .maestro/screenshots/theme-${LOCALE}-2-after-restart
