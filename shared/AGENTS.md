@@ -13,4 +13,4 @@ the future `web/`, and Supabase Edge Functions. Real workspace package (not vend
 - Tests: vitest, pure unit tests (always cover day/timezone boundaries).
 
 ## Status
-Not scaffolded yet.
+Not scaffolded yet (no `package.json` or `src/`) — not touched by SPEC-01; the app skeleton has no Zod/domain logic.
