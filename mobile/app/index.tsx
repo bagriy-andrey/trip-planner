@@ -1,10 +1,6 @@
-import { Text, View } from "react-native";
+import { Redirect } from "expo-router";
 
-// Bootstrap stub (PLAN-01 Step 1). Replaced by a redirect to /onboarding in Step 9.
+// Service route, not a screen: a cold start lands on onboarding (AC-1).
 export default function Index() {
-  return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-      <Text>APP bootstrap</Text>
-    </View>
-  );
+  return <Redirect href="/onboarding" />;
 }
