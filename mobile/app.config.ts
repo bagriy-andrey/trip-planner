@@ -54,5 +54,7 @@ export default (): ExpoConfig => ({
       },
     ],
     "expo-localization",
+    // iOS 27 needs the UIScene life cycle; the SDK 57 prebuild template lacks it.
+    "./plugins/withIosSceneLifecycle",
   ],
 });
