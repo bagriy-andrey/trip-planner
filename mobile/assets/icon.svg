@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Temporary placeholder icon (AC-29): amber "T" on the app's dark background.
+       Glyph stays inside the central 66% so the same art works as the Android adaptive foreground. -->
+  <rect width="1024" height="1024" fill="#0B0D11"/>
+  <path fill="#F2A93B" d="M312 312h400v96H560v304H464V408H312z"/>
+</svg>
