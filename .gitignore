@@ -13,3 +13,4 @@ coverage/
 # local Claude Code state
 .claude/settings.local.json
 .idea/
+.maestro/

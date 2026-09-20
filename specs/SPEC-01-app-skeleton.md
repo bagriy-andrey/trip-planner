@@ -1,6 +1,6 @@
 # Spec: App skeleton (навигационный каркас мобильного приложения)  |  Spec ID: SPEC-01  |  Status: approved
 Supersedes: —
-Implementation Plan: not yet planned
+Implementation Plan: specs/plans/PLAN-01-app-skeleton.md
 
 ## Проблема й навіщо
 
