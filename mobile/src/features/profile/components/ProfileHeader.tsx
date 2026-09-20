@@ -4,14 +4,14 @@ import { AppText, Avatar } from "@/components";
 import { spacing } from "@/lib/theme";
 
 export interface ProfileHeaderProps {
-  /** Already translated/placeholder display name. */
+  /** Display name. */
   name: string;
   email: string;
 }
 
 const AVATAR_SIZE = 72;
 
-/** Avatar, name and email of the account (placeholders in the skeleton). */
+/** Avatar, name and email of the account (mock user for now). */
 export function ProfileHeader({ name, email }: ProfileHeaderProps) {
   const initial = Array.from(name)[0] ?? "";
   return (

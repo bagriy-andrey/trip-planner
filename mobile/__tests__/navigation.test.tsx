@@ -143,26 +143,26 @@ describe("navigation topology", () => {
   });
 
   it("opens the booking forms of the trip from the S7 buttons (typed object hrefs)", async () => {
-    await renderApp("/trips/trip-krakow");
+    await renderApp("/trips/trip-lisbon");
     fireEvent.press(screen.getByTestId("add-flight"));
-    await expectPath("/trips/trip-krakow/flights/new");
+    await expectPath("/trips/trip-lisbon/flights/new");
     act(() => router.back());
-    await expectPath("/trips/trip-krakow");
+    await expectPath("/trips/trip-lisbon");
 
-    fireEvent.press(screen.getByTestId("flight-card-flight-outbound"));
-    await expectPath("/trips/trip-krakow/flights/flight-outbound");
+    fireEvent.press(screen.getByTestId("flight-card-flight-lisbon-outbound"));
+    await expectPath("/trips/trip-lisbon/flights/flight-lisbon-outbound");
     act(() => router.back());
 
     fireEvent.press(screen.getByTestId("add-hotel"));
-    await expectPath("/trips/trip-krakow/hotels/new");
+    await expectPath("/trips/trip-lisbon/hotels/new");
     act(() => router.back());
 
     fireEvent.press(screen.getByTestId("add-car"));
-    await expectPath("/trips/trip-krakow/cars/new");
+    await expectPath("/trips/trip-lisbon/cars/new");
   });
 
   it("keeps a hostile trip id inside its own path segment", async () => {
-    await renderApp("/trips/trip-krakow");
+    await renderApp("/trips/trip-lisbon");
     // What TripDetailScreen pushes for tripId "../../etc": expo-router must encode the param
     // so it stays ONE segment (the unit test only checks the object handed to the router).
     // `getPathname()` returns the decoded path, so assert on the matched route + its params.

@@ -5,6 +5,7 @@ import type { Edge } from "react-native-safe-area-context";
 import { AppText, GlassSurface, Screen, SecondaryButton } from "@/components";
 import { useTranslation } from "@/lib/i18n";
 import { spacing } from "@/lib/theme";
+import { MOCK_USER } from "@/mocks";
 
 import { ProfileHeader } from "./components/ProfileHeader";
 import { SoonSettingRow } from "./components/SoonSettingRow";
@@ -34,18 +35,18 @@ export function ProfileScreen() {
       <AppText variant="display" accessibilityRole="header">
         {t("title")}
       </AppText>
-      <ProfileHeader name={t("namePlaceholder")} email={t("emailPlaceholder")} />
+      <ProfileHeader name={MOCK_USER.name} email={MOCK_USER.email} />
       <GlassSurface style={styles.group}>
         <ThemeSettingRow />
         <SoonSettingRow label={t("rows.notifications")} testID="row-notifications" />
         <SoonSettingRow
           label={t("rows.connectedAccounts")}
-          value={t("rows.connectedAccountsValue")}
+          value={MOCK_USER.connectedAccount}
           testID="row-connected-accounts"
         />
         <SoonSettingRow
           label={t("rows.currency")}
-          value={t("rows.currencyValue")}
+          value={MOCK_USER.currency}
           testID="row-currency"
         />
       </GlassSurface>

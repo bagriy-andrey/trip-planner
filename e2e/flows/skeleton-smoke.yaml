@@ -87,7 +87,7 @@ tags:
 # --- History card -> S7 -> back (AC-9, AC-10) -------------------------------------------------
 - tapOn: "${TAB_HISTORY}"
 - tapOn: ".*${CITY_ROME}.*"
-# S7 is recognised by its "add flight" button (the sample trip is always Krakow, whichever card opened it).
+# S7 is recognised by its "add flight" button (any trip's details screen has it).
 - assertVisible: "${ADD_FLIGHT}"
 # AC-9: S7 has no tab bar, so none of the three tab labels is on screen.
 - assertNotVisible: "${TAB_TRIPS}"
@@ -101,7 +101,7 @@ tags:
 
 # --- Trips card -> S7 -> flight form (S9) -> cancel -> back ------------------------------------
 - tapOn: "${TAB_TRIPS}"
-- tapOn: ".*${CITY_KRAKOW}.*"
+- tapOn: ".*${CITY_LISBON}.*"
 - assertVisible: "${ADD_FLIGHT}"
 - tapOn: "${ADD_FLIGHT}"
 - assertVisible: "${FLIGHT_FORM_FROM}"

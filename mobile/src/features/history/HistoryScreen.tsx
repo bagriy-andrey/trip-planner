@@ -3,23 +3,22 @@ import { StyleSheet, View } from "react-native";
 import type { Edge } from "react-native-safe-area-context";
 
 import { AppText, AvatarButton, Screen } from "@/components";
-import { PLACEHOLDER_NOW, TripCard } from "@/features/trips";
+import { TripCard } from "@/features/trips";
 import { resolveLocale, useTranslation } from "@/lib/i18n";
 import { spacing } from "@/lib/theme";
-
-import { HISTORY_PLACEHOLDERS } from "./placeholders";
+import { COMPLETED_TRIPS, MOCK_NOW, MOCK_USER } from "@/mocks";
 
 // The tab bar owns the bottom inset.
 const TAB_EDGES: readonly Edge[] = ["top", "left", "right"];
 
-/** S5 — history tab: muted, completed sample trips reusing the S4 card. */
+/** S5 — history tab: muted, completed mock trips reusing the S4 card. */
 export function HistoryScreen() {
   const { t, i18n } = useTranslation("history");
-  const { t: tProfile } = useTranslation("profile");
+  const { t: tTrips } = useTranslation("trips");
   const { t: tCommon } = useTranslation("common");
   const router = useRouter();
   const locale = resolveLocale([i18n.language]);
-  const initial = Array.from(tProfile("namePlaceholder"))[0] ?? "";
+  const initial = Array.from(MOCK_USER.name)[0] ?? "";
 
   return (
     <Screen edges={TAB_EDGES} testID="history-screen" contentStyle={styles.content}>
@@ -35,12 +34,12 @@ export function HistoryScreen() {
           testID="history-avatar"
         />
       </View>
-      {HISTORY_PLACEHOLDERS.map(({ cityKey, ...trip }) => (
+      {COMPLETED_TRIPS.map(({ cityKey, ...trip }) => (
         <TripCard
           key={trip.id}
-          trip={{ ...trip, city: t(cityKey) }}
+          trip={{ ...trip, city: tTrips(cityKey) }}
           locale={locale}
-          now={PLACEHOLDER_NOW}
+          now={MOCK_NOW}
           muted
           onPress={() => router.push(`/trips/${trip.id}`)}
           testID={`trip-card-${trip.id}`}

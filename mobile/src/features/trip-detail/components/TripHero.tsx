@@ -14,8 +14,8 @@ const MORE = "…";
 export interface TripHeroProps {
   /** Already translated city name. */
   city: string;
-  /** Range and nights, e.g. "Sep 24 – 30, 2026 · 6 nights". Mono (AC-38). */
-  dateLine: string;
+  /** Range and nights, e.g. "Sep 24 – 30, 2026 · 6 nights". Mono (AC-38). Null for a draft without dates. */
+  dateLine: string | null;
   /** Already translated status text, drawn in the accent pill. */
   statusLabel: string;
   backLabel: string;
@@ -83,9 +83,11 @@ export function TripHero({ city, dateLine, statusLabel, backLabel, moreLabel, mo
         </AppText>
         <View style={styles.meta}>
           <Pill tone="accent" label={statusLabel} />
-          <AppText variant="monoSmall" color="textMuted" style={styles.dates}>
-            {dateLine}
-          </AppText>
+          {dateLine !== null ? (
+            <AppText variant="monoSmall" color="textMuted" style={styles.dates}>
+              {dateLine}
+            </AppText>
+          ) : null}
         </View>
       </GlassSurface>
     </View>

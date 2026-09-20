@@ -5,15 +5,16 @@ import { formatShortDate, useTranslation } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { spacing } from "@/lib/theme";
 
-import type { HotelPlaceholder } from "../placeholders";
+import { nightsBetween } from "@/mocks";
+import type { MockHotel } from "@/mocks";
 
 export interface HotelCardProps {
-  hotel: HotelPlaceholder;
+  hotel: MockHotel;
   locale: Locale;
   testID?: string;
 }
 
-/** Hotel summary: name, check-in/out dates (mono, AC-38) and a breakfast chip. Not navigable in the skeleton. */
+/** Hotel summary: name, check-in/out dates (mono, AC-38) and a breakfast chip. Not navigable yet. */
 export function HotelCard({ hotel, locale, testID }: HotelCardProps) {
   const { t } = useTranslation("tripDetail");
   const checkIn = formatShortDate(locale, hotel.checkIn);
@@ -22,7 +23,7 @@ export function HotelCard({ hotel, locale, testID }: HotelCardProps) {
     <GlassSurface style={styles.card}>
       <View testID={testID} style={styles.content}>
         <AppText variant="title" numberOfLines={2}>
-          {t("hotel.sampleName")}
+          {hotel.name}
         </AppText>
         <View style={styles.dates}>
           <View style={styles.date}>
@@ -38,7 +39,14 @@ export function HotelCard({ hotel, locale, testID }: HotelCardProps) {
             <AppText variant="monoSmall">{checkOut}</AppText>
           </View>
         </View>
-        <Pill label={t("hotel.breakfast", { count: hotel.totalDays, included: hotel.breakfastDays })} />
+        {hotel.breakfastDays > 0 ? (
+          <Pill
+            label={t("hotel.breakfast", {
+              count: nightsBetween(hotel.checkIn, hotel.checkOut),
+              included: hotel.breakfastDays,
+            })}
+          />
+        ) : null}
       </View>
     </GlassSurface>
   );

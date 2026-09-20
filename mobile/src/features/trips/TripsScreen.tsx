@@ -5,22 +5,21 @@ import type { Edge } from "react-native-safe-area-context";
 import { AppText, AvatarButton, Screen } from "@/components";
 import { resolveLocale, useTranslation } from "@/lib/i18n";
 import { spacing } from "@/lib/theme";
+import { CURRENT_TRIPS, MOCK_NOW, MOCK_USER } from "@/mocks";
 
 import { FloatingAddButton } from "./components/FloatingAddButton";
 import { TripCard } from "./components/TripCard";
-import { PLACEHOLDER_NOW, TRIP_PLACEHOLDERS } from "./placeholders";
 
 // The tab bar owns the bottom inset.
 const TAB_EDGES: readonly Edge[] = ["top", "left", "right"];
 
-/** S4 — trips tab: static sample cards, avatar -> profile tab, "+" -> new-trip modal. */
+/** S4 — trips tab: mock trip cards, avatar -> profile tab, "+" -> new-trip modal. */
 export function TripsScreen() {
   const { t, i18n } = useTranslation("trips");
-  const { t: tProfile } = useTranslation("profile");
   const { t: tCommon } = useTranslation("common");
   const router = useRouter();
   const locale = resolveLocale([i18n.language]);
-  const initial = Array.from(tProfile("namePlaceholder"))[0] ?? "";
+  const initial = Array.from(MOCK_USER.name)[0] ?? "";
 
   return (
     <View style={styles.root}>
@@ -37,12 +36,12 @@ export function TripsScreen() {
             testID="trips-avatar"
           />
         </View>
-        {TRIP_PLACEHOLDERS.map(({ cityKey, ...trip }) => (
+        {CURRENT_TRIPS.map(({ cityKey, ...trip }) => (
           <TripCard
             key={trip.id}
             trip={{ ...trip, city: t(cityKey) }}
             locale={locale}
-            now={PLACEHOLDER_NOW}
+            now={MOCK_NOW}
             onPress={() => router.push(`/trips/${trip.id}`)}
             testID={`trip-card-${trip.id}`}
           />

@@ -18,10 +18,10 @@ beforeEach(() => {
 });
 
 describe("HistoryScreen (S5)", () => {
-  it("renders the title, the avatar and the completed sample trips", async () => {
+  it("renders the title, the avatar and the completed mock trips", async () => {
     await renderWithProviders(<HistoryScreen />);
     expect(screen.getByRole("header", { name: "History" })).toBeOnTheScreen();
-    for (const id of ["trip-rome", "trip-prague"]) {
+    for (const id of ["trip-rome", "trip-prague", "trip-amsterdam"]) {
       const card = screen.getByTestId(`trip-card-${id}`);
       expect(within(card).getByText("completed")).toBeOnTheScreen();
     }
@@ -30,13 +30,13 @@ describe("HistoryScreen (S5)", () => {
   it("localizes to Russian", async () => {
     await renderWithProviders(<HistoryScreen />, { locale: "ru" });
     expect(screen.getByRole("header", { name: "История" })).toBeOnTheScreen();
-    expect(screen.getAllByText("завершено")).toHaveLength(2);
+    expect(screen.getAllByText("завершено")).toHaveLength(3);
   });
 
   it("gives the avatar and every card a non-empty accessibility label (AC-19)", async () => {
     await renderWithProviders(<HistoryScreen />);
     const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(3);
+    expect(buttons).toHaveLength(4);
     for (const button of buttons) {
       expect(String(button.props.accessibilityLabel ?? "").length).toBeGreaterThan(0);
     }
