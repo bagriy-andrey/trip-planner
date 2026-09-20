@@ -16,7 +16,7 @@ export function SignUpScreen() {
   const router = useRouter();
   return (
     <Screen testID="sign-up-screen" contentStyle={styles.content}>
-      <AppText variant="display" accessibilityRole="header">
+      <AppText variant="authTitle" accessibilityRole="header">
         {t("signUp.title")}
       </AppText>
       <SocialAuthButtons />

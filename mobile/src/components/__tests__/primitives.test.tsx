@@ -2,7 +2,7 @@ import { screen, userEvent } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 import type { ReactElement } from "react";
 
-import { FONT_FAMILY } from "@/lib/theme";
+import { family } from "@/lib/theme";
 import { darkTokens, lightTokens } from "@/lib/theme";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
@@ -131,16 +131,18 @@ describe("AppText typography (AC-17, AC-21)", () => {
   it("uses Manrope for every non-mono role", async () => {
     await renderWithProviders(
       <>
-        <AppText variant="display">display</AppText>
-        <AppText variant="title">title</AppText>
+        <AppText variant="h1">h1</AppText>
+        <AppText variant="h2">h2</AppText>
+        <AppText variant="button">button</AppText>
         <AppText variant="body">body</AppText>
         <AppText variant="caption">caption</AppText>
       </>,
     );
-    for (const name of ["display", "title", "body", "caption"]) {
+    for (const name of ["h1", "h2", "button", "body", "caption"]) {
       expect(flatStyle(screen.getByText(name)).fontFamily).toMatch(/^Manrope_/);
     }
-    expect(flatStyle(screen.getByText("body")).fontFamily).toBe(FONT_FAMILY.regular);
+    expect(flatStyle(screen.getByText("h1")).fontFamily).toBe(family.display);
+    expect(flatStyle(screen.getByText("body")).fontFamily).toBe(family.medium);
   });
 
   it("never turns off font scaling", async () => {
@@ -151,6 +153,17 @@ describe("AppText typography (AC-17, AC-21)", () => {
   it("resolves colour tokens against the active theme", async () => {
     await renderWithProviders(<AppText>themed</AppText>, { themePreference: "light" });
     expect(flatStyle(screen.getByText("themed")).color).toBe(lightTokens.text);
+  });
+
+  it("can draw textTertiary and danger text", async () => {
+    await renderWithProviders(
+      <>
+        <AppText color="textTertiary">hint</AppText>
+        <AppText color="danger">error</AppText>
+      </>,
+    );
+    expect(flatStyle(screen.getByText("hint")).color).toBe(darkTokens.textTertiary);
+    expect(flatStyle(screen.getByText("error")).color).toBe(darkTokens.danger);
   });
 
   it("uses the dark text token in the default (dark) theme", async () => {

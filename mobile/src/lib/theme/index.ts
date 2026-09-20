@@ -9,7 +9,8 @@ export {
   resolveColorScheme,
 } from "./preference";
 export type { ColorScheme, SystemColorScheme, ThemePreference } from "./preference";
-export { darkTokens, lightTokens, radii, spacing } from "./tokens";
+export { coverColors, darkTokens, lightTokens } from "./tokens";
 export type { ThemeTokens } from "./tokens";
-export { FONT_FAMILY, typography } from "./typography";
+export { blurIntensity, coverMuteSaturation, layout, radius, spacing } from "./metrics";
+export { family, size, typography } from "./typography";
 export type { TypographyRole } from "./typography";

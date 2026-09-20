@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
 import type { ReactNode } from "react";
 
-import { radii, useTheme } from "@/lib/theme";
+import { layout, radius, useTheme } from "@/lib/theme";
 
 import { MIN_HIT_SIZE } from "./a11y";
 import type { AccessibleProps } from "./a11y";
@@ -49,8 +49,8 @@ export function IconButton({
       <View
         style={[
           styles.visual,
-          { width: size, height: size, borderRadius: radii.pill },
-          filled && { backgroundColor: tokens.glass, borderColor: tokens.glassBorder, borderWidth: StyleSheet.hairlineWidth },
+          { width: size, height: size, borderRadius: radius.pill },
+          filled && { backgroundColor: tokens.surface, borderColor: tokens.surfaceBorder, borderWidth: layout.borderWidth },
         ]}
       >
         {children}

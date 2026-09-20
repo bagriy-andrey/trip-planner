@@ -21,7 +21,7 @@ export function BaggageToggle({ label, testID }: BaggageToggleProps) {
         accessibilityLabel={label}
         value={included}
         onValueChange={setIncluded}
-        trackColor={{ true: tokens.accent, false: tokens.pill }}
+        trackColor={{ true: tokens.accent, false: tokens.divider }}
         testID={testID}
       />
     </View>

@@ -25,10 +25,10 @@ export function ForgotPasswordScreen() {
       >
         <AppText color="accent">{t("common:actions.back")}</AppText>
       </PressableRow>
-      <AppText variant="display" accessibilityRole="header">
+      <AppText variant="authTitle" accessibilityRole="header">
         {t("auth:forgotPassword.title")}
       </AppText>
-      <AppText color="textMuted">{t("auth:forgotPassword.description")}</AppText>
+      <AppText color="textSecondary">{t("auth:forgotPassword.description")}</AppText>
       <PlaceholderField
         label={t("auth:fields.email.label")}
         placeholder={t("auth:fields.email.placeholder")}

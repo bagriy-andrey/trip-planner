@@ -21,8 +21,8 @@ function AppShell() {
 
   // Root view colour follows the theme so overscroll / transitions never flash the other one.
   useEffect(() => {
-    void SystemUI.setBackgroundColorAsync(tokens.background);
-  }, [tokens.background]);
+    void SystemUI.setBackgroundColorAsync(tokens.bg);
+  }, [tokens.bg]);
 
   // A font error still releases the splash: system fonts beat a stuck launch screen.
   const ready = (fontsLoaded || fontsError !== null) && themeReady;
@@ -39,7 +39,7 @@ function AppShell() {
         screenOptions={{
           // Every screen draws its own back / cancel controls (S7 hero, S10-S12 back button, S8/S9 ModalHeader).
           headerShown: false,
-          contentStyle: { backgroundColor: tokens.background },
+          contentStyle: { backgroundColor: tokens.bg },
         }}
       >
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />

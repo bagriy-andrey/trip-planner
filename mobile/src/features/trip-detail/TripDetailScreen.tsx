@@ -108,5 +108,5 @@ export function TripDetailScreen({ tripId }: TripDetailScreenProps) {
 const styles = StyleSheet.create({
   // The hero is full-bleed, so the screen adds no horizontal padding of its own.
   screen: { paddingHorizontal: 0, paddingBottom: spacing.xl },
-  sections: { gap: spacing.xl, paddingHorizontal: spacing.lg, paddingTop: spacing.xl },
+  sections: { gap: spacing.xl, paddingHorizontal: spacing.screenX, paddingTop: spacing.xl },
 });

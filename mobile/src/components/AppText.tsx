@@ -4,7 +4,14 @@ import type { TextProps } from "react-native";
 import { typography, useTheme } from "@/lib/theme";
 import type { TypographyRole } from "@/lib/theme";
 
-export type AppTextColor = "text" | "textMuted" | "accent" | "onAccent";
+export type AppTextColor =
+  | "text"
+  | "textSecondary"
+  | "textTertiary"
+  | "accent"
+  | "onAccent"
+  | "danger"
+  | "invertedPillText";
 
 // `allowFontScaling` is omitted from the props on purpose: text always follows
 // Dynamic Type (AC-21). Layout must adapt, the text must not opt out.

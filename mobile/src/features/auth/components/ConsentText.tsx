@@ -15,7 +15,7 @@ export interface ConsentTextProps {
 export function ConsentText({ onTermsPress, onPrivacyPress }: ConsentTextProps) {
   const { t } = useTranslation("auth");
   return (
-    <AppText variant="caption" color="textMuted" style={styles.centered}>
+    <AppText variant="caption" color="textSecondary" style={styles.centered}>
       {t("signUp.consentPrefix")}{" "}
       <AppText
         variant="caption"

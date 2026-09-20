@@ -5,6 +5,8 @@ import { createElement } from "react";
 import type { ReactElement, ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 
+import { blurIntensity } from "@/lib/theme";
+
 export type BlurTint = "light" | "dark" | "default";
 
 export interface BlurProps {
@@ -15,6 +17,6 @@ export interface BlurProps {
   children?: ReactNode;
 }
 
-export function Blur({ intensity = 30, tint = "default", style, children }: BlurProps): ReactElement {
+export function Blur({ intensity = blurIntensity.panel, tint = "default", style, children }: BlurProps): ReactElement {
   return createElement(BlurView, { intensity, tint, style }, children);
 }

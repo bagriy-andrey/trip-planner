@@ -16,7 +16,7 @@ export interface AuthFooterLinkProps {
 export function AuthFooterLink({ prompt, linkLabel, onPress, testID }: AuthFooterLinkProps) {
   return (
     <View style={styles.row}>
-      <AppText color="textMuted">{prompt}</AppText>
+      <AppText color="textSecondary">{prompt}</AppText>
       <PressableRow
         accessibilityRole="link"
         accessibilityLabel={linkLabel}
@@ -24,7 +24,7 @@ export function AuthFooterLink({ prompt, linkLabel, onPress, testID }: AuthFoote
         testID={testID}
         style={styles.link}
       >
-        <AppText color="accent" variant="title">
+        <AppText color="accent" variant="button">
           {linkLabel}
         </AppText>
       </PressableRow>

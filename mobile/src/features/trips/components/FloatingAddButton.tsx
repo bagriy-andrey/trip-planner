@@ -3,7 +3,7 @@ import type { StyleProp, ViewStyle } from "react-native";
 
 import { AppText, MIN_HIT_SIZE } from "@/components";
 import type { AccessibleProps } from "@/components";
-import { useTheme } from "@/lib/theme";
+import { layout, useTheme } from "@/lib/theme";
 
 const SIZE = 56;
 // Operator glyph, not translatable copy.
@@ -33,11 +33,11 @@ export function FloatingAddButton({
       testID={testID}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: tokens.accent, borderColor: tokens.glassBorder, opacity: pressed ? 0.8 : 1 },
+        { backgroundColor: tokens.accent, borderColor: tokens.surfaceBorder, opacity: pressed ? 0.8 : 1 },
         style,
       ]}
     >
-      <AppText variant="display" color="onAccent" accessibilityElementsHidden>
+      <AppText variant="h1" color="onAccent" accessibilityElementsHidden>
         {PLUS}
       </AppText>
     </Pressable>
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     minWidth: MIN_HIT_SIZE,
     minHeight: MIN_HIT_SIZE,
     borderRadius: SIZE / 2,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: layout.borderWidth,
     alignItems: "center",
     justifyContent: "center",
   },

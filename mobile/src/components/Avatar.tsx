@@ -26,7 +26,7 @@ export function Avatar({ initials, size = 40, style }: AvatarProps) {
         style,
       ]}
     >
-      <AppText variant="title" color="onAccent" numberOfLines={1}>
+      <AppText variant="h2" color="onAccent" numberOfLines={1}>
         {initials}
       </AppText>
     </View>

@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText, MIN_HIT_SIZE } from "@/components";
 import { useTranslation } from "@/lib/i18n";
-import { radii, spacing, THEME_PREFERENCES, useTheme } from "@/lib/theme";
+import { radius, spacing, THEME_PREFERENCES, useTheme } from "@/lib/theme";
 import type { ThemePreference } from "@/lib/theme";
 
 /**
@@ -25,7 +25,7 @@ export function ThemeSettingRow() {
       <View
         accessibilityRole="radiogroup"
         accessibilityLabel={t("rows.theme")}
-        style={[styles.group, { backgroundColor: tokens.pill }]}
+        style={[styles.group, { backgroundColor: tokens.divider }]}
       >
         {THEME_PREFERENCES.map((option) => {
           const selected = option === preference;
@@ -41,7 +41,7 @@ export function ThemeSettingRow() {
               style={[styles.segment, selected && { backgroundColor: tokens.accent }]}
             >
               <AppText
-                variant="caption"
+                variant="small"
                 color={selected ? "onAccent" : "text"}
                 style={styles.segmentLabel}
               >
@@ -60,14 +60,14 @@ const styles = StyleSheet.create({
   group: {
     flexDirection: "row",
     padding: spacing.xs,
-    borderRadius: radii.pill,
+    borderRadius: radius.pill,
     gap: spacing.xs,
   },
   segment: {
     flex: 1,
     minHeight: MIN_HIT_SIZE,
     paddingHorizontal: spacing.sm,
-    borderRadius: radii.pill,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
   },

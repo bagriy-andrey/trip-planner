@@ -20,11 +20,11 @@ export function EmptyState({ title, description, icon, action, style }: EmptySta
   return (
     <View style={[styles.container, style]}>
       {icon}
-      <AppText variant="title" style={styles.centered}>
+      <AppText variant="h2" style={styles.centered}>
         {title}
       </AppText>
       {description ? (
-        <AppText color="textMuted" style={styles.centered}>
+        <AppText color="textSecondary" style={styles.centered}>
           {description}
         </AppText>
       ) : null}

@@ -39,7 +39,7 @@ const PLATFORM_DIR = "src/platform/";
 const STORAGE_DIR = "src/lib/storage/";
 // The font loader maps family names to bundled assets. It imports `@expo-google-fonts/*`
 // (package paths contain the family names) and takes every family NAME from the theme's
-// FONT_FAMILY, so it is the theme's asset half, not a second source of truth (AC-17).
+// `family`, so it is the theme's asset half, not a second source of truth (AC-17).
 const FONT_LOADER = "src/lib/fonts.ts";
 
 interface Violation {

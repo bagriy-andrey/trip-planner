@@ -14,7 +14,7 @@ export interface ScreenProps {
   scroll?: boolean;
   /** Safe-area edges to pad; pass fewer under a native header or a tab bar. */
   edges?: readonly Edge[];
-  /** Horizontal/vertical padding of the content (default: `spacing.lg` horizontal). */
+  /** Horizontal/vertical padding of the content (default: `spacing.screenX` horizontal). */
   contentStyle?: StyleProp<ViewStyle>;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -40,7 +40,7 @@ export function Screen({
     <SafeAreaView
       edges={edges}
       testID={testID}
-      style={[styles.root, { backgroundColor: tokens.background }, style]}
+      style={[styles.root, { backgroundColor: tokens.bg }, style]}
     >
       {scroll ? (
         <ScrollView
@@ -61,5 +61,5 @@ export function Screen({
 const styles = StyleSheet.create({
   root: { flex: 1 },
   fill: { flex: 1 },
-  content: { paddingHorizontal: spacing.lg },
+  content: { paddingHorizontal: spacing.screenX },
 });

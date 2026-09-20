@@ -9,10 +9,12 @@ import { BlurView } from "expo-blur";
 import { createElement } from "react";
 import type { ReactElement } from "react";
 
+import { blurIntensity } from "@/lib/theme";
+
 import type { BlurProps } from "./blur";
 
 export type { BlurProps, BlurTint } from "./blur";
 
-export function Blur({ intensity = 30, tint = "default", style, children }: BlurProps): ReactElement {
+export function Blur({ intensity = blurIntensity.panel, tint = "default", style, children }: BlurProps): ReactElement {
   return createElement(BlurView, { intensity, tint, style, blurMethod: "none" }, children);
 }

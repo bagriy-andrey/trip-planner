@@ -3,21 +3,21 @@ import type { StyleProp, ViewStyle } from "react-native";
 import type { ReactNode } from "react";
 
 import { Blur } from "@/platform/blur";
-import { radii, useTheme } from "@/lib/theme";
+import { blurIntensity, layout, radius, useTheme } from "@/lib/theme";
 
 export interface GlassSurfaceProps {
   children?: ReactNode;
   /** Blur strength, 1–100. */
   intensity?: number;
   /**
-   * Adds a scrim under the content (token `coverOverlay`) for text sitting on
+   * Adds a scrim under the content (token `coverScrim`) for text sitting on
    * a busy/colourful cover, when the plain glass gives too little contrast (AC-22).
    */
   strengthen?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
-export function GlassSurface({ children, intensity = 30, strengthen = false, style }: GlassSurfaceProps) {
+export function GlassSurface({ children, intensity = blurIntensity.panel, strengthen = false, style }: GlassSurfaceProps) {
   const { tokens, scheme } = useTheme();
   return (
     <Blur
@@ -25,12 +25,12 @@ export function GlassSurface({ children, intensity = 30, strengthen = false, sty
       tint={scheme}
       style={[
         styles.surface,
-        { backgroundColor: tokens.glass, borderColor: tokens.glassBorder },
+        { backgroundColor: tokens.surface, borderColor: tokens.surfaceBorder },
         style,
       ]}
     >
       {strengthen ? (
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tokens.coverOverlay }]} />
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tokens.coverScrim }]} />
       ) : null}
       {children}
     </Blur>
@@ -39,8 +39,8 @@ export function GlassSurface({ children, intensity = 30, strengthen = false, sty
 
 const styles = StyleSheet.create({
   surface: {
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.card,
+    borderWidth: layout.borderWidth,
     overflow: "hidden",
   },
 });

@@ -2,7 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, GlassSurface, IconButton, Pill, SoonBadge } from "@/components";
-import { radii, spacing, useTheme } from "@/lib/theme";
+import { radius, spacing, useTheme } from "@/lib/theme";
 
 const HERO_HEIGHT = 260;
 const ROUND_BUTTON = 44;
@@ -48,7 +48,7 @@ function RoundGlassButton({
         onPress={onPress}
         testID={testID}
       >
-        <AppText variant="title">{glyph}</AppText>
+        <AppText variant="h2">{glyph}</AppText>
       </IconButton>
     </GlassSurface>
   );
@@ -61,10 +61,10 @@ export function TripHero({ city, dateLine, statusLabel, backLabel, moreLabel, mo
   return (
     <View
       testID="trip-hero"
-      style={[styles.hero, { backgroundColor: tokens.pill, paddingTop: insets.top + spacing.sm }]}
+      style={[styles.hero, { backgroundColor: tokens.divider, paddingTop: insets.top + spacing.sm }]}
     >
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tokens.accent, opacity: 0.7 }]} />
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tokens.coverOverlay }]} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tokens.coverScrim }]} />
       <View style={styles.topRow}>
         <RoundGlassButton label={backLabel} glyph={BACK} onPress={onBack} testID="trip-hero-back" />
         <View style={styles.moreGroup}>
@@ -78,13 +78,13 @@ export function TripHero({ city, dateLine, statusLabel, backLabel, moreLabel, mo
         </View>
       </View>
       <GlassSurface strengthen style={styles.panel}>
-        <AppText variant="display" numberOfLines={1} ellipsizeMode="tail" accessibilityRole="header">
+        <AppText variant="cityHero" numberOfLines={1} ellipsizeMode="tail" accessibilityRole="header">
           {city}
         </AppText>
         <View style={styles.meta}>
           <Pill tone="accent" label={statusLabel} />
           {dateLine !== null ? (
-            <AppText variant="monoSmall" color="textMuted" style={styles.dates}>
+            <AppText variant="monoSmall" color="textSecondary" style={styles.dates}>
               {dateLine}
             </AppText>
           ) : null}
@@ -98,12 +98,12 @@ const styles = StyleSheet.create({
   hero: {
     minHeight: HERO_HEIGHT,
     justifyContent: "space-between",
-    padding: spacing.lg,
+    padding: spacing.screenX,
     overflow: "hidden",
   },
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   moreGroup: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  round: { width: ROUND_BUTTON, height: ROUND_BUTTON, borderRadius: radii.pill },
+  round: { width: ROUND_BUTTON, height: ROUND_BUTTON, borderRadius: radius.pill },
   panel: { padding: spacing.md, gap: spacing.xs },
   meta: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: spacing.sm, rowGap: spacing.xs },
   dates: { flexShrink: 1 },

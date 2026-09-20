@@ -36,7 +36,7 @@ export function Stepper({
   return (
     <View testID={testID} style={[styles.row, style]}>
       <IconButton accessibilityLabel={decrementAccessibilityLabel} onPress={onDecrement}>
-        <AppText variant="title">{MINUS}</AppText>
+        <AppText variant="h2">{MINUS}</AppText>
       </IconButton>
       <AppText
         variant="mono"
@@ -46,7 +46,7 @@ export function Stepper({
         {String(value)}
       </AppText>
       <IconButton accessibilityLabel={incrementAccessibilityLabel} onPress={onIncrement}>
-        <AppText variant="title">{PLUS}</AppText>
+        <AppText variant="h2">{PLUS}</AppText>
       </IconButton>
     </View>
   );

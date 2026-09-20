@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { AppText, GlassSurface, Pill, PressableRow } from "@/components";
 import { formatShortDate, formatTime, useTranslation } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
-import { radii, spacing } from "@/lib/theme";
+import { radius, spacing } from "@/lib/theme";
 
 import type { MockFlight } from "@/mocks";
 
@@ -37,7 +37,7 @@ export function FlightCard({ flight, locale, onPress, testID }: FlightCardProps)
         <AppText variant="mono" numberOfLines={1}>
           {route}
         </AppText>
-        <AppText variant="monoSmall" color="textMuted" numberOfLines={1}>
+        <AppText variant="monoSmall" color="textSecondary" numberOfLines={1}>
           {when}
         </AppText>
         <View style={styles.chips}>
@@ -50,7 +50,7 @@ export function FlightCard({ flight, locale, onPress, testID }: FlightCardProps)
 }
 
 const styles = StyleSheet.create({
-  row: { borderRadius: radii.lg },
+  row: { borderRadius: radius.card },
   card: { flex: 1, padding: spacing.md, gap: spacing.xs },
   chips: { flexDirection: "row", flexWrap: "wrap", columnGap: spacing.sm, rowGap: spacing.xs },
 });

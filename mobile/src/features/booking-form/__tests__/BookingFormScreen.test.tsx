@@ -1,6 +1,6 @@
 import { fireEvent, screen, userEvent } from "@testing-library/react-native";
 
-import { FONT_FAMILY } from "@/lib/theme";
+import { family } from "@/lib/theme";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
 import { BookingFormScreen } from "../BookingFormScreen";
@@ -86,7 +86,7 @@ describe("BookingFormScreen (S9)", () => {
   it("draws ticket data fields in the mono face (AC-38)", async () => {
     await renderWithProviders(<BookingFormScreen variant="flight" />);
     for (const label of ["From", "To", "Seat", "Ticket number"]) {
-      expect(screen.getByLabelText(label)).toHaveStyle({ fontFamily: FONT_FAMILY.monoMedium });
+      expect(screen.getByLabelText(label)).toHaveStyle({ fontFamily: family.mono });
     }
   });
 

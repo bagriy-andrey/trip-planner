@@ -18,10 +18,10 @@ export default function TabsLayout() {
         tabBarIcon: NO_ICON,
         tabBarIconStyle: { display: "none" },
         tabBarActiveTintColor: tokens.accent,
-        tabBarInactiveTintColor: tokens.textMuted,
+        tabBarInactiveTintColor: tokens.textSecondary,
         // No fixed width or height on labels: they must grow with Dynamic Type (AC-39).
-        tabBarLabelStyle: { ...typography.body, paddingVertical: spacing.sm },
-        tabBarStyle: { backgroundColor: tokens.background, borderTopColor: tokens.glassBorder },
+        tabBarLabelStyle: { ...typography.micro, paddingVertical: spacing.sm },
+        tabBarStyle: { backgroundColor: tokens.bg, borderTopColor: tokens.surfaceBorder },
       }}
     >
       <Tabs.Screen

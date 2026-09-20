@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 
 import { useTranslation } from "@/lib/i18n";
-import { radii, spacing, useTheme } from "@/lib/theme";
+import { radius, spacing, useTheme } from "@/lib/theme";
 
 export interface DotsIndicatorProps {
   total: number;
@@ -25,7 +25,7 @@ export function DotsIndicator({ total, current }: DotsIndicatorProps) {
           key={index}
           style={[
             styles.dot,
-            { backgroundColor: index + 1 === current ? tokens.accent : tokens.glassBorder },
+            { backgroundColor: index + 1 === current ? tokens.accent : tokens.surfaceBorder },
           ]}
         />
       ))}
@@ -35,5 +35,5 @@ export function DotsIndicator({ total, current }: DotsIndicatorProps) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
-  dot: { width: 8, height: 8, borderRadius: radii.pill },
+  dot: { width: 8, height: 8, borderRadius: radius.pill },
 });

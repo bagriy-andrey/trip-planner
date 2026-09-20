@@ -28,10 +28,10 @@ export function LegalScreen({ kind }: LegalScreenProps) {
       >
         <AppText color="accent">{t("common:actions.back")}</AppText>
       </PressableRow>
-      <AppText variant="display" accessibilityRole="header">
+      <AppText variant="h1" accessibilityRole="header">
         {t(`legal:${kind}.title`)}
       </AppText>
-      <AppText color="textMuted">{t("legal:placeholderBody")}</AppText>
+      <AppText color="textSecondary">{t("legal:placeholderBody")}</AppText>
     </Screen>
   );
 }

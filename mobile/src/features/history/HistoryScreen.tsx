@@ -23,7 +23,7 @@ export function HistoryScreen() {
   return (
     <Screen edges={TAB_EDGES} testID="history-screen" contentStyle={styles.content}>
       <View style={styles.header}>
-        <AppText variant="display" accessibilityRole="header" style={styles.title}>
+        <AppText variant="h1" accessibilityRole="header" style={styles.title}>
           {t("title")}
         </AppText>
         <AvatarButton

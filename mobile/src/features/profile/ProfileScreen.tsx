@@ -32,7 +32,7 @@ export function ProfileScreen() {
 
   return (
     <Screen edges={TAB_EDGES} testID="profile-screen" contentStyle={styles.content}>
-      <AppText variant="display" accessibilityRole="header">
+      <AppText variant="h1" accessibilityRole="header">
         {t("title")}
       </AppText>
       <ProfileHeader name={MOCK_USER.name} email={MOCK_USER.email} />

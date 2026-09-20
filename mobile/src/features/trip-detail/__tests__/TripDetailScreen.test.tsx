@@ -1,6 +1,6 @@
 import { screen, userEvent, within } from "@testing-library/react-native";
 
-import { FONT_FAMILY } from "@/lib/theme";
+import { family } from "@/lib/theme";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
 import { TripDetailScreen } from "../TripDetailScreen";
@@ -25,7 +25,7 @@ describe("TripDetailScreen (S7)", () => {
     expect(within(hero).getByRole("header", { name: "Lisbon" })).toBeOnTheScreen();
     expect(within(hero).getByText("in 5 days")).toBeOnTheScreen();
     const dates = within(hero).getByText("Sep 25 – Oct 1, 2026 · 6 nights");
-    expect(dates).toHaveStyle({ fontFamily: FONT_FAMILY.mono });
+    expect(dates).toHaveStyle({ fontFamily: family.mono });
   });
 
   it("renders the three sections, each with a plus button in its header", async () => {
@@ -41,7 +41,7 @@ describe("TripDetailScreen (S7)", () => {
   it("shows flight cards with IATA codes in the mono face, baggage and passenger chips", async () => {
     await renderWithProviders(<TripDetailScreen tripId="trip-lisbon" />);
     const outbound = screen.getByTestId("flight-card-flight-lisbon-outbound");
-    expect(within(outbound).getByText("WAW → LIS")).toHaveStyle({ fontFamily: FONT_FAMILY.monoMedium });
+    expect(within(outbound).getByText("WAW → LIS")).toHaveStyle({ fontFamily: family.mono });
     expect(within(outbound).getByText("Baggage included")).toBeOnTheScreen();
     expect(within(outbound).getByText("2 passengers")).toBeOnTheScreen();
     const inbound = screen.getByTestId("flight-card-flight-lisbon-return");

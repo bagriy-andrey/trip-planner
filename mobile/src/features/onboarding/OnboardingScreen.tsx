@@ -18,13 +18,13 @@ export function OnboardingScreen() {
   return (
     <Screen testID="onboarding-screen" contentStyle={styles.content}>
       <View style={styles.hero}>
-        <AppText variant="title" color="accent" testID="onboarding-app-name">
+        <AppText variant="h2" color="accent" testID="onboarding-app-name">
           {APP_NAME}
         </AppText>
-        <AppText variant="display" accessibilityRole="header">
+        <AppText variant="hero" accessibilityRole="header">
           {t("title")}
         </AppText>
-        <AppText color="textMuted">{t("subtitle")}</AppText>
+        <AppText color="textSecondary">{t("subtitle")}</AppText>
       </View>
       <View style={styles.actions}>
         <DotsIndicator total={PAGE_COUNT} current={1} />

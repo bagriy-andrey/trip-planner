@@ -1,6 +1,6 @@
 import { screen, userEvent, within } from "@testing-library/react-native";
 
-import { FONT_FAMILY } from "@/lib/theme";
+import { family } from "@/lib/theme";
 import { MOCK_NOW } from "@/mocks";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
@@ -52,7 +52,7 @@ describe("TripsScreen (S4)", () => {
     await renderWithProviders(<TripsScreen />);
     const nearest = screen.getByTestId("trip-card-trip-lisbon");
     const range = within(nearest).getByText("Sep 25 – Oct 1, 2026");
-    expect(range).toHaveStyle({ fontFamily: FONT_FAMILY.mono });
+    expect(range).toHaveStyle({ fontFamily: family.mono });
   });
 
   it("shows the real destinations and their dates in the right order", async () => {

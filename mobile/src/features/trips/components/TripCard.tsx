@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { AppText, GlassSurface, PressableRow } from "@/components";
 import { formatDateRange } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
-import { radii, spacing } from "@/lib/theme";
+import { radius, spacing } from "@/lib/theme";
 
 import type { TripCardData } from "../types";
 
@@ -43,12 +43,12 @@ export function TripCard({ trip, locale, now, muted = false, onPress, testID }: 
     >
       <TripCoverPlaceholder variant={trip.coverIndex} muted={muted}>
         <GlassSurface style={styles.panel}>
-          <AppText variant="title" numberOfLines={1} ellipsizeMode="tail">
+          <AppText variant="cardTitle" numberOfLines={1} ellipsizeMode="tail">
             {trip.city}
           </AppText>
           <View style={styles.meta}>
             {range !== null ? (
-              <AppText variant="monoSmall" color="textMuted" numberOfLines={1}>
+              <AppText variant="monoSmall" color="textSecondary" numberOfLines={1}>
                 {range}
               </AppText>
             ) : null}
@@ -61,7 +61,7 @@ export function TripCard({ trip, locale, now, muted = false, onPress, testID }: 
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: radii.lg, overflow: "hidden" },
+  card: { borderRadius: radius.cover, overflow: "hidden" },
   panel: { padding: spacing.md, gap: spacing.xs },
   meta: {
     flexDirection: "row",

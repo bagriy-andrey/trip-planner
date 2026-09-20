@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
 import type { ReactNode } from "react";
 
-import { radii, spacing, useTheme } from "@/lib/theme";
+import { layout, radius, spacing, useTheme } from "@/lib/theme";
 
 import { AppText } from "./AppText";
 import { MIN_HIT_SIZE } from "./a11y";
@@ -41,8 +41,8 @@ export function SecondaryButton({
       style={({ pressed }) => [
         styles.base,
         {
-          backgroundColor: tokens.glass,
-          borderColor: tokens.glassBorder,
+          backgroundColor: tokens.surface,
+          borderColor: tokens.surfaceBorder,
           opacity: disabled ? 0.4 : pressed ? 0.8 : 1,
         },
         style,
@@ -50,7 +50,7 @@ export function SecondaryButton({
     >
       <View style={styles.content}>
         {leading}
-        <AppText variant="title" style={styles.label}>
+        <AppText variant="button" style={styles.label}>
           {label}
         </AppText>
       </View>
@@ -64,8 +64,8 @@ const styles = StyleSheet.create({
     minWidth: MIN_HIT_SIZE,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
-    borderRadius: radii.pill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.pill,
+    borderWidth: layout.borderWidth,
     alignItems: "center",
     justifyContent: "center",
   },

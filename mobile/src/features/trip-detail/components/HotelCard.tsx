@@ -22,18 +22,18 @@ export function HotelCard({ hotel, locale, testID }: HotelCardProps) {
   return (
     <GlassSurface style={styles.card}>
       <View testID={testID} style={styles.content}>
-        <AppText variant="title" numberOfLines={2}>
+        <AppText variant="h2" numberOfLines={2}>
           {hotel.name}
         </AppText>
         <View style={styles.dates}>
           <View style={styles.date}>
-            <AppText variant="caption" color="textMuted">
+            <AppText variant="small" color="textSecondary">
               {t("hotel.checkIn")}
             </AppText>
             <AppText variant="monoSmall">{checkIn}</AppText>
           </View>
           <View style={styles.date}>
-            <AppText variant="caption" color="textMuted">
+            <AppText variant="small" color="textSecondary">
               {t("hotel.checkOut")}
             </AppText>
             <AppText variant="monoSmall">{checkOut}</AppText>

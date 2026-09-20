@@ -23,11 +23,11 @@ export function BookingSection({ title, addLabel, onAdd, children, testID, addTe
   return (
     <View testID={testID} style={styles.section}>
       <View style={styles.header}>
-        <AppText variant="title" accessibilityRole="header" style={styles.title}>
+        <AppText variant="h2" accessibilityRole="header" style={styles.title}>
           {title}
         </AppText>
         <IconButton accessibilityLabel={addLabel} onPress={onAdd} testID={addTestID}>
-          <AppText variant="title">{PLUS}</AppText>
+          <AppText variant="h2">{PLUS}</AppText>
         </IconButton>
       </View>
       {children}

@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
 
-import { radii, spacing, useTheme } from "@/lib/theme";
+import { radius, spacing, useTheme } from "@/lib/theme";
 
 import { AppText } from "./AppText";
 
@@ -19,8 +19,8 @@ export interface PillProps {
 
 export function Pill({ label, tone = "neutral", accessibilityLabel, style, testID }: PillProps) {
   const { tokens } = useTheme();
-  const background = tone === "accent" ? tokens.accent : tokens.pill;
-  const textColor = tone === "accent" ? "onAccent" : tone === "muted" ? "textMuted" : "text";
+  const background = tone === "accent" ? tokens.accent : tokens.divider;
+  const textColor = tone === "accent" ? "onAccent" : tone === "muted" ? "textSecondary" : "text";
   return (
     <View
       accessible
@@ -28,7 +28,7 @@ export function Pill({ label, tone = "neutral", accessibilityLabel, style, testI
       testID={testID}
       style={[styles.pill, { backgroundColor: background }, style]}
     >
-      <AppText variant="caption" color={textColor} numberOfLines={1}>
+      <AppText variant="micro" color={textColor} numberOfLines={1}>
         {label}
       </AppText>
     </View>
@@ -40,6 +40,6 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
+    borderRadius: radius.pill,
   },
 });

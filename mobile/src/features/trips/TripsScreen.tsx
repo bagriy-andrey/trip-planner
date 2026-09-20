@@ -25,7 +25,7 @@ export function TripsScreen() {
     <View style={styles.root}>
       <Screen edges={TAB_EDGES} testID="trips-screen" contentStyle={styles.content}>
         <View style={styles.header}>
-          <AppText variant="display" accessibilityRole="header" style={styles.title}>
+          <AppText variant="h1" accessibilityRole="header" style={styles.title}>
             {t("title")}
           </AppText>
           <AvatarButton
@@ -68,5 +68,5 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   title: { flexShrink: 1 },
-  fab: { position: "absolute", right: spacing.lg, bottom: spacing.xl },
+  fab: { position: "absolute", right: spacing.screenX, bottom: spacing.xl },
 });

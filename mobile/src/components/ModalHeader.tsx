@@ -37,9 +37,9 @@ export function ModalHeader({
         onPress={onCancel}
         style={[styles.side, styles.left]}
       >
-        <AppText color="textMuted">{cancel}</AppText>
+        <AppText color="textSecondary">{cancel}</AppText>
       </Pressable>
-      <AppText variant="title" accessibilityRole="header" numberOfLines={1} style={styles.title}>
+      <AppText variant="h2" accessibilityRole="header" numberOfLines={1} style={styles.title}>
         {title}
       </AppText>
       <Pressable

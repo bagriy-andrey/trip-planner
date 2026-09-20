@@ -1,7 +1,7 @@
 import { StyleSheet, TextInput, View } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
 
-import { radii, spacing, typography, useTheme } from "@/lib/theme";
+import { layout, radius, spacing, typography, useTheme } from "@/lib/theme";
 
 import { AppText } from "./AppText";
 import { MIN_HIT_SIZE } from "./a11y";
@@ -34,10 +34,10 @@ export function PlaceholderField({
   const face = mono ? typography.mono : typography.body;
   return (
     <View style={[styles.wrapper, style]}>
-      <AppText variant="caption" color="textMuted">
+      <AppText variant="small" color="textSecondary">
         {label}
       </AppText>
-      <View style={[styles.field, { backgroundColor: tokens.glass, borderColor: tokens.glassBorder }]}>
+      <View style={[styles.field, { backgroundColor: tokens.surface, borderColor: tokens.surfaceBorder }]}>
         <TextInput
           accessibilityLabel={label}
           editable={false}
@@ -46,7 +46,7 @@ export function PlaceholderField({
           autoComplete="off"
           value={value}
           placeholder={placeholder}
-          placeholderTextColor={tokens.textMuted}
+          placeholderTextColor={tokens.textSecondary}
           testID={testID}
           style={[styles.input, face, { color: tokens.text }]}
         />
@@ -59,8 +59,8 @@ const styles = StyleSheet.create({
   wrapper: { gap: spacing.xs },
   field: {
     minHeight: MIN_HIT_SIZE,
-    borderRadius: radii.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.field,
+    borderWidth: layout.borderWidth,
     paddingHorizontal: spacing.lg,
     justifyContent: "center",
   },

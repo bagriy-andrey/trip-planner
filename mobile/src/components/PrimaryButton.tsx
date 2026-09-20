@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
 import type { ReactNode } from "react";
 
-import { radii, spacing, useTheme } from "@/lib/theme";
+import { radius, spacing, useTheme } from "@/lib/theme";
 
 import { AppText } from "./AppText";
 import { MIN_HIT_SIZE } from "./a11y";
@@ -46,7 +46,7 @@ export function PrimaryButton({
     >
       <View style={styles.content}>
         {leading}
-        <AppText variant="title" color="onAccent" style={styles.label}>
+        <AppText variant="button" color="onAccent" style={styles.label}>
           {label}
         </AppText>
       </View>
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     minWidth: MIN_HIT_SIZE,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
-    borderRadius: radii.pill,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
   },

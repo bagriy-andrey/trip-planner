@@ -30,7 +30,7 @@ export function SoonSettingRow({ label, value, testID }: SoonSettingRowProps) {
       <View style={styles.text}>
         <AppText>{label}</AppText>
         {value !== undefined ? (
-          <AppText variant="caption" color="textMuted">
+          <AppText variant="small" color="textSecondary">
             {value}
           </AppText>
         ) : null}

@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import type { ReactNode } from "react";
 
-import { radii, spacing, useTheme } from "@/lib/theme";
+import { radius, spacing, useTheme } from "@/lib/theme";
 
 // The theme has no cover palette (and no images exist in the skeleton), so the
 // placeholder varies the accent's strength over a neutral base.
@@ -22,14 +22,14 @@ export function TripCoverPlaceholder({ variant, muted = false, children }: TripC
   const { tokens } = useTheme();
   const strength = COVER_STRENGTH[Math.abs(variant) % COVER_STRENGTH.length] ?? 1;
   return (
-    <View style={[styles.cover, { backgroundColor: tokens.pill }, muted && styles.muted]}>
+    <View style={[styles.cover, { backgroundColor: tokens.divider }, muted && styles.muted]}>
       <View
         pointerEvents="none"
         style={[StyleSheet.absoluteFill, { backgroundColor: tokens.accent, opacity: strength }]}
       />
       <View
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { backgroundColor: tokens.coverOverlay }]}
+        style={[StyleSheet.absoluteFill, { backgroundColor: tokens.coverScrim }]}
       />
       {children}
     </View>
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
     padding: spacing.md,
-    borderRadius: radii.lg,
+    borderRadius: radius.cover,
     overflow: "hidden",
   },
   muted: { opacity: 0.55 },

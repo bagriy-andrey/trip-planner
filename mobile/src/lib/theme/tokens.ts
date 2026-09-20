@@ -1,61 +1,82 @@
-// Single source of truth for colours, spacing and radii (AC-16).
-// Core values come from the design brief token table (decision Q13); the derived
-// ones (textMuted, pill, coverOverlay, onAccent) live here too so screens never
-// carry a hex/rgba literal of their own.
+// Single source of truth for colours (AC-16). Values and names are canonical in
+// `design/tokens.md`: change a value there first, then here. Screens never carry
+// a hex/rgba literal of their own.
 
 export interface ThemeTokens {
-  background: string;
-  glass: string;
-  glassBorder: string;
+  /** Screen background. */
+  bg: string;
+  /** Glass panel fill: cards, inputs. */
+  surface: string;
+  /** Denser glass over an image, or the tab bar. */
+  surfaceStrong: string;
+  /** Glass panel border; always paired with a `surface*` fill. */
+  surfaceBorder: string;
+  /** Row separators, inactive fills, indicator dots, disabled button background. */
+  divider: string;
   text: string;
+  /** Explanatory text: captions, placeholders. */
+  textSecondary: string;
+  /** Service text: hints, empty dates, disabled labels. */
+  textTertiary: string;
+  tabInactive: string;
   accent: string;
-  /** Secondary text: captions, placeholders, "soon" tags. */
-  textMuted: string;
-  /** Background of small status pills / chips. */
-  pill: string;
-  /** Scrim over trip cover placeholders so text on top stays legible. */
-  coverOverlay: string;
-  /** Text/icon colour drawn on top of `accent`. */
+  /** Text/icon colour drawn on top of `accent`; dark in both themes. */
   onAccent: string;
+  /** Warning chip fill (e.g. an expiring insurance policy). */
+  warnBg: string;
+  warnBorder: string;
+  /** Destructive actions and field errors only. */
+  danger: string;
+  /** Dimming under a modal sheet. */
+  scrim: string;
+  /** Thin dimming of a cover under the glass panel (keeps text ≥ 4.5:1). */
+  coverScrim: string;
+  /** "Continue with Apple" button: light on dark theme, dark on light theme. */
+  invertedPill: string;
+  invertedPillText: string;
 }
 
 export const darkTokens = {
-  background: "#0B0D11",
-  glass: "rgba(255,255,255,0.07)",
-  glassBorder: "rgba(255,255,255,0.14)",
+  bg: "#0B0D11",
+  surface: "rgba(255,255,255,0.07)",
+  surfaceStrong: "rgba(255,255,255,0.13)",
+  surfaceBorder: "rgba(255,255,255,0.14)",
+  divider: "rgba(255,255,255,0.12)",
   text: "#F5F6F7",
+  textSecondary: "rgba(245,246,247,0.62)",
+  textTertiary: "rgba(245,246,247,0.40)",
+  tabInactive: "rgba(245,246,247,0.42)",
   accent: "#F2A93B",
-  textMuted: "rgba(245,246,247,0.62)",
-  pill: "rgba(255,255,255,0.10)",
-  coverOverlay: "rgba(11,13,17,0.45)",
-  onAccent: "#0B0D11",
+  onAccent: "#14171C",
+  warnBg: "rgba(242,169,59,0.10)",
+  warnBorder: "rgba(242,169,59,0.30)",
+  danger: "#D96B5A",
+  scrim: "rgba(0,0,0,0.50)",
+  coverScrim: "rgba(0,0,0,0.18)",
+  invertedPill: "#F5F6F7",
+  invertedPillText: "#14171C",
 } as const satisfies ThemeTokens;
 
 export const lightTokens = {
-  background: "#F3F1EC",
-  glass: "rgba(255,255,255,0.55)",
-  glassBorder: "rgba(20,23,28,0.09)",
+  bg: "#F3F1EC",
+  surface: "rgba(255,255,255,0.55)",
+  surfaceStrong: "rgba(255,255,255,0.80)",
+  surfaceBorder: "rgba(20,23,28,0.09)",
+  divider: "rgba(20,23,28,0.10)",
   text: "#14171C",
+  textSecondary: "rgba(20,23,28,0.58)",
+  textTertiary: "rgba(20,23,28,0.40)",
+  tabInactive: "rgba(20,23,28,0.40)",
   accent: "#F2A93B",
-  textMuted: "rgba(20,23,28,0.62)",
-  pill: "rgba(20,23,28,0.07)",
-  coverOverlay: "rgba(11,13,17,0.35)",
-  onAccent: "#0B0D11",
+  onAccent: "#14171C",
+  warnBg: "rgba(242,169,59,0.14)",
+  warnBorder: "rgba(242,169,59,0.40)",
+  danger: "#C0503C",
+  scrim: "rgba(0,0,0,0.35)",
+  coverScrim: "rgba(0,0,0,0.22)",
+  invertedPill: "#14171C",
+  invertedPillText: "#F5F6F7",
 } as const satisfies ThemeTokens;
 
-export const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  xxl: 32,
-} as const;
-
-export const radii = {
-  sm: 8,
-  md: 14,
-  lg: 20,
-  xl: 28,
-  pill: 999,
-} as const;
+/** Trip-cover placeholder colours; pick one deterministically by city name. */
+export const coverColors = ["#1F4F4A", "#8C4A34", "#33384F", "#7A4A6B", "#4A5A3A"] as const;

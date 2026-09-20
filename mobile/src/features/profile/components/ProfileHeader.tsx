@@ -19,10 +19,10 @@ export function ProfileHeader({ name, email }: ProfileHeaderProps) {
       <Avatar initials={initial} size={AVATAR_SIZE} />
       <View style={styles.text}>
         {/* Long names wrap to two lines, then truncate. */}
-        <AppText variant="title" numberOfLines={2} ellipsizeMode="tail" testID="profile-name">
+        <AppText variant="h2" numberOfLines={2} ellipsizeMode="tail" testID="profile-name">
           {name}
         </AppText>
-        <AppText color="textMuted" numberOfLines={1} ellipsizeMode="tail" testID="profile-email">
+        <AppText color="textSecondary" numberOfLines={1} ellipsizeMode="tail" testID="profile-email">
           {email}
         </AppText>
       </View>
