@@ -2,6 +2,7 @@ import { screen, userEvent, within } from "@testing-library/react-native";
 
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
+import { ProfileHeader } from "../components/ProfileHeader";
 import { ProfileScreen } from "../ProfileScreen";
 
 const mockRouter = {
@@ -23,8 +24,8 @@ describe("ProfileScreen (S6)", () => {
   it("renders the header, the theme row, three stub rows and sign-out", async () => {
     await renderWithProviders(<ProfileScreen />);
     expect(screen.getByRole("header", { name: "Profile" })).toBeOnTheScreen();
-    expect(screen.getByTestId("profile-name")).toHaveTextContent("Christopher Montgomery-Featherstonehaugh");
-    expect(screen.getByTestId("profile-email")).toHaveTextContent("name@example.com");
+    expect(screen.getByTestId("profile-name")).toHaveTextContent("Anna Kowalska");
+    expect(screen.getByTestId("profile-email")).toHaveTextContent("anna.kowalska@example.com");
     expect(screen.getByLabelText("Appearance")).toBeOnTheScreen();
     for (const id of SOON_ROWS) {
       expect(screen.getByTestId(id)).toBeOnTheScreen();
@@ -78,7 +79,9 @@ describe("ProfileScreen (S6)", () => {
   });
 
   it("wraps a very long name to at most two lines without throwing", async () => {
-    await renderWithProviders(<ProfileScreen />, { locale: "ru" });
+    await renderWithProviders(
+      <ProfileHeader name="Alexandra-Catherine Konstantinopolitanskaya-Ivanovna" email="long@example.com" />,
+    );
     expect(screen.getByTestId("profile-name").props.numberOfLines).toBe(2);
   });
 

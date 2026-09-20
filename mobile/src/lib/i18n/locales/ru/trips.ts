@@ -3,13 +3,14 @@ export const trips = {
   a11y: {
     newTrip: "Новая поездка",
   },
-  // Static sample content for the skeleton cards (S4, S7).
-  sample: {
-    krakow: "Краков",
+  cities: {
     lisbon: "Лиссабон",
-    // Deliberately long: exercises the wrap/truncate edge case.
-    longCity: "Петропавловск-Камчатский и окрестности вулканов",
-    draft: "Токио",
+    barcelona: "Барселона",
+    vienna: "Вена",
+    tokyo: "Токио",
+    rome: "Рим",
+    prague: "Прага",
+    amsterdam: "Амстердам",
   },
   newTrip: {
     title: "Новая поездка",

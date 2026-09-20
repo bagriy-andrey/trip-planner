@@ -5,13 +5,13 @@ import { formatShortDate, formatTime, useTranslation } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { radii, spacing } from "@/lib/theme";
 
-import type { FlightPlaceholder } from "../placeholders";
+import type { MockFlight } from "@/mocks";
 
 // Route separator glyph, not translatable copy.
 const ARROW = "→";
 
 export interface FlightCardProps {
-  flight: FlightPlaceholder;
+  flight: MockFlight;
   locale: Locale;
   onPress: () => void;
   testID?: string;
@@ -21,7 +21,8 @@ export interface FlightCardProps {
 export function FlightCard({ flight, locale, onPress, testID }: FlightCardProps) {
   const { t } = useTranslation("tripDetail");
   const route = `${flight.from} ${ARROW} ${flight.to}`;
-  const when = `${formatShortDate(locale, flight.departure)} · ${formatTime(locale, flight.departure)}`;
+  // Shown as the wall-clock time at the departure airport, not in UTC.
+  const when = `${formatShortDate(locale, flight.departure, flight.timeZone)} · ${formatTime(locale, flight.departure, flight.timeZone)}`;
   const baggage = flight.baggageIncluded ? t("flight.baggageIncluded") : t("flight.noBaggage");
   const passengers = t("flight.passengers", { count: flight.passengers });
   return (

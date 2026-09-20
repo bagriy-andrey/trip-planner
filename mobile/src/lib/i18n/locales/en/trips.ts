@@ -3,11 +3,14 @@ export const trips = {
   a11y: {
     newTrip: "New trip",
   },
-  sample: {
-    krakow: "Kraków",
+  cities: {
     lisbon: "Lisbon",
-    longCity: "Llanfairpwllgwyngyll and the surrounding Anglesey coast",
-    draft: "Tokyo",
+    barcelona: "Barcelona",
+    vienna: "Vienna",
+    tokyo: "Tokyo",
+    rome: "Rome",
+    prague: "Prague",
+    amsterdam: "Amsterdam",
   },
   newTrip: {
     title: "New trip",

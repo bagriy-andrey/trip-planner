@@ -155,7 +155,7 @@ fi
 #   SIGNIN_CREATE_LINK         auth:signIn.createLink
 #   FORGOT_TITLE               auth:forgotPassword.title
 #   LEGAL_BODY                 legal:placeholderBody
-#   CITY_KRAKOW, CITY_ROME     trips:sample.krakow, history:sample.rome
+#   CITY_LISBON, CITY_ROME     trips:cities.lisbon, trips:cities.rome
 #   NEW_TRIP_A11Y              trips:a11y.newTrip
 #   NEW_TRIP_CITY_LABEL        trips:newTrip.city
 #   ADD_FLIGHT                 tripDetail:a11y.addFlight
@@ -185,7 +185,7 @@ SIGNIN_SUBMIT=Войти
 SIGNIN_CREATE_LINK=Создать
 FORGOT_TITLE=Восстановление пароля
 LEGAL_BODY=Текст будет добавлен позже
-CITY_KRAKOW=Краков
+CITY_LISBON=Лиссабон
 CITY_ROME=Рим
 NEW_TRIP_A11Y=Новая поездка
 NEW_TRIP_CITY_LABEL=Город
@@ -217,7 +217,7 @@ SIGNIN_SUBMIT=Sign in
 SIGNIN_CREATE_LINK=Create one
 FORGOT_TITLE=Reset password
 LEGAL_BODY=Text will be added later
-CITY_KRAKOW=Kraków
+CITY_LISBON=Lisbon
 CITY_ROME=Rome
 NEW_TRIP_A11Y=New trip
 NEW_TRIP_CITY_LABEL=City

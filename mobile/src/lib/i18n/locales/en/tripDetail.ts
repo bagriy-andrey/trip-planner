@@ -17,7 +17,6 @@ export const tripDetail = {
     passengers_other: "{{count}} passengers",
   },
   hotel: {
-    sampleName: "Old Town Hotel",
     checkIn: "Check-in",
     checkOut: "Check-out",
     // {{count}} = total days, {{included}} = days with breakfast.

@@ -19,7 +19,6 @@ export const tripDetail = {
     passengers_other: "{{count}} пассажира",
   },
   hotel: {
-    sampleName: "Отель «Старый город»",
     checkIn: "Заезд",
     checkOut: "Выезд",
     // {{count}} = total days (genitive after "из"), {{included}} = days with breakfast.

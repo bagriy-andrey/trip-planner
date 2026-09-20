@@ -17,7 +17,7 @@ Read `.claude/skills/mobile-architecture` before adding files; `expo-react-nativ
 - Verify on a real device / release build before calling perf work done.
 
 ## Status
-Expo SDK 57 skeleton (SPEC-01 / PLAN-01): screens S1–S12 wired with static placeholders (no data, no Supabase yet), theme light/dark/system (one AsyncStorage key), i18n ru/en (i18next), `typedRoutes`, privacy manifest mirrored in `app.privacy.ts` (audit: `docs/release/privacy-manifest-audit.md`).
+Expo SDK 57 skeleton (SPEC-01 / PLAN-01): screens S1–S12 wired to realistic mock data in `src/mocks/` (no Supabase yet; the mock module is what the future `api/` layer replaces), theme light/dark/system (one AsyncStorage key), i18n ru/en (i18next), `typedRoutes`, privacy manifest mirrored in `app.privacy.ts` (audit: `docs/release/privacy-manifest-audit.md`).
 - Works: `pnpm -r typecheck`, `pnpm -r test` (jest-expo + guardrail tests: route contract, static rules), `npx expo config --type public`. Gotchas: `insights.md`.
 - Known issue: the dev client crashes at launch on the iOS 27 simulator (SIGTRAP, UIScene lifecycle adoption in the SDK 57 CNG `AppDelegate`) — `npx expo run:ios` on an iOS 27 sim is not a working path yet.
 - Repo uses pnpm 11 (`packageManager: pnpm@11.7.0`); `pnpm-workspace.yaml` `allowBuilds` / `minimumReleaseAgeExclude` are temporary and may be deleted later.

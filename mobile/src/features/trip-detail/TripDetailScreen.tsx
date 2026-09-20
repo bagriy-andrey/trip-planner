@@ -3,7 +3,6 @@ import { StyleSheet, View } from "react-native";
 import type { Edge } from "react-native-safe-area-context";
 
 import { Screen } from "@/components";
-import { PLACEHOLDER_NOW } from "@/features/trips";
 import {
   formatDateRange,
   formatNights,
@@ -12,22 +11,21 @@ import {
   useTranslation,
 } from "@/lib/i18n";
 import { spacing } from "@/lib/theme";
+import { MOCK_NOW, findTrip, nightsBetween } from "@/mocks";
 
 import { BookingSection } from "./components/BookingSection";
 import { CarEmptySection } from "./components/CarEmptySection";
 import { FlightCard } from "./components/FlightCard";
 import { HotelCard } from "./components/HotelCard";
 import { TripHero } from "./components/TripHero";
-import { FLIGHT_PLACEHOLDERS, HOTEL_PLACEHOLDER, TRIP_DETAIL_PLACEHOLDER } from "./placeholders";
 
 // The hero bleeds under the status bar and pads the top inset itself.
 const EDGES: readonly Edge[] = ["bottom", "left", "right"];
 
 export interface TripDetailScreenProps {
   /**
-   * Only used to build the routes of the booking forms. The content never
-   * depends on it: the skeleton shows the same sample trip for any id, so a
-   * malformed or unknown id (e.g. from a future deep link) cannot break it.
+   * Picks the mock trip. An unknown or malformed id (e.g. from a future deep
+   * link) falls back to the nearest trip instead of breaking the screen.
    */
   tripId: string;
 }
@@ -43,15 +41,21 @@ export function TripDetailScreen({ tripId }: TripDetailScreenProps) {
   // The id is data, not a path: it goes through `params`, which expo-router encodes
   // per segment, so it can never add path segments.
   const params = { tripId };
-  const { start, end, nights, cityKey } = TRIP_DETAIL_PLACEHOLDER;
-  const dateLine = `${formatDateRange(locale, start, end)} · ${formatNights(locale, nights)}`;
+  const trip = findTrip(tripId);
+  const { start, end, flights, hotel } = trip;
+  // A draft has no dates yet: no range or nights, and its status reads "plan · no date yet".
+  const dated = start !== null && end !== null;
+  const dateLine = dated
+    ? `${formatDateRange(locale, start, end)} · ${formatNights(locale, nightsBetween(start, end))}`
+    : null;
+  const statusLabel = dated ? formatRelativeDays(locale, start, MOCK_NOW) : tCommon("status.draft");
 
   return (
     <Screen edges={EDGES} testID="trip-detail-screen" contentStyle={styles.screen}>
       <TripHero
-        city={tTrips(cityKey)}
+        city={tTrips(trip.cityKey)}
         dateLine={dateLine}
-        statusLabel={formatRelativeDays(locale, start, PLACEHOLDER_NOW)}
+        statusLabel={statusLabel}
         backLabel={tCommon("actions.back")}
         moreLabel={t("a11y.more")}
         moreHint={tCommon("a11y.soonHint")}
@@ -65,7 +69,7 @@ export function TripDetailScreen({ tripId }: TripDetailScreenProps) {
           testID="section-flights"
           addTestID="add-flight"
         >
-          {FLIGHT_PLACEHOLDERS.map((flight) => (
+          {flights.map((flight) => (
             <FlightCard
               key={flight.id}
               flight={flight}
@@ -85,7 +89,7 @@ export function TripDetailScreen({ tripId }: TripDetailScreenProps) {
           testID="section-hotel"
           addTestID="add-hotel"
         >
-          <HotelCard hotel={HOTEL_PLACEHOLDER} locale={locale} testID="hotel-card" />
+          {hotel !== null ? <HotelCard hotel={hotel} locale={locale} testID="hotel-card" /> : null}
         </BookingSection>
         <BookingSection
           title={t("sections.car")}
