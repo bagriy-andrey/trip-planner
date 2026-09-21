@@ -1,1 +1,0 @@
-export { NewTripScreen } from "./NewTripScreen";

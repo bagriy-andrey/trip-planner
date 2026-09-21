@@ -1,3 +1,6 @@
-import { NewTripScreen } from "@/features/new-trip";
+import { TripFormScreen } from "@/features/trip-form";
 
-export default NewTripScreen;
+/** S8 — create-trip sheet (modal). All behaviour lives in the feature. */
+export default function NewTripRoute() {
+  return <TripFormScreen mode="create" />;
+}
