@@ -1,6 +1,6 @@
 # Spec: Email-авторизация (регистрация, вход, сессия, сброс пароля)  |  Spec ID: SPEC-02  |  Status: draft
 Supersedes: — (SPEC-01 остаётся в силе; перечень его AC, которые этот спек заменяет, — в разделе «Что заменяется в SPEC-01»)
-Implementation Plan: not yet planned
+Implementation Plan: specs/plans/PLAN-02-email-auth.md
 
 ## Проблема й навіщо
 
