@@ -103,6 +103,22 @@ describe("TripsScreen (S4)", () => {
     expect(mockRouter.push).not.toHaveBeenCalled();
   });
 
+  it("takes the avatar initial from the session's display name, upper-cased (AC-27)", async () => {
+    await renderWithProviders(<TripsScreen />, {
+      session: { user: { displayName: "  zoe Adler " } },
+    });
+    const avatar = screen.getByTestId("trips-avatar");
+    expect(within(avatar).getByText("Z", { includeHiddenElements: true })).toBeOnTheScreen();
+  });
+
+  it("falls back to the email's local part for the initial when there is no display name (AC-26)", async () => {
+    await renderWithProviders(<TripsScreen />, {
+      session: { user: { email: "bruno.k@example.com", displayName: null } },
+    });
+    const avatar = screen.getByTestId("trips-avatar");
+    expect(within(avatar).getByText("B", { includeHiddenElements: true })).toBeOnTheScreen();
+  });
+
   it("opens the new-trip modal from the floating button", async () => {
     const user = userEvent.setup();
     await renderWithProviders(<TripsScreen />);

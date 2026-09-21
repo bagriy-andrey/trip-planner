@@ -1,9 +1,10 @@
-import { useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import type { Edge } from "react-native-safe-area-context";
 
 import { AppText, GlassSurface, Screen, SecondaryButton } from "@/components";
+import { signOut } from "@/features/auth";
 import { useTranslation } from "@/lib/i18n";
+import { displayNameOf, useSession } from "@/lib/session";
 import { spacing } from "@/lib/theme";
 import { MOCK_USER } from "@/mocks";
 
@@ -15,19 +16,18 @@ import { ThemeSettingRow } from "./components/ThemeSettingRow";
 const TAB_EDGES: readonly Edge[] = ["top", "left", "right"];
 
 /**
- * S6 — profile tab. Theme is the only working setting; the other rows are
- * "soon" stubs. There is deliberately no language row: the UI language
+ * S6 — profile tab. Name and email come from the session (AC-25). Theme is the only working
+ * setting; the other rows are "soon" stubs. There is deliberately no language row: the UI language
  * follows the device (AC-40).
  */
 export function ProfileScreen() {
   const { t } = useTranslation("profile");
-  const router = useRouter();
+  const { user } = useSession();
 
-  const signOut = () => {
-    // Drop anything stacked above the tabs, then reset to onboarding so the
-    // back gesture cannot return to the tabs (AC-13).
-    router.dismissAll();
-    router.replace("/onboarding");
+  // No navigation here: signOut ends the session and the root layout's route gating moves the
+  // user to /onboarding by itself, clearing the stack (AC-22).
+  const onSignOut = () => {
+    void signOut();
   };
 
   return (
@@ -35,7 +35,7 @@ export function ProfileScreen() {
       <AppText variant="h1" accessibilityRole="header">
         {t("title")}
       </AppText>
-      <ProfileHeader name={MOCK_USER.name} email={MOCK_USER.email} />
+      <ProfileHeader name={displayNameOf(user)} email={user?.email ?? ""} />
       <GlassSurface style={styles.group}>
         <ThemeSettingRow />
         <SoonSettingRow label={t("rows.notifications")} testID="row-notifications" />
@@ -54,7 +54,7 @@ export function ProfileScreen() {
         <SecondaryButton
           label={t("logout")}
           accessibilityLabel={t("logout")}
-          onPress={signOut}
+          onPress={onSignOut}
           testID="profile-logout"
         />
       </View>
