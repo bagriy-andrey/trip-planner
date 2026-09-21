@@ -1,11 +1,8 @@
 import { StyleSheet, View } from "react-native";
 import type { ReactNode } from "react";
 
-import { AppText, IconButton } from "@/components";
+import { AppText, Icon, IconButton } from "@/components";
 import { spacing } from "@/lib/theme";
-
-// Operator glyph, not translatable copy.
-const PLUS = "+";
 
 export interface BookingSectionProps {
   /** Already translated section title. */
@@ -27,7 +24,7 @@ export function BookingSection({ title, addLabel, onAdd, children, testID, addTe
           {title}
         </AppText>
         <IconButton accessibilityLabel={addLabel} onPress={onAdd} testID={addTestID}>
-          <AppText variant="h2">{PLUS}</AppText>
+          <Icon name="plus" />
         </IconButton>
       </View>
       {children}

@@ -1,13 +1,11 @@
 import { Pressable, StyleSheet } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
 
-import { AppText, MIN_HIT_SIZE } from "@/components";
+import { Icon, MIN_HIT_SIZE } from "@/components";
 import type { AccessibleProps } from "@/components";
 import { layout, useTheme } from "@/lib/theme";
 
 const SIZE = 56;
-// Operator glyph, not translatable copy.
-const PLUS = "+";
 
 export interface FloatingAddButtonProps extends AccessibleProps {
   onPress: () => void;
@@ -37,9 +35,7 @@ export function FloatingAddButton({
         style,
       ]}
     >
-      <AppText variant="h1" color="onAccent" accessibilityElementsHidden>
-        {PLUS}
-      </AppText>
+      <Icon name="plus" size="lg" color="onAccent" />
     </Pressable>
   );
 }

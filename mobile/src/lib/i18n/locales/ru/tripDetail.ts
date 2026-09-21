@@ -11,6 +11,8 @@ export const tripDetail = {
     car: "Аренда авто",
   },
   flight: {
+    // Spoken form of the "WAW [arrow] LIS" route.
+    route: "{{from}} — {{to}}",
     baggageIncluded: "Багаж включён",
     noBaggage: "Без багажа",
     passengers_one: "{{count}} пассажир",

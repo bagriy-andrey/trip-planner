@@ -1,4 +1,4 @@
-import { blurIntensity, coverMuteSaturation, layout, radius, spacing } from "../metrics";
+import { blurIntensity, coverMuteSaturation, iconSize, layout, radius, spacing } from "../metrics";
 import { coverColors, darkTokens, lightTokens } from "../tokens";
 import { family, size, typography } from "../typography";
 
@@ -105,6 +105,10 @@ describe("sizes (design/tokens.md, «Размеры и отступы»)", () =>
       switchH: 24,
       switchKnob: 20,
     });
+  });
+
+  it("icon sizes", () => {
+    expect(iconSize).toEqual({ sm: 16, md: 20, lg: 24 });
   });
 
   it("blur and cover muting", () => {

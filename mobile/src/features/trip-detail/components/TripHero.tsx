@@ -1,15 +1,12 @@
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, GlassSurface, IconButton, Pill, SoonBadge } from "@/components";
+import { AppText, GlassSurface, Icon, IconButton, Pill, SoonBadge } from "@/components";
+import type { IconName } from "@/components";
 import { radius, spacing, useTheme } from "@/lib/theme";
 
 const HERO_HEIGHT = 260;
 const ROUND_BUTTON = 44;
-
-// Glyphs, not translatable copy.
-const BACK = "‹";
-const MORE = "…";
 
 export interface TripHeroProps {
   /** Already translated city name. */
@@ -20,7 +17,7 @@ export interface TripHeroProps {
   statusLabel: string;
   backLabel: string;
   moreLabel: string;
-  /** Spoken hint for the "…" stub (Q7: it does nothing yet). */
+  /** Spoken hint for the "more" stub (Q7: it does nothing yet). */
   moreHint: string;
   onBack: () => void;
 }
@@ -29,13 +26,13 @@ export interface TripHeroProps {
 function RoundGlassButton({
   label,
   hint,
-  glyph,
+  icon,
   onPress,
   testID,
 }: {
   label: string;
   hint?: string;
-  glyph: string;
+  icon: IconName;
   onPress?: () => void;
   testID?: string;
 }) {
@@ -48,13 +45,13 @@ function RoundGlassButton({
         onPress={onPress}
         testID={testID}
       >
-        <AppText variant="h2">{glyph}</AppText>
+        <Icon name={icon} />
       </IconButton>
     </GlassSurface>
   );
 }
 
-/** Cover placeholder (no images in the skeleton) with back / "…" controls and the glass info panel. */
+/** Cover placeholder (no images in the skeleton) with back / "more" controls and the glass info panel. */
 export function TripHero({ city, dateLine, statusLabel, backLabel, moreLabel, moreHint, onBack }: TripHeroProps) {
   const { tokens } = useTheme();
   const insets = useSafeAreaInsets();
@@ -66,13 +63,13 @@ export function TripHero({ city, dateLine, statusLabel, backLabel, moreLabel, mo
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tokens.accent, opacity: 0.7 }]} />
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tokens.coverScrim }]} />
       <View style={styles.topRow}>
-        <RoundGlassButton label={backLabel} glyph={BACK} onPress={onBack} testID="trip-hero-back" />
+        <RoundGlassButton label={backLabel} icon="back" onPress={onBack} testID="trip-hero-back" />
         <View style={styles.moreGroup}>
           <SoonBadge />
           <RoundGlassButton
             label={moreLabel}
             hint={moreHint}
-            glyph={MORE}
+            icon="more"
             testID="trip-hero-more"
           />
         </View>

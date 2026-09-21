@@ -41,11 +41,12 @@ describe("TripDetailScreen (S7)", () => {
   it("shows flight cards with IATA codes in the mono face, baggage and passenger chips", async () => {
     await renderWithProviders(<TripDetailScreen tripId="trip-lisbon" />);
     const outbound = screen.getByTestId("flight-card-flight-lisbon-outbound");
-    expect(within(outbound).getByText("WAW → LIS")).toHaveStyle({ fontFamily: family.mono });
+    expect(within(outbound).getByText("WAW")).toHaveStyle({ fontFamily: family.mono });
+    expect(within(outbound).getByText("LIS")).toHaveStyle({ fontFamily: family.mono });
     expect(within(outbound).getByText("Baggage included")).toBeOnTheScreen();
     expect(within(outbound).getByText("2 passengers")).toBeOnTheScreen();
     const inbound = screen.getByTestId("flight-card-flight-lisbon-return");
-    expect(within(inbound).getByText("LIS → WAW")).toBeOnTheScreen();
+    expect(within(inbound).getByLabelText(/LIS to WAW/)).toBeOnTheScreen();
     expect(within(inbound).getByText("No baggage")).toBeOnTheScreen();
   });
 
@@ -178,7 +179,7 @@ describe("TripDetailScreen (S7)", () => {
     await renderWithProviders(<TripDetailScreen tripId="trip-rome" />);
     expect(screen.getByRole("header", { name: "Rome" })).toBeOnTheScreen();
     expect(screen.getByText("completed")).toBeOnTheScreen();
-    expect(within(screen.getByTestId("flight-card-flight-rome-outbound")).getByText("WAW → FCO")).toBeOnTheScreen();
+    expect(within(screen.getByTestId("flight-card-flight-rome-outbound")).getByLabelText(/WAW to FCO/)).toBeOnTheScreen();
     expect(within(screen.getByTestId("hotel-card")).getByText("Hotel Artemide")).toBeOnTheScreen();
   });
 

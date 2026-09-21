@@ -1,11 +1,14 @@
 import { Tabs } from "expo-router";
 
+import { Icon } from "@/components";
+import type { IconName } from "@/components";
 import { useTranslation } from "@/lib/i18n";
 import { spacing, typography, useTheme } from "@/lib/theme";
 
-// The skeleton ships no icon set, so tabs are label-only; without an explicit
-// `tabBarIcon` React Navigation would draw its placeholder triangle.
-const NO_ICON = () => null;
+// Every tab needs an explicit `tabBarIcon`, otherwise React Navigation draws its placeholder triangle.
+const tabIcon =
+  (name: IconName) =>
+  ({ focused }: { focused: boolean }) => <Icon name={name} color={focused ? "accent" : "tabInactive"} />;
 
 export default function TabsLayout() {
   const { t } = useTranslation("common");
@@ -15,10 +18,8 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarIcon: NO_ICON,
-        tabBarIconStyle: { display: "none" },
         tabBarActiveTintColor: tokens.accent,
-        tabBarInactiveTintColor: tokens.textSecondary,
+        tabBarInactiveTintColor: tokens.tabInactive,
         // No fixed width or height on labels: they must grow with Dynamic Type (AC-39).
         tabBarLabelStyle: { ...typography.micro, paddingVertical: spacing.sm },
         tabBarStyle: { backgroundColor: tokens.bg, borderTopColor: tokens.surfaceBorder },
@@ -28,6 +29,7 @@ export default function TabsLayout() {
         name="trips"
         options={{
           title: t("tabs.trips"),
+          tabBarIcon: tabIcon("suitcase"),
           tabBarLabel: t("tabs.trips"),
           tabBarAccessibilityLabel: t("tabs.trips"),
         }}
@@ -36,6 +38,7 @@ export default function TabsLayout() {
         name="history"
         options={{
           title: t("tabs.history"),
+          tabBarIcon: tabIcon("clock"),
           tabBarLabel: t("tabs.history"),
           tabBarAccessibilityLabel: t("tabs.history"),
         }}
@@ -44,6 +47,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: t("tabs.profile"),
+          tabBarIcon: tabIcon("user"),
           tabBarLabel: t("tabs.profile"),
           tabBarAccessibilityLabel: t("tabs.profile"),
         }}

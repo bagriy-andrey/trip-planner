@@ -57,6 +57,9 @@ export const layout = {
   switchKnob: 20,
 } as const;
 
+/** Icon glyph sizes: sm next to mono text/in chips, md in round buttons and the tab bar, lg on the FAB. */
+export const iconSize = { sm: 16, md: 20, lg: 24 } as const;
+
 export const blurIntensity = { panel: 20, tabBar: 24 } as const;
 
 /** Archived covers are muted by desaturating the backdrop, NOT by opacity. */
