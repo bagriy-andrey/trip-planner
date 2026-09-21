@@ -4,6 +4,7 @@ import type { StyleProp, ViewStyle } from "react-native";
 import { spacing } from "@/lib/theme";
 
 import { AppText } from "./AppText";
+import { Icon } from "./Icon";
 import { IconButton } from "./IconButton";
 
 export interface StepperProps {
@@ -19,10 +20,6 @@ export interface StepperProps {
   testID?: string;
 }
 
-// Operator glyphs, not translatable copy.
-const MINUS = "−";
-const PLUS = "+";
-
 export function Stepper({
   value,
   accessibilityLabel,
@@ -36,7 +33,7 @@ export function Stepper({
   return (
     <View testID={testID} style={[styles.row, style]}>
       <IconButton accessibilityLabel={decrementAccessibilityLabel} onPress={onDecrement}>
-        <AppText variant="h2">{MINUS}</AppText>
+        <Icon name="minus" />
       </IconButton>
       <AppText
         variant="mono"
@@ -46,7 +43,7 @@ export function Stepper({
         {String(value)}
       </AppText>
       <IconButton accessibilityLabel={incrementAccessibilityLabel} onPress={onIncrement}>
-        <AppText variant="h2">{PLUS}</AppText>
+        <Icon name="plus" />
       </IconButton>
     </View>
   );
