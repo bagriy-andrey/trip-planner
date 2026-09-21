@@ -6,6 +6,8 @@ export { Avatar } from "./Avatar";
 export type { AvatarProps } from "./Avatar";
 export { AvatarButton } from "./AvatarButton";
 export type { AvatarButtonProps } from "./AvatarButton";
+export { Checkbox } from "./Checkbox";
+export type { CheckboxProps } from "./Checkbox";
 export { EmptyState } from "./EmptyState";
 export type { EmptyStateProps } from "./EmptyState";
 export { GlassSurface } from "./GlassSurface";
