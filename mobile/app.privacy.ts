@@ -24,6 +24,12 @@ type IosPrivacyManifests = NonNullable<
 // ship NO PrivacyInfo.xcprivacy and their iOS sources touch no required-reason
 // API (Keychain / CryptoKit are not on Apple's list), so the union above is
 // unchanged. aes-js 3.1.2 is pure JS (no manifest). No NS*UsageDescription.
+//
+// Re-audit 2026-09-21 (SPEC-03 / PLAN-03 step 2): @react-native-community/datetimepicker
+// 9.1.0 (linked pod RNDateTimePicker) ships NO PrivacyInfo.xcprivacy and its iOS
+// sources (ios/*.m, ios/fabric/*.mm/.cpp) reference no required-reason API, so the
+// union above is unchanged. @tanstack/react-query 5.103.1 is pure JS. No
+// NS*UsageDescription.
 export const iosPrivacyManifests: IosPrivacyManifests = {
   NSPrivacyAccessedAPITypes: [
     {
