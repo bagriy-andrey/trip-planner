@@ -1,6 +1,7 @@
 import { StyleSheet, View } from "react-native";
 
 import { AppText, Avatar } from "@/components";
+import { initialOf } from "@/lib/session";
 import { spacing } from "@/lib/theme";
 
 export interface ProfileHeaderProps {
@@ -11,9 +12,9 @@ export interface ProfileHeaderProps {
 
 const AVATAR_SIZE = 72;
 
-/** Avatar, name and email of the account (mock user for now). */
+/** Avatar, name and email of the signed-in account. */
 export function ProfileHeader({ name, email }: ProfileHeaderProps) {
-  const initial = Array.from(name)[0] ?? "";
+  const initial = initialOf(name);
   return (
     <View style={styles.root}>
       <Avatar initials={initial} size={AVATAR_SIZE} />
