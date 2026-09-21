@@ -19,10 +19,10 @@ Backend: Supabase (Postgres + Auth + Storage + Edge Functions). Contracts + doma
 E2E: Maestro.
 
 ## Commands (fill in as packages get scaffolded)
-- Install: `pnpm install`. All packages from root: `pnpm -r typecheck` / `pnpm -r test`; per package: `pnpm typecheck` / `pnpm test`.
+- Install: `pnpm install`. All packages from root: `pnpm -r typecheck` / `pnpm -r test`; per package: `pnpm typecheck` / `pnpm test` (e.g. `pnpm --filter @tripplanner/shared test`).
 - Mobile: `cd mobile && npx expo config --type public` (config check) · `npx expo start` (dev client) · builds via `eas build`.
 - E2E: `./scripts/e2e.sh <flow> [--locale ru|en] [--metro-url URL]` (needs Maestro + booted iOS sim; not yet run — see `e2e/AGENTS.md`).
-- Backend: `supabase start` · `supabase migration new <name>` · `supabase db reset` · `supabase test db`.
+- Backend: `supabase start -x vector` (`-x vector` needed on Rancher Desktop; app env from `supabase status` → `mobile/.env`, see `supabase/README.md`) · `supabase migration new <name>` · `supabase db reset` · `supabase test db`.
 - Types: `supabase gen types typescript --local > shared/src/db/database.types.ts` after each migration.
 
 ## Where things live

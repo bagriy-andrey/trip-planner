@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { THEME_STORAGE_KEY } from "@/lib/theme/preference";
 
+import { STORAGE_KEYS } from "../keys";
 import { ALLOWED_SETTING_KEYS, readSetting, writeSetting } from "../settingsStorage";
 import type { SettingKey } from "../settingsStorage";
 
@@ -13,6 +14,25 @@ beforeEach(async () => {
 describe("settingsStorage (AC-33)", () => {
   it("allows exactly one key: the theme key", () => {
     expect([...ALLOWED_SETTING_KEYS]).toEqual([THEME_STORAGE_KEY]);
+  });
+
+  it("takes its keys from the registry and never lists a secret one", () => {
+    const registered = Object.values(STORAGE_KEYS).map((entry) => entry.key);
+    const secret = Object.values(STORAGE_KEYS)
+      .filter((entry) => entry.secret)
+      .map((entry) => entry.key);
+    for (const key of ALLOWED_SETTING_KEYS) {
+      expect(registered).toContain(key);
+      expect(secret).not.toContain(key);
+    }
+  });
+
+  it("refuses the encrypted-session and launch-flag keys (they have their own writers)", async () => {
+    for (const entry of [STORAGE_KEYS.session, STORAGE_KEYS.firstLaunch]) {
+      await expect(writeSetting(entry.key as SettingKey, "x")).resolves.toEqual({ ok: false });
+      await expect(readSetting(entry.key as SettingKey)).resolves.toBeNull();
+    }
+    await expect(AsyncStorage.getAllKeys()).resolves.toEqual([]);
   });
 
   it("round-trips the theme key", async () => {

@@ -5,8 +5,9 @@ import type { Edge } from "react-native-safe-area-context";
 import { AppText, AvatarButton, Screen } from "@/components";
 import { TripCard } from "@/features/trips";
 import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { displayNameOf, initialOf, useSession } from "@/lib/session";
 import { spacing } from "@/lib/theme";
-import { COMPLETED_TRIPS, MOCK_NOW, MOCK_USER } from "@/mocks";
+import { COMPLETED_TRIPS, MOCK_NOW } from "@/mocks";
 
 // The tab bar owns the bottom inset.
 const TAB_EDGES: readonly Edge[] = ["top", "left", "right"];
@@ -18,7 +19,9 @@ export function HistoryScreen() {
   const { t: tCommon } = useTranslation("common");
   const router = useRouter();
   const locale = resolveLocale([i18n.language]);
-  const initial = Array.from(MOCK_USER.name)[0] ?? "";
+  const { user } = useSession();
+  // The same name, hence the same initial, as on the profile (AC-27).
+  const initial = initialOf(displayNameOf(user));
 
   return (
     <Screen edges={TAB_EDGES} testID="history-screen" contentStyle={styles.content}>

@@ -1,5 +1,9 @@
 import { screen, userEvent, within } from "@testing-library/react-native";
 
+import { signOut } from "@/features/auth";
+import { HistoryScreen } from "@/features/history";
+import { TripsScreen } from "@/features/trips";
+import { MOCK_USER } from "@/mocks";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
 import { ProfileHeader } from "../components/ProfileHeader";
@@ -13,16 +17,24 @@ const mockRouter = {
   dismissAll: jest.fn(),
 };
 jest.mock("expo-router", () => ({ useRouter: () => mockRouter }));
+// Only the public surface `ProfileScreen` uses; the real sign-out (and gating) is exercised in
+// ProfileSignOut.test.tsx.
+jest.mock("@/features/auth", () => ({ signOut: jest.fn() }));
+
+const mockSignOut = jest.mocked(signOut);
+
+const SESSION = { user: { email: "anna.kowalska@example.com", displayName: "Anna Kowalska" } };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockSignOut.mockResolvedValue({ ok: true });
 });
 
 const SOON_ROWS = ["row-notifications", "row-connected-accounts", "row-currency"];
 
 describe("ProfileScreen (S6)", () => {
   it("renders the header, the theme row, three stub rows and sign-out", async () => {
-    await renderWithProviders(<ProfileScreen />);
+    await renderWithProviders(<ProfileScreen />, { session: SESSION });
     expect(screen.getByRole("header", { name: "Profile" })).toBeOnTheScreen();
     expect(screen.getByTestId("profile-name")).toHaveTextContent("Anna Kowalska");
     expect(screen.getByTestId("profile-email")).toHaveTextContent("anna.kowalska@example.com");
@@ -34,13 +46,13 @@ describe("ProfileScreen (S6)", () => {
   });
 
   it("shows the connected-account and currency values", async () => {
-    await renderWithProviders(<ProfileScreen />);
+    await renderWithProviders(<ProfileScreen />, { session: SESSION });
     expect(within(screen.getByTestId("row-connected-accounts")).getByText("Booking.com")).toBeOnTheScreen();
     expect(within(screen.getByTestId("row-currency")).getByText("EUR")).toBeOnTheScreen();
   });
 
   it("marks every stub row with 'soon' and announces it (Q7)", async () => {
-    await renderWithProviders(<ProfileScreen />);
+    await renderWithProviders(<ProfileScreen />, { session: SESSION });
     for (const id of SOON_ROWS) {
       const row = screen.getByTestId(id);
       expect(within(row).getByText("soon")).toBeOnTheScreen();
@@ -52,7 +64,7 @@ describe("ProfileScreen (S6)", () => {
 
   it("does not navigate anywhere when a stub row is pressed (Q7)", async () => {
     const user = userEvent.setup();
-    await renderWithProviders(<ProfileScreen />);
+    await renderWithProviders(<ProfileScreen />, { session: SESSION });
     for (const id of SOON_ROWS) {
       await user.press(screen.getByTestId(id));
     }
@@ -62,7 +74,7 @@ describe("ProfileScreen (S6)", () => {
   });
 
   it.each(["en", "ru"] as const)("has no language-selection row in %s (AC-40)", async (locale) => {
-    await renderWithProviders(<ProfileScreen />, { locale });
+    await renderWithProviders(<ProfileScreen />, { locale, session: SESSION });
     expect(screen.queryByText(/language|язык/i)).not.toBeOnTheScreen();
     // The only selector is the theme one, with exactly its three options.
     expect(screen.getAllByLabelText(locale === "en" ? "Appearance" : "Тема оформления")).toHaveLength(1);
@@ -70,7 +82,7 @@ describe("ProfileScreen (S6)", () => {
   });
 
   it("localizes to Russian", async () => {
-    await renderWithProviders(<ProfileScreen />, { locale: "ru" });
+    await renderWithProviders(<ProfileScreen />, { locale: "ru", session: SESSION });
     expect(screen.getByRole("radio", { name: "Светлая" })).toBeOnTheScreen();
     expect(screen.getByRole("radio", { name: "Тёмная" })).toBeOnTheScreen();
     expect(screen.getByRole("radio", { name: "Системная" })).toBeOnTheScreen();
@@ -85,15 +97,65 @@ describe("ProfileScreen (S6)", () => {
     expect(screen.getByTestId("profile-name").props.numberOfLines).toBe(2);
   });
 
-  it("signs out by dismissing to the root, then replacing with onboarding (AC-13)", async () => {
+  it("shows the name and email of the signed-in account (AC-25)", async () => {
+    await renderWithProviders(<ProfileScreen />, {
+      session: { user: { email: "lena.novak@example.org", displayName: "Lena Novak" } },
+    });
+    expect(screen.getByTestId("profile-name")).toHaveTextContent("Lena Novak");
+    expect(screen.getByTestId("profile-email")).toHaveTextContent("lena.novak@example.org");
+    expect(within(screen.getByTestId("profile-screen")).getByText("L", { includeHiddenElements: true })).toBeOnTheScreen();
+  });
+
+  it("keeps no name or email in the mock user: only the two stub-row values remain (AC-25)", () => {
+    expect(Object.keys(MOCK_USER).sort()).toEqual(["connectedAccount", "currency"]);
+  });
+
+  it("shows the email's local part and a non-empty initial without a display name (AC-26)", async () => {
+    await renderWithProviders(<ProfileScreen />, {
+      session: { user: { email: "bruno.k@example.com", displayName: null } },
+    });
+    expect(screen.getByTestId("profile-name")).toHaveTextContent("bruno.k");
+    expect(screen.getByTestId("profile-email")).toHaveTextContent("bruno.k@example.com");
+    expect(within(screen.getByTestId("profile-screen")).getByText("B", { includeHiddenElements: true })).toBeOnTheScreen();
+  });
+
+  it("treats a blank display name like a missing one (AC-26)", async () => {
+    await renderWithProviders(<ProfileScreen />, {
+      session: { user: { email: "carla@example.com", displayName: "   " } },
+    });
+    expect(screen.getByTestId("profile-name")).toHaveTextContent("carla");
+  });
+
+  it("shows the same initial on the profile, trips and history for one session (AC-27)", async () => {
+    const session = { user: { email: "x@example.com", displayName: "  émile Zola" } };
+    const initials: string[] = [];
+    for (const [ui, avatarId] of [
+      [<TripsScreen key="trips" />, "trips-avatar"],
+      [<HistoryScreen key="history" />, "history-avatar"],
+      [<ProfileScreen key="profile" />, "profile-screen"],
+    ] as const) {
+      const view = await renderWithProviders(ui, { session });
+      const circle = within(screen.getByTestId(avatarId)).getByText(/^\p{L}$/u, { includeHiddenElements: true });
+      initials.push(circle.props.children as string);
+      view.unmount();
+    }
+    expect(initials).toEqual(["É", "É", "É"]);
+  });
+
+  it("calls signOut exactly once on 'Sign out' and does not navigate itself (AC-22)", async () => {
     const user = userEvent.setup();
-    await renderWithProviders(<ProfileScreen />);
+    await renderWithProviders(<ProfileScreen />, { session: SESSION });
     await user.press(screen.getByRole("button", { name: "Sign out" }));
-    expect(mockRouter.dismissAll).toHaveBeenCalledTimes(1);
-    expect(mockRouter.replace).toHaveBeenCalledTimes(1);
-    expect(mockRouter.replace).toHaveBeenCalledWith("/onboarding");
-    const dismissOrder = mockRouter.dismissAll.mock.invocationCallOrder[0] ?? 0;
-    const replaceOrder = mockRouter.replace.mock.invocationCallOrder[0] ?? 0;
-    expect(dismissOrder).toBeLessThan(replaceOrder);
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    // Gating moves the user to /onboarding (ProfileSignOut.test.tsx), not this screen.
+    expect(mockRouter.dismissAll).not.toHaveBeenCalled();
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+    expect(mockRouter.push).not.toHaveBeenCalled();
+    expect(mockRouter.navigate).not.toHaveBeenCalled();
+  });
+
+  it("has no delete-account row (decision C6)", async () => {
+    await renderWithProviders(<ProfileScreen />, { session: SESSION });
+    expect(screen.queryByText(/delete account|удалить аккаунт/i)).not.toBeOnTheScreen();
   });
 });

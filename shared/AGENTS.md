@@ -13,4 +13,6 @@ the future `web/`, and Supabase Edge Functions. Real workspace package (not vend
 - Tests: vitest, pure unit tests (always cover day/timezone boundaries).
 
 ## Status
-Not scaffolded yet (no `package.json` or `src/`) — not touched by SPEC-01; the app skeleton has no Zod/domain logic.
+`@tripplanner/shared` exists (SPEC-02 / PLAN-02): `package.json` exports TS source directly (no build step), `tsc --noEmit` + vitest (`pnpm --filter @tripplanner/shared test`, 41 tests).
+- `src/auth/`: Zod form schemas for email / password / display name / OTP code (`schemas.ts`), the stable error-id contract that clients map to i18n strings (`errorCodes.ts`), and `parseAuthForm` (`parse.ts`). Used by `mobile/src/features/auth`.
+- Not there yet: generated DB types (`src/db/`) and any domain logic (conflict rules, timezone/money helpers) — no tables exist yet (see `supabase/AGENTS.md`).

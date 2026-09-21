@@ -1,7 +1,5 @@
-/** The signed-in traveller of the mock data. `example.com` is reserved for documentation (RFC 2606). */
+/** Static stand-ins for settings rows that have no backend yet. Name and email come from the session. */
 export const MOCK_USER = {
-  name: "Anna Kowalska",
-  email: "anna.kowalska@example.com",
   connectedAccount: "Booking.com",
   currency: "EUR",
 } as const;

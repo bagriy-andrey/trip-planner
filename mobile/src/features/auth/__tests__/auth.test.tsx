@@ -1,23 +1,27 @@
+// Structure, the Apple/Google stubs and the links of S2/S3 (SPEC-01 behaviour that SPEC-02 keeps,
+// AC-49). What S2/S3/S10/S10b DO on submit — validation, api calls, errors — lives in the
+// per-screen files next to this one; the old "Sign in enters the tabs without checks" tests
+// (SPEC-01 AC-7) are gone, replaced by that behaviour.
 import { screen, userEvent } from "@testing-library/react-native";
 
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
-import { ForgotPasswordScreen } from "../ForgotPasswordScreen";
 import { SignInScreen } from "../SignInScreen";
 import { SignUpScreen } from "../SignUpScreen";
+import { mockRouter, mockedApi } from "./testKit";
 
-const mockRouter = {
-  push: jest.fn(),
-  replace: jest.fn(),
-  navigate: jest.fn(),
-  back: jest.fn(),
-  canGoBack: jest.fn(() => true),
-};
-jest.mock("expo-router", () => ({ useRouter: () => mockRouter }));
+jest.mock("expo-router", () => ({ useRouter: () => jest.requireActual("./testKit").mockRouter }));
+jest.mock("../api", () => ({
+  signIn: jest.fn(),
+  signUp: jest.fn(),
+  requestPasswordReset: jest.fn(),
+  verifyRecoveryCodeAndSetPassword: jest.fn(),
+  updatePassword: jest.fn(),
+  signOut: jest.fn(),
+}));
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockRouter.canGoBack.mockReturnValue(true);
 });
 
 function expectNoNavigation() {
@@ -27,10 +31,17 @@ function expectNoNavigation() {
   expect(mockRouter.back).not.toHaveBeenCalled();
 }
 
+function expectNoAuthCalls() {
+  for (const call of Object.values(mockedApi)) {
+    if (typeof call === "function") expect(call).not.toHaveBeenCalled();
+  }
+}
+
 describe("SignInScreen (S2)", () => {
-  it("renders title, fields and both social stubs with the 'soon' marker", async () => {
+  it("renders title, subtitle, fields and both social stubs with the 'soon' marker", async () => {
     await renderWithProviders(<SignInScreen />);
     expect(screen.getByText("Welcome back")).toBeOnTheScreen();
+    expect(screen.getByText("Sign in to sync your trips")).toBeOnTheScreen();
     expect(screen.getByText("or with email")).toBeOnTheScreen();
     expect(screen.getByLabelText("Email")).toBeOnTheScreen();
     expect(screen.getByLabelText("Password")).toBeOnTheScreen();
@@ -39,18 +50,11 @@ describe("SignInScreen (S2)", () => {
     expect(screen.getAllByText("soon")).toHaveLength(2);
   });
 
-  it("masks the password field", async () => {
+  it("masks the password field and shows the design placeholders", async () => {
     await renderWithProviders(<SignInScreen />);
     expect(screen.getByLabelText("Password").props.secureTextEntry).toBe(true);
     expect(screen.getByLabelText("Email").props.secureTextEntry).toBeFalsy();
-  });
-
-  it("enters the tabs via replace('/trips') without any validation (AC-7)", async () => {
-    const user = userEvent.setup();
-    await renderWithProviders(<SignInScreen />);
-    await user.press(screen.getByRole("button", { name: "Sign in" }));
-    expect(mockRouter.replace).toHaveBeenCalledTimes(1);
-    expect(mockRouter.replace).toHaveBeenCalledWith("/trips");
+    expect(screen.getByLabelText("Email").props.placeholder).toBe("you@example.com");
   });
 
   it("goes to sign-up and forgot-password from the links", async () => {
@@ -62,38 +66,44 @@ describe("SignInScreen (S2)", () => {
     expect(mockRouter.push).toHaveBeenCalledWith("/forgot-password");
   });
 
-  it("social stubs are pressable and do nothing", async () => {
+  it("social stubs are pressable and do nothing (AC-49)", async () => {
     const user = userEvent.setup();
     await renderWithProviders(<SignInScreen />);
     await user.press(screen.getByTestId("social-apple"));
     await user.press(screen.getByTestId("social-google"));
     expectNoNavigation();
+    expectNoAuthCalls();
   });
 
   it("renders Russian strings for the ru locale", async () => {
     await renderWithProviders(<SignInScreen />, { locale: "ru" });
     expect(screen.getByText("С возвращением")).toBeOnTheScreen();
+    expect(screen.getByText("Войдите, чтобы синхронизировать поездки")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Email")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Пароль")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Войти" })).toBeOnTheScreen();
     expect(screen.getAllByText("скоро")).toHaveLength(2);
   });
 });
 
 describe("SignUpScreen (S3)", () => {
-  it("renders name, email and masked password fields", async () => {
+  it("renders name, email and masked password fields with the social stubs", async () => {
     await renderWithProviders(<SignUpScreen />);
     expect(screen.getByText("Create account")).toBeOnTheScreen();
+    expect(screen.getByText("One trip, every detail at hand")).toBeOnTheScreen();
     expect(screen.getByLabelText("Name")).toBeOnTheScreen();
     expect(screen.getByLabelText("Email")).toBeOnTheScreen();
     expect(screen.getByLabelText("Password").props.secureTextEntry).toBe(true);
     expect(screen.getAllByText("soon")).toHaveLength(2);
   });
 
-  it("enters the tabs via replace('/trips') without any validation (AC-7)", async () => {
+  it("social stubs are pressable and do nothing (AC-49)", async () => {
     const user = userEvent.setup();
     await renderWithProviders(<SignUpScreen />);
-    await user.press(screen.getByRole("button", { name: "Sign up" }));
-    expect(mockRouter.replace).toHaveBeenCalledTimes(1);
-    expect(mockRouter.replace).toHaveBeenCalledWith("/trips");
+    await user.press(screen.getByTestId("social-apple"));
+    await user.press(screen.getByTestId("social-google"));
+    expectNoNavigation();
+    expectNoAuthCalls();
   });
 
   it("opens the two legal documents from the consent links", async () => {
@@ -116,30 +126,5 @@ describe("SignUpScreen (S3)", () => {
     await renderWithProviders(<SignUpScreen />, { locale: "ru" });
     expect(screen.getByText("Условиями использования")).toBeOnTheScreen();
     expect(screen.getByText("Политикой конфиденциальности")).toBeOnTheScreen();
-  });
-});
-
-describe("ForgotPasswordScreen (S10)", () => {
-  it("renders title, description and the email field", async () => {
-    await renderWithProviders(<ForgotPasswordScreen />);
-    expect(screen.getByText("Reset password")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Email")).toBeOnTheScreen();
-  });
-
-  it("'Back' and 'Send link' both return to the previous screen", async () => {
-    const user = userEvent.setup();
-    await renderWithProviders(<ForgotPasswordScreen />);
-    await user.press(screen.getByRole("button", { name: "Back" }));
-    await user.press(screen.getByRole("button", { name: "Send link" }));
-    expect(mockRouter.back).toHaveBeenCalledTimes(2);
-  });
-
-  it("falls back to /sign-in when there is no history to go back to", async () => {
-    mockRouter.canGoBack.mockReturnValue(false);
-    const user = userEvent.setup();
-    await renderWithProviders(<ForgotPasswordScreen />);
-    await user.press(screen.getByRole("button", { name: "Send link" }));
-    expect(mockRouter.back).not.toHaveBeenCalled();
-    expect(mockRouter.replace).toHaveBeenCalledWith("/sign-in");
   });
 });
