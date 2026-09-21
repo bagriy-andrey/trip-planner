@@ -66,7 +66,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }
       if (!active) return;
 
-      const { data } = supabase.auth.onAuthStateChange((_event, session) => apply(session));
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
+        // supabase-js reports INITIAL_SESSION with a null session whenever its own load hits an
+        // error — including a refresh that failed only because the device is offline. That is
+        // not an answer: the getSession() result below decides (empty store -> signedOut,
+        // offline -> the stored session, AC-9).
+        if (event === "INITIAL_SESSION" && session === null) return;
+        apply(session);
+      });
       unsubscribe = () => data.subscription.unsubscribe();
       if (!active) {
         unsubscribe();

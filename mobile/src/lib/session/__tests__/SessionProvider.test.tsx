@@ -18,6 +18,8 @@ interface AuthMock {
   unsubscribe: jest.Mock;
   /** Delivers a backend auth event to the provider's subscription. */
   emit: (event: string, session: Session | null) => void;
+  /** Like the real client: on subscribe, report INITIAL_SESSION (null) from a microtask. */
+  initialNullOnSubscribe: { current: boolean };
 }
 
 interface StorageMock {
@@ -29,10 +31,13 @@ interface StorageMock {
 jest.mock("@/lib/supabase", () => {
   let listener: ((event: string, session: unknown) => void) | undefined;
   const unsubscribe = jest.fn();
+  const initialNullOnSubscribe = { current: false };
   const auth = {
     getSession: jest.fn(),
+    initialNullOnSubscribe,
     onAuthStateChange: jest.fn((callback: (event: string, session: unknown) => void) => {
       listener = callback;
+      if (initialNullOnSubscribe.current) queueMicrotask(() => callback("INITIAL_SESSION", null));
       return { data: { subscription: { unsubscribe } } };
     }),
     startAutoRefresh: jest.fn(() => Promise.resolve()),
@@ -136,6 +141,7 @@ function setCurrentAppState(state: AppStateStatus) {
 beforeEach(() => {
   latest = undefined;
   jest.clearAllMocks();
+  auth.initialNullOnSubscribe.current = false;
   auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
   storage.ensureFreshInstallCleared.mockResolvedValue(false);
   storage.clearStoredSession.mockResolvedValue(undefined);
@@ -236,6 +242,8 @@ describe("a rejected or unreadable session (AC-3, AC-4)", () => {
   const OFFLINE = { name: "AuthRetryableFetchError", message: "Network request failed", status: 0 };
 
   it("opens signed in from the stored session when the refresh failed only because the device is offline (AC-9)", async () => {
+    // The real client ALSO reports INITIAL_SESSION(null) here; that must not settle the state.
+    auth.initialNullOnSubscribe.current = true;
     auth.getSession.mockResolvedValue({ data: { session: null }, error: OFFLINE });
     storage.readStoredSessionUser.mockResolvedValue({ user: fakeSession().user });
     await renderProvider();
@@ -248,11 +256,19 @@ describe("a rejected or unreadable session (AC-3, AC-4)", () => {
   });
 
   it("goes signedOut, without wiping anything, when offline and nothing usable is stored", async () => {
+    auth.initialNullOnSubscribe.current = true;
     auth.getSession.mockResolvedValue({ data: { session: null }, error: OFFLINE });
     storage.readStoredSessionUser.mockResolvedValue(null);
     await renderProvider();
     expect(probeText()).toBe("signedOut|-|false");
     expect(storage.clearStoredSession).not.toHaveBeenCalled();
+  });
+
+  it("an empty store with the client's INITIAL_SESSION(null) still ends signedOut (AC-3)", async () => {
+    auth.initialNullOnSubscribe.current = true;
+    auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
+    await renderProvider();
+    expect(probeText()).toBe("signedOut|-|false");
   });
 
   it("does not trust a stored user that has no id", async () => {
