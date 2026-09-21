@@ -4,6 +4,7 @@
 - Scope: Expo SDK 57 skeleton (`mobile/`, PLAN-01 Step 10), iOS.
 - Result: `iosPrivacyManifests` in `mobile/app.privacy.ts` mirrors the union below into `ios.privacyManifests`.
   Apple does not reliably parse manifests of statically linked pods, so the app-level manifest repeats them.
+- Latest entry: 2026-09-21, SPEC-02 email auth (`expo-secure-store`, `expo-crypto`, `aes-js`) - see "Audit 2026-09-21" at the end. Union unchanged.
 - Re-run on every Expo SDK bump and on every new native dependency (a new native module also means a new dev-client build).
 
 ## How it was done
@@ -65,3 +66,23 @@ Two packages touch `UserDefaults` and ship no manifest:
 
 - The app's own `NSPrivacyCollectedDataTypes` / `NSPrivacyTracking` declarations are not set here (skeleton has no data collection); decide in the release spec together with the App Store privacy questionnaire.
 - The `Info.plist` contains no `NS*UsageDescription` (verified via `npx expo config --type public`); the skeleton requests no permissions.
+
+## Audit 2026-09-21 (SPEC-02 email auth, PLAN-02 Step 5)
+
+Scope: the native/JS dependencies added by SPEC-02 Step 1. Same procedure as above (pnpm store walked by real paths under `node_modules/.pnpm`; linked pods from `npx expo-modules-autolinking resolve --platform apple --json`; iOS source grep for the required-reason symbols listed in step 3; podspec check).
+
+| Package | Version | Kind | Linked pod | `PrivacyInfo.xcprivacy` | Required-reason API in iOS sources | Verdict |
+|---|---|---|---|---|---|---|
+| `expo-secure-store` | 57.0.4 | native (Expo module) | `ExpoSecureStore`, `debugOnly: false` | none (no `*.xcprivacy` anywhere in the package, no `resource_bundles` in the podspec) | none (Keychain access via Security framework is not a required-reason API) | no manifest needed |
+| `expo-crypto` | 57.0.3 | native (Expo module) | `ExpoCrypto`, `debugOnly: false` | none (same checks) | none (CryptoKit digest/AES, no file/defaults/uptime/disk APIs) | no manifest needed |
+| `aes-js` | 3.1.2 | pure JS | none (not linked) | not applicable | not applicable | no manifest needed |
+
+- Store contents: one copy each (`expo-secure-store@57.0.4_expo@57.0.24`, `expo-crypto@57.0.3_expo@57.0.24`, `aes-js@3.1.2`). The set of `PrivacyInfo.xcprivacy` files in the store is the same as in the 2026-09-19 audit (no new package brings one).
+- Result: no new `NSPrivacyAccessedAPITypes` categories or reason codes. `iosPrivacyManifests` in `mobile/app.privacy.ts` is unchanged apart from a comment recording this audit; existing entries (FileTimestamp C617.1/0A2A.1/3B52.1, UserDefaults CA92.1, SystemBootTime 35F9.1, DiskSpace E174.1/85F4.1) are kept.
+- Stop-signal check: neither new native package touches a required-reason API without a manifest. No new stop-signal. The two `debugOnly` findings from 2026-09-19 (`expo-dev-launcher`, `expo-dev-menu`) still apply and are unchanged.
+- Permissions: no `NS*UsageDescription` is added (SecureStore/Crypto request no system permission); `ios.infoPlist` stays empty of them.
+- The new modules are native, so the dev client must be rebuilt once (`npx expo run:ios`).
+
+### Data collection (App Store Connect declaration)
+
+From SPEC-02 the app collects email and display name, linked to the user's identity (purpose: authentication). The App Store Connect data-collection declaration (App Privacy questionnaire; and `NSPrivacyCollectedDataTypes` if declared in the app manifest) is therefore no longer empty. This is an obligation of the release spec; the open item above ("skeleton has no data collection") is superseded by this line. `NSPrivacyTracking` stays `false`.
