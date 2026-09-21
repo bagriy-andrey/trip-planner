@@ -21,12 +21,13 @@ const path = jest.requireActual<NodePath>("node:path");
 
 const APP_DIR = path.resolve(__dirname, "../app");
 
-// SPEC-01 "Карта маршрутов (контракт)" + the two service routes.
+// SPEC-01 "Карта маршрутов (контракт)" + `/reset-password` (SPEC-02 S10b) + the two service routes.
 const SPEC_ROUTES = [
   "/onboarding",
   "/sign-in",
   "/sign-up",
   "/forgot-password",
+  "/reset-password",
   "/legal/terms",
   "/legal/privacy",
   "/trips",
@@ -84,6 +85,18 @@ describe("route map contract (AC-23)", () => {
   it("has no two files resolving to the same route", () => {
     const routes = routeFiles.map(toRoute);
     expect(new Set(routes).size).toBe(routes.length);
+  });
+
+  it("auth routes have no dynamic segments and no params (SPEC-02 AC-39)", () => {
+    // The email between S10 and S10b travels through the flow state, never the URL.
+    const authRoutes = ["/sign-in", "/sign-up", "/forgot-password", "/reset-password"];
+    const routes = routeFiles.map(toRoute);
+    for (const route of authRoutes) expect(routes).toContain(route);
+    expect(authRoutes.filter((route) => /[[\]*]/.test(route))).toEqual([]);
+    for (const file of ["sign-in.tsx", "sign-up.tsx", "forgot-password.tsx", "reset-password.tsx"]) {
+      const source = fs.readFileSync(path.join(APP_DIR, file), "utf8");
+      expect(source).not.toMatch(/useLocalSearchParams|useGlobalSearchParams|searchParams/);
+    }
   });
 
   it("keeps every route file thin (layouts own providers/options and are exempt)", () => {

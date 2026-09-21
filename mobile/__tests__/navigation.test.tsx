@@ -386,7 +386,7 @@ describe("gating of the tabs and trips/* without a session (SPEC-02 AC-20)", () 
 });
 
 describe("gating of the auth screens with a session (SPEC-02 AC-21)", () => {
-  it.each(["/onboarding", "/sign-in", "/sign-up", "/forgot-password"])(
+  it.each(["/onboarding", "/sign-in", "/sign-up", "/forgot-password", "/reset-password"])(
     "opening %s while signed in leads to /trips",
     async (url) => {
       const { getRouterState } = await renderApp(url, signedIn);
