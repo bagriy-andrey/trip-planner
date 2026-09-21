@@ -1,0 +1,23 @@
+{
+  "name": "@tripplanner/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zod contracts and pure domain logic shared by mobile, the future web and Edge Functions. Exports TypeScript source (no build step).",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.1"
+  }
+}

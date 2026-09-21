@@ -39,3 +39,46 @@ jest.mock("expo-system-ui", () => ({
   setBackgroundColorAsync: jest.fn(() => Promise.resolve()),
   getBackgroundColorAsync: jest.fn(() => Promise.resolve(null)),
 }));
+
+// In-memory expo-secure-store. Cleared before every test so a stored AES key
+// never leaks between tests. Tests may seed/inspect it via the mock's helpers.
+jest.mock("expo-secure-store", () => {
+  const store = new Map<string, string>();
+  return {
+    __esModule: true,
+    WHEN_UNLOCKED_THIS_DEVICE_ONLY: 6,
+    AFTER_FIRST_UNLOCK: 0,
+    AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: 1,
+    WHEN_UNLOCKED: 5,
+    isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+    getItemAsync: jest.fn((key: string) => Promise.resolve(store.get(key) ?? null)),
+    setItemAsync: jest.fn((key: string, value: string) => {
+      store.set(key, value);
+      return Promise.resolve();
+    }),
+    deleteItemAsync: jest.fn((key: string) => {
+      store.delete(key);
+      return Promise.resolve();
+    }),
+    __clearSecureStore: () => store.clear(),
+  };
+});
+
+// Deterministic "random" bytes: tests must not depend on randomness.
+jest.mock("expo-crypto", () => {
+  const getRandomBytes = (byteCount: number) =>
+    Uint8Array.from({ length: byteCount }, (_, i) => (i * 7 + 1) % 256);
+  return {
+    __esModule: true,
+    getRandomBytes: jest.fn(getRandomBytes),
+    getRandomBytesAsync: jest.fn((byteCount: number) =>
+      Promise.resolve(getRandomBytes(byteCount)),
+    ),
+  };
+});
+
+beforeEach(() => {
+  (
+    jest.requireMock("expo-secure-store") as { __clearSecureStore: () => void }
+  ).__clearSecureStore();
+});
