@@ -66,14 +66,14 @@ describe("toTripCardData", () => {
 
 describe("desaturate", () => {
   it("returns the colour at full saturation and grey at zero", () => {
-    expect(desaturate("#33384F", 1)).toBe("rgb(51, 56, 79)");
-    const grey = /rgb\((\d+), (\d+), (\d+)\)/.exec(desaturate("#8C4A34", 0));
+    expect(desaturate(coverColors[2], 1)).toBe(coverColors[2].toLowerCase());
+    const grey = /^#(..)(..)(..)$/.exec(desaturate(coverColors[1], 0));
     expect(grey?.[1]).toBe(grey?.[2]);
     expect(grey?.[2]).toBe(grey?.[3]);
   });
 
   it("leaves something that is not a hex colour alone", () => {
-    expect(desaturate("rgba(0,0,0,0.5)", 0.5)).toBe("rgba(0,0,0,0.5)");
+    expect(desaturate("transparent", 0.5)).toBe("transparent");
   });
 });
 

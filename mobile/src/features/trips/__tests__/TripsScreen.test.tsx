@@ -45,12 +45,17 @@ const SIGNED_IN: RenderWithProvidersOptions = { session: { user: {} } };
 // arrives; letting it run inside `act` keeps that update from landing outside of it.
 const LIST_BATCH_MS = 60;
 
-async function renderTrips(data: readonly Trip[], options: RenderWithProvidersOptions = SIGNED_IN) {
-  listTripsMock.mockResolvedValue({ ok: true, data });
-  const result = await renderWithProviders(<TripsScreen />, options);
+async function settle() {
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, LIST_BATCH_MS));
   });
+}
+
+async function renderTrips(data: readonly Trip[], options: RenderWithProvidersOptions = SIGNED_IN) {
+  listTripsMock.mockResolvedValue({ ok: true, data });
+  const result = await renderWithProviders(<TripsScreen />, options);
+  await waitFor(() => expect(result.queryClient.isFetching()).toBe(0));
+  await settle();
   return result;
 }
 
@@ -179,6 +184,7 @@ describe("TripsScreen (S4) — states", () => {
   it("shows skeleton cards of the card's height while loading, and no spinner (AC-39)", async () => {
     listTripsMock.mockReturnValue(new Promise(() => undefined));
     await renderWithProviders(<TripsScreen />, SIGNED_IN);
+    await settle();
     const skeletons = await screen.findAllByTestId("trips-skeleton", { includeHiddenElements: true });
     expect(skeletons.length).toBeGreaterThan(0);
     for (const skeleton of skeletons) {
@@ -205,6 +211,7 @@ describe("TripsScreen (S4) — states", () => {
     const user = userEvent.setup();
     listTripsMock.mockResolvedValueOnce({ ok: false, kind: "offline" });
     await renderWithProviders(<TripsScreen />, SIGNED_IN);
+    await settle();
     const error = await screen.findByTestId("trips-error");
     expect(within(error).getByText("Could not load your trips")).toBeOnTheScreen();
     expect(within(error).getByText("No connection. Check your internet and try again")).toBeOnTheScreen();
@@ -217,11 +224,13 @@ describe("TripsScreen (S4) — states", () => {
     expect(await screen.findByTestId("trip-card-soon")).toBeOnTheScreen();
     expect(listTripsMock).toHaveBeenCalledTimes(2);
     expect(screen.queryByTestId("trips-error")).not.toBeOnTheScreen();
+    await settle();
   });
 
   it("maps each failure kind to its own message, an unknown one to the generic text", async () => {
     listTripsMock.mockResolvedValue({ ok: false, kind: "timeout" });
     await renderWithProviders(<TripsScreen />, SIGNED_IN);
+    await settle();
     expect(await screen.findByText("The server is taking too long. Try again")).toBeOnTheScreen();
   });
 });
@@ -256,6 +265,7 @@ describe("TripsScreen (S4) — announcements (AC-71)", () => {
   it("announces a failed load", async () => {
     listTripsMock.mockResolvedValue({ ok: false, kind: "unknown" });
     await renderWithProviders(<TripsScreen />, SIGNED_IN);
+    await settle();
     await screen.findByTestId("trips-error");
     expect(announce).toHaveBeenCalledTimes(1);
     expect(announce).toHaveBeenCalledWith("Could not load your trips");
@@ -302,6 +312,7 @@ describe("TripsScreen (S4) — interaction", () => {
   it("gives the Retry action a label, the button role and a 44pt target (AC-70)", async () => {
     listTripsMock.mockResolvedValue({ ok: false, kind: "unknown" });
     await renderWithProviders(<TripsScreen />, SIGNED_IN);
+    await settle();
     const retry = await screen.findByRole("button", { name: "Retry" });
     expect(StyleSheet.flatten(retry.props.style).minHeight).toBeGreaterThanOrEqual(layout.minTouch);
   });

@@ -46,12 +46,17 @@ const SIGNED_IN: RenderWithProvidersOptions = { session: { user: {} } };
 // See TripsScreen.test: let the list's own batching timer run inside `act`.
 const LIST_BATCH_MS = 60;
 
-async function renderHistory(data: readonly Trip[], options: RenderWithProvidersOptions = SIGNED_IN) {
-  listTripsMock.mockResolvedValue({ ok: true, data });
-  const result = await renderWithProviders(<HistoryScreen />, options);
+async function settle() {
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, LIST_BATCH_MS));
   });
+}
+
+async function renderHistory(data: readonly Trip[], options: RenderWithProvidersOptions = SIGNED_IN) {
+  listTripsMock.mockResolvedValue({ ok: true, data });
+  const result = await renderWithProviders(<HistoryScreen />, options);
+  await waitFor(() => expect(result.queryClient.isFetching()).toBe(0));
+  await settle();
   return result;
 }
 
@@ -113,15 +118,14 @@ describe("HistoryScreen (S5) — list", () => {
     expect(style.opacity).toBeUndefined();
     // Desaturated: a different colour than the palette entry, and less saturated.
     expect(coverColors).not.toContain(style.backgroundColor);
-    const channels = /rgb\((\d+), (\d+), (\d+)\)/.exec(String(style.backgroundColor));
-    expect(channels).not.toBeNull();
-    const spread = (values: number[]) => Math.max(...values) - Math.min(...values);
-    const muted = spread([Number(channels?.[1]), Number(channels?.[2]), Number(channels?.[3])]);
-    const original = coverColors.map((hex) => {
-      const rgb = [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16));
-      return spread(rgb);
-    });
-    expect(muted).toBeLessThan(Math.max(...original));
+    const spreadOf = (hex: string) => {
+      const channels = [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16));
+      return Math.max(...channels) - Math.min(...channels);
+    };
+    // Same hue, less chroma: the muted backing is closer to grey than the palette entry it came from.
+    expect(style.backgroundColor).toMatch(/^#[0-9a-f]{6}$/);
+    const lessChroma = coverColors.filter((hex) => spreadOf(String(style.backgroundColor)) < spreadOf(hex));
+    expect(lessChroma.length).toBeGreaterThan(0);
     expect(coverMuteSaturation).toBeLessThan(1);
     // The date text keeps its own colour token — nothing dims it.
     expect(within(card).getByText(/^Aug 1/)).toHaveStyle({ color: darkTokens.textSecondary });
@@ -133,9 +137,7 @@ describe("HistoryScreen (S5) — list", () => {
     const card = await screen.findByTestId("trip-card-soon");
     const color = StyleSheet.flatten(within(card).getByTestId("trip-cover-backing").props.style).backgroundColor;
     expect(coverColors).toContain(color);
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, LIST_BATCH_MS));
-    });
+    await settle();
   });
 });
 
@@ -143,6 +145,7 @@ describe("HistoryScreen (S5) — states", () => {
   it("shows skeletons while loading and no spinner-only screen (AC-39)", async () => {
     listTripsMock.mockReturnValue(new Promise(() => undefined));
     await renderWithProviders(<HistoryScreen />, SIGNED_IN);
+    await settle();
     const skeletons = await screen.findAllByTestId("history-skeleton", { includeHiddenElements: true });
     expect(skeletons.length).toBeGreaterThan(0);
     for (const skeleton of skeletons) {
@@ -177,6 +180,7 @@ describe("HistoryScreen (S5) — states", () => {
     const user = userEvent.setup();
     listTripsMock.mockResolvedValueOnce({ ok: false, kind: "unknown" });
     await renderWithProviders(<HistoryScreen />, SIGNED_IN);
+    await settle();
     const error = await screen.findByTestId("history-error");
     expect(within(error).getByText("Could not load your history")).toBeOnTheScreen();
     expect(within(error).getByText("Something went wrong. Try again")).toBeOnTheScreen();
@@ -187,9 +191,7 @@ describe("HistoryScreen (S5) — states", () => {
     await user.press(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByTestId("trip-card-rome")).toBeOnTheScreen();
     expect(listTripsMock).toHaveBeenCalledTimes(2);
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, LIST_BATCH_MS));
-    });
+    await settle();
   });
 });
 
@@ -216,6 +218,7 @@ describe("HistoryScreen (S5) — announcements (AC-71)", () => {
   it("announces a failed load", async () => {
     listTripsMock.mockResolvedValue({ ok: false, kind: "offline" });
     await renderWithProviders(<HistoryScreen />, SIGNED_IN);
+    await settle();
     await screen.findByTestId("history-error");
     await waitFor(() => expect(announce).toHaveBeenCalledWith("Could not load your history"));
   });
