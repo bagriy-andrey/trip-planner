@@ -77,6 +77,13 @@ jest.mock("expo-crypto", () => {
   };
 });
 
+// `@/lib/supabase` throws a ConfigError at import when the two public settings are unset
+// (AC-47), and anything that renders the root layout imports it. Obviously fake, non-secret
+// defaults keep those suites loadable without a `.env`; a value already set (CI, a developer's
+// shell) wins, and tests that need the "unset" behaviour clear the variables themselves.
+process.env.EXPO_PUBLIC_SUPABASE_URL ??= "http://localhost:54321";
+process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??= "test-anon-key-not-a-secret";
+
 beforeEach(() => {
   (
     jest.requireMock("expo-secure-store") as { __clearSecureStore: () => void }
