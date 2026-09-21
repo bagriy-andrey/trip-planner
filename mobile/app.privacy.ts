@@ -19,6 +19,11 @@ type IosPrivacyManifests = NonNullable<
 //   expo-system-ui.
 // - SystemBootTime 35F9.1: react-native (React-timing), boost.
 // - DiskSpace: E174.1 + 85F4.1 expo-file-system 57.0.7.
+//
+// Re-audit 2026-09-21 (SPEC-02): expo-secure-store 57.0.4 and expo-crypto 57.0.3
+// ship NO PrivacyInfo.xcprivacy and their iOS sources touch no required-reason
+// API (Keychain / CryptoKit are not on Apple's list), so the union above is
+// unchanged. aes-js 3.1.2 is pure JS (no manifest). No NS*UsageDescription.
 export const iosPrivacyManifests: IosPrivacyManifests = {
   NSPrivacyAccessedAPITypes: [
     {
