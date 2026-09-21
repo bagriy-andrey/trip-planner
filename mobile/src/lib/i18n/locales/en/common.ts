@@ -4,6 +4,7 @@ export const common = {
     done: "Done",
     save: "Save",
     back: "Back",
+    retry: "Retry",
   },
   tabs: {
     trips: "Trips",
@@ -22,6 +23,12 @@ export const common = {
     inDays_one: "in {{count}} day",
     inDays_other: "in {{count}} days",
     draft: "plan · no date yet",
+    plan: "plan",
+    archived: "archived",
+  },
+  dates: {
+    notChosen: "no date chosen",
+    line: "{{range}} · {{nights}}",
   },
   nights_one: "{{count}} night",
   nights_other: "{{count}} nights",

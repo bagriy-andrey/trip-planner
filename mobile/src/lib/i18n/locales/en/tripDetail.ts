@@ -30,4 +30,31 @@ export const tripDetail = {
     emptyText: "Add a car rental to keep the booking next to your trip.",
     addAction: "Add car",
   },
+  menu: {
+    edit: "Edit",
+    archive: "Move to archive",
+    unarchive: "Restore from archive",
+    delete: "Delete permanently",
+  },
+  deleteConfirm: {
+    title: "Delete this trip permanently?",
+    message: "The trip \"{{name}}\" will be deleted and can't be restored.",
+    confirm: "Delete permanently",
+  },
+  announce: {
+    archived: "Trip moved to the archive",
+    unarchived: "Trip restored from the archive",
+    deleted: "Trip deleted",
+  },
+  notFound: {
+    title: "Trip not found",
+    text: "It may have been deleted, or the link is out of date.",
+    action: "Back to trips",
+  },
+  loadError: "Could not load the trip",
+  empty: {
+    flight: "Add flight",
+    hotel: "Add hotel",
+    car: "Add car",
+  },
 };

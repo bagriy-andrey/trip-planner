@@ -1,9 +1,12 @@
 import {
+  formatCalendarDate,
+  formatCalendarRange,
   formatDateRange,
   formatNights,
   formatRelativeDays,
   formatShortDate,
   formatTime,
+  formatTripDateLine,
 } from "../format";
 
 const utc = (iso: string) => new Date(iso);
@@ -111,5 +114,96 @@ describe("formatRelativeDays", () => {
     expect(formatRelativeDays("en", NOW, NOW)).toBe("today");
     expect(formatRelativeDays("ru", inDays(-1), NOW)).toBe("завершено");
     expect(formatRelativeDays("en", inDays(-30), NOW)).toBe("completed");
+  });
+});
+
+// Spaces inside Intl output are thin/no-break: normalise before comparing (mobile/insights.md).
+const plain = (value: string) => value.replace(/\s/g, " ");
+
+describe("calendar dates", () => {
+  it("formats one date per locale, year included", () => {
+    expect(plain(formatCalendarDate("en", "2026-09-12"))).toBe("Sep 12, 2026");
+    expect(plain(formatCalendarDate("ru", "2026-09-12"))).toMatch(/^12 сент\.? 2026/);
+  });
+
+  it("formats a same-month range", () => {
+    expect(plain(formatCalendarRange("en", "2026-09-12", "2026-09-18"))).toMatch(/^Sep 12 [–-] 18, 2026$/);
+    expect(plain(formatCalendarRange("ru", "2026-09-12", "2026-09-18"))).toMatch(/^12 ?[–-] ?18 сент\.? 2026/);
+  });
+
+  it("keeps both months across a month rollover", () => {
+    expect(plain(formatCalendarRange("en", "2026-09-28", "2026-10-03"))).toMatch(/^Sep 28 [–-] Oct 3, 2026$/);
+    expect(plain(formatCalendarRange("ru", "2026-09-28", "2026-10-03"))).toMatch(
+      /^28 сент\.? ?[–-] ?3 окт\.? 2026/,
+    );
+  });
+
+  it("renders February 29 of a leap year and rejects it in a common year", () => {
+    expect(plain(formatCalendarDate("en", "2028-02-29"))).toBe("Feb 29, 2028");
+    expect(() => formatCalendarDate("en", "2027-02-29")).toThrow(RangeError);
+  });
+
+  it.each(["2026-9-12", "2026-09-12T00:00:00Z", "12.09.2026", "", "2026-13-01", "2026-04-31"])(
+    "rejects the malformed value %j",
+    (value) => {
+      expect(() => formatCalendarDate("en", value)).toThrow(RangeError);
+    },
+  );
+
+  describe("formatTripDateLine", () => {
+    it.each([
+      ["en", "2026-09-12", "2026-09-18", /^Sep 12 [–-] 18, 2026 · 6 nights$/],
+      ["ru", "2026-09-12", "2026-09-18", /^12 ?[–-] ?18 сент\.? 2026.* · 6 ночей$/],
+      // Month rollover.
+      ["en", "2026-09-28", "2026-10-03", /^Sep 28 [–-] Oct 3, 2026 · 5 nights$/],
+      ["ru", "2026-09-28", "2026-10-03", /· 5 ночей$/],
+      // Across February 29 of a leap year: 28 Feb -> 2 Mar is 3 nights.
+      ["en", "2028-02-28", "2028-03-02", /^Feb 28 [–-] Mar 2, 2028 · 3 nights$/],
+      ["ru", "2028-02-28", "2028-03-02", /· 3 ночи$/],
+      // Same day: zero nights, a single date.
+      ["en", "2026-09-12", "2026-09-12", /^Sep 12, 2026 · 0 nights$/],
+      ["ru", "2026-09-12", "2026-09-12", /^12 сент\.? 2026.* · 0 ночей$/],
+      ["en", "2026-09-12", "2026-09-13", /· 1 night$/],
+      ["ru", "2026-09-12", "2026-09-13", /· 1 ночь$/],
+      // Year rollover.
+      ["en", "2026-12-30", "2027-01-02", /· 3 nights$/],
+    ] as const)("%s %s -> %s", (locale, start, end, expected) => {
+      expect(plain(formatTripDateLine(locale, start, end))).toMatch(expected);
+    });
+  });
+
+  // AC-72/AC-74: a calendar date must not move a day, whatever the device zone.
+  describe("does not shift the day in a negative-offset time zone", () => {
+    // `process.env.TZ` set inside a jest worker does not reach the real process, so the device
+    // zone is simulated where it matters: an `Intl.DateTimeFormat` built without an explicit
+    // `timeZone` falls back to Los Angeles instead of the machine's zone. An implementation that
+    // forgot `timeZone: "UTC"` would then render the previous day.
+    const RealDateTimeFormat = Intl.DateTimeFormat;
+    beforeAll(() => {
+      jest.spyOn(Intl, "DateTimeFormat").mockImplementation(
+        (locales?: ConstructorParameters<typeof Intl.DateTimeFormat>[0], options?: Intl.DateTimeFormatOptions) =>
+          new RealDateTimeFormat(locales, { timeZone: "America/Los_Angeles", ...options }),
+      );
+    });
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it("really simulates a zone behind UTC (precondition)", () => {
+      const utcMidnight = new Date(Date.UTC(2026, 8, 12));
+      // The naive rendering of a UTC-midnight date is exactly what would go wrong here.
+      expect(new Intl.DateTimeFormat("en", { day: "numeric", month: "short" }).format(utcMidnight)).toBe("Sep 11");
+    });
+
+    it("keeps the typed day", () => {
+      expect(plain(formatCalendarDate("en", "2026-09-12"))).toBe("Sep 12, 2026");
+      expect(plain(formatCalendarRange("en", "2026-09-12", "2026-09-18"))).toMatch(/^Sep 12 [–-] 18, 2026$/);
+      expect(plain(formatTripDateLine("en", "2026-03-08", "2026-03-09"))).toMatch(/^Mar 8 [–-] 9, 2026 · 1 night$/);
+    });
+
+    it("counts nights over a DST change without an off-by-one", () => {
+      // US DST began 2026-03-08 (a 23-hour local day): still exactly 2 nights.
+      expect(formatTripDateLine("en", "2026-03-07", "2026-03-09")).toMatch(/· 2 nights$/);
+    });
   });
 });
