@@ -156,3 +156,24 @@ export const sessionSecureStorage: SessionStorage = {
     await clearStoredSession();
   },
 };
+
+/**
+ * The user of the locally stored session, for an offline cold start (AC-9): when the access
+ * token has expired and the refresh cannot reach the network, the session is still good and the
+ * app must open signed in. Local only — never touches the network, never throws. `null` when
+ * there is no readable session or it carries no refresh token (nothing could ever renew it).
+ * The user is untrusted JSON: the caller validates its shape.
+ */
+export async function readStoredSessionUser(): Promise<{ user: unknown } | null> {
+  const raw = await sessionSecureStorage.getItem(SESSION_KEY);
+  if (raw === null) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) return null;
+    if (!("refresh_token" in parsed) || typeof parsed.refresh_token !== "string") return null;
+    if (parsed.refresh_token === "" || !("user" in parsed)) return null;
+    return { user: parsed.user };
+  } catch {
+    return null;
+  }
+}

@@ -23,6 +23,7 @@ interface AuthMock {
 interface StorageMock {
   ensureFreshInstallCleared: jest.Mock;
   clearStoredSession: jest.Mock;
+  readStoredSessionUser: jest.Mock;
 }
 
 jest.mock("@/lib/supabase", () => {
@@ -46,6 +47,7 @@ jest.mock("@/lib/storage", () => ({
   __esModule: true,
   ensureFreshInstallCleared: jest.fn(() => Promise.resolve(false)),
   clearStoredSession: jest.fn(() => Promise.resolve()),
+  readStoredSessionUser: jest.fn(() => Promise.resolve(null)),
 }));
 
 const auth = (jest.requireMock("@/lib/supabase") as { __auth: AuthMock }).__auth;
@@ -137,6 +139,7 @@ beforeEach(() => {
   auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
   storage.ensureFreshInstallCleared.mockResolvedValue(false);
   storage.clearStoredSession.mockResolvedValue(undefined);
+  storage.readStoredSessionUser.mockResolvedValue(null);
 });
 
 afterEach(() => {
@@ -230,18 +233,33 @@ describe("a rejected or unreadable session (AC-3, AC-4)", () => {
     expect(storage.clearStoredSession).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps the stored session when the refresh failed only because the device is offline", async () => {
-    auth.getSession.mockResolvedValue({
-      data: { session: null },
-      error: { name: "AuthRetryableFetchError", message: "Network request failed", status: 0 },
-    });
+  const OFFLINE = { name: "AuthRetryableFetchError", message: "Network request failed", status: 0 };
+
+  it("opens signed in from the stored session when the refresh failed only because the device is offline (AC-9)", async () => {
+    auth.getSession.mockResolvedValue({ data: { session: null }, error: OFFLINE });
+    storage.readStoredSessionUser.mockResolvedValue({ user: fakeSession().user });
+    await renderProvider();
+    expect(probeText()).toBe("signedIn|anna@example.com|true");
+    expect(storage.clearStoredSession).not.toHaveBeenCalled();
+
+    // Back online, the client's own refresh may still be rejected by the server: that ends it.
+    act(() => auth.emit("SIGNED_OUT", null));
+    expect(probeText()).toBe("signedOut|-|false");
+  });
+
+  it("goes signedOut, without wiping anything, when offline and nothing usable is stored", async () => {
+    auth.getSession.mockResolvedValue({ data: { session: null }, error: OFFLINE });
+    storage.readStoredSessionUser.mockResolvedValue(null);
     await renderProvider();
     expect(probeText()).toBe("signedOut|-|false");
     expect(storage.clearStoredSession).not.toHaveBeenCalled();
+  });
 
-    // Once online, the client's own refresh signs the user in through the subscription.
-    act(() => auth.emit("TOKEN_REFRESHED", fakeSession()));
-    expect(probeText()).toBe("signedIn|anna@example.com|true");
+  it("does not trust a stored user that has no id", async () => {
+    auth.getSession.mockResolvedValue({ data: { session: null }, error: OFFLINE });
+    storage.readStoredSessionUser.mockResolvedValue({ user: { email: "x@y.z" } });
+    await renderProvider();
+    expect(probeText()).toBe("signedOut|-|false");
   });
 });
 

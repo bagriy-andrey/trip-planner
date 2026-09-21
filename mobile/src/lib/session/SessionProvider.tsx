@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { AppState } from "react-native";
 
-import { clearStoredSession, ensureFreshInstallCleared } from "@/lib/storage";
+import { clearStoredSession, ensureFreshInstallCleared, readStoredSessionUser } from "@/lib/storage";
 import { supabase } from "@/lib/supabase";
 import type { Session } from "@/lib/supabase";
 
@@ -15,8 +15,9 @@ import type { SessionContextValue, SessionStatus, SessionUser } from "./useSessi
 //   first read), then `getSession()`, which reads the encrypted store and only touches the
 //   network when the access token has expired.
 // - Any unreadable / rejected session means "signed out", silently, with the leftovers wiped
-//   (AC-3, AC-4). An offline failure to refresh is NOT a rejection: the stored session stays,
-//   and a later refresh event signs the user in.
+//   (AC-3, AC-4). An offline failure to refresh is NOT a rejection: the stored session stays and
+//   the app opens signed in from it (AC-9); auto-refresh retries once the network is back, and a
+//   server rejection then ends the session through the auth-event subscription.
 // - The subscription callback only sets state — supabase-js forbids awaiting its own methods
 //   inside it.
 // - Token auto-refresh runs only while the app is in the foreground (AC-5).
@@ -30,6 +31,10 @@ const RESTORING: SessionState = { status: "restoring", user: null };
 
 function stateOf(session: Session | null): SessionState {
   return session === null ? { status: "signedOut", user: null } : { status: "signedIn", user: session.user };
+}
+
+function isUser(value: unknown): value is SessionUser {
+  return typeof value === "object" && value !== null && "id" in value && typeof value.id === "string";
 }
 
 /** A transient connection failure while refreshing: the stored session is still good. */
@@ -46,11 +51,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     let settled = false;
     let unsubscribe: (() => void) | undefined;
 
-    const apply = (session: Session | null) => {
+    const applyState = (next: SessionState) => {
       if (!active) return;
       settled = true;
-      setState(stateOf(session));
+      setState(next);
     };
+    const apply = (session: Session | null) => applyState(stateOf(session));
 
     const restore = async () => {
       try {
@@ -69,7 +75,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
       try {
         const { data: current, error } = await supabase.auth.getSession();
-        if (error && !isOfflineRefreshFailure(error)) {
+        if (error && isOfflineRefreshFailure(error)) {
+          // Offline with an expired access token: the stored session is still good (AC-9).
+          const stored = await readStoredSessionUser();
+          if (!settled) {
+            applyState(stored !== null && isUser(stored.user) ? { status: "signedIn", user: stored.user } : stateOf(null));
+          }
+          return;
+        }
+        if (error) {
           // Refresh token expired / revoked / unreadable: drop the local remnants (AC-4).
           await clearStoredSession();
         }

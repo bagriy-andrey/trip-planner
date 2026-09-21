@@ -3,7 +3,7 @@ import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 
 import { SECURE_STORE_KEYS, STORAGE_KEYS } from "../keys";
-import { clearStoredSession, sessionSecureStorage } from "../sessionSecureStorage";
+import { clearStoredSession, readStoredSessionUser, sessionSecureStorage } from "../sessionSecureStorage";
 
 const SESSION_KEY = STORAGE_KEYS.session.key;
 const AES_KEY_NAME = SECURE_STORE_KEYS.sessionEncryptionKey;
@@ -199,5 +199,30 @@ describe("sessionSecureStorage: restore needs no network (AC-9)", () => {
     } finally {
       globalThis.fetch = original;
     }
+  });
+});
+
+describe("readStoredSessionUser: offline cold start (AC-9)", () => {
+  const KEY = STORAGE_KEYS.session.key;
+
+  it("returns the stored user of a session that has a refresh token", async () => {
+    const user = { id: "user-1", email: "anna@example.com" };
+    await sessionSecureStorage.setItem(KEY, JSON.stringify({ access_token: "a", refresh_token: "r", user }));
+    await expect(readStoredSessionUser()).resolves.toEqual({ user });
+  });
+
+  it("returns null for an empty store", async () => {
+    await expect(readStoredSessionUser()).resolves.toBeNull();
+  });
+
+  it("returns null without a refresh token, or for non-JSON / non-object values", async () => {
+    await sessionSecureStorage.setItem(KEY, JSON.stringify({ access_token: "a", user: { id: "u" } }));
+    await expect(readStoredSessionUser()).resolves.toBeNull();
+    await sessionSecureStorage.setItem(KEY, JSON.stringify({ refresh_token: "", user: { id: "u" } }));
+    await expect(readStoredSessionUser()).resolves.toBeNull();
+    await sessionSecureStorage.setItem(KEY, "not json");
+    await expect(readStoredSessionUser()).resolves.toBeNull();
+    await sessionSecureStorage.setItem(KEY, "42");
+    await expect(readStoredSessionUser()).resolves.toBeNull();
   });
 });
