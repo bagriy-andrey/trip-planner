@@ -62,6 +62,16 @@ export const trips = {
       city: "City · {{detail}}",
       country: "Country · {{detail}}",
     },
+    // Keyed by the PLACE_REGIONS ids from @tripplanner/shared.
+    regions: {
+      europe: "Europe",
+      asia: "Asia",
+      "middle-east": "Middle East",
+      africa: "Africa",
+      "north-america": "North America",
+      "south-america": "South America",
+      oceania: "Oceania",
+    },
     title: {
       label: "Trip name",
       placeholder: "Optional",
