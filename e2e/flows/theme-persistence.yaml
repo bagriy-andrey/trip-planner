@@ -31,13 +31,27 @@ tags:
           text: "Continue|Продолжить"
           optional: true
 
-# Sign in (the skeleton validates nothing) -> Profile tab.
+# Sign up with a fresh account (real server: needs the local Supabase stack; the runner mints
+# E2E_EMAIL per run; fields by placeholder, see skeleton-smoke) -> Profile tab.
 - extendedWaitUntil:
     visible: "${ONBOARDING_TITLE}"
     timeout: 60000
-- tapOn: "${ONBOARDING_SIGNIN_LINK}"
-- assertVisible: "${SIGNIN_TITLE}"
-- tapOn: "${SIGNIN_SUBMIT}"
+- tapOn: "${ONBOARDING_START}"
+- assertVisible: "${SIGNUP_TITLE}"
+- tapOn: "${FIELD_NAME_PLACEHOLDER}"
+- inputText: "${E2E_NAME}"
+- tapOn: "${FIELD_EMAIL_PLACEHOLDER}"
+- inputText: "${E2E_EMAIL}"
+- tapOn: "${FIELD_PASSWORD_PLACEHOLDER}"
+- inputText: "${E2E_PASSWORD}"
+- hideKeyboard
+- tapOn: "${SIGNUP_SUBMIT}"
+- tapOn:
+    text: "${SYSTEM_NOT_NOW}"
+    optional: true
+- extendedWaitUntil:
+    visible: "${TAB_TRIPS}"
+    timeout: 30000
 - tapOn: "${TAB_PROFILE}"
 - assertVisible: "${THEME_LIGHT}"
 
@@ -69,13 +83,10 @@ tags:
           text: "Continue|Продолжить"
           optional: true
 
-# The app has no session yet, so a cold start is onboarding again: sign in, open Profile.
+# The session is persisted (SPEC-02), so a cold start lands straight on the tabs: open Profile.
 - extendedWaitUntil:
-    visible: "${ONBOARDING_TITLE}"
+    visible: "${TAB_TRIPS}"
     timeout: 60000
-- tapOn: "${ONBOARDING_SIGNIN_LINK}"
-- assertVisible: "${SIGNIN_TITLE}"
-- tapOn: "${SIGNIN_SUBMIT}"
 - tapOn: "${TAB_PROFILE}"
 - assertVisible: "${THEME_LIGHT}"
 
