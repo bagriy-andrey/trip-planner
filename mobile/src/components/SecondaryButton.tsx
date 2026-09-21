@@ -40,17 +40,20 @@ export function SecondaryButton({
       testID={testID}
       style={({ pressed }) => [
         styles.base,
-        {
-          backgroundColor: tokens.surface,
-          borderColor: tokens.surfaceBorder,
-          opacity: disabled ? 0.4 : pressed ? 0.8 : 1,
-        },
+        // Disabled is a colour state (`divider` + `textTertiary`), never opacity (design/tokens.md).
+        disabled
+          ? { backgroundColor: tokens.divider, borderColor: tokens.divider }
+          : {
+              backgroundColor: tokens.surface,
+              borderColor: tokens.surfaceBorder,
+              opacity: pressed ? 0.8 : 1,
+            },
         style,
       ]}
     >
       <View style={styles.content}>
         {leading}
-        <AppText variant="button" style={styles.label}>
+        <AppText variant="button" color={disabled ? "textTertiary" : "text"} style={styles.label}>
           {label}
         </AppText>
       </View>
