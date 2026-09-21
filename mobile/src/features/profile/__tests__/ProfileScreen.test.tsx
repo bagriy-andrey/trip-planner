@@ -3,7 +3,6 @@ import { screen, userEvent, within } from "@testing-library/react-native";
 import { signOut } from "@/features/auth";
 import { HistoryScreen } from "@/features/history";
 import { TripsScreen } from "@/features/trips";
-import { MOCK_USER } from "@/mocks";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
 import { ProfileHeader } from "../components/ProfileHeader";
@@ -45,10 +44,29 @@ describe("ProfileScreen (S6)", () => {
     expect(screen.getByRole("button", { name: "Sign out" })).toBeOnTheScreen();
   });
 
-  it("shows the connected-account and currency values", async () => {
+  it.each(["en", "ru"] as const)(
+    "shows the connected-accounts and currency rows with only the 'soon' marker and no value in %s (AC-65)",
+    async (locale) => {
+      await renderWithProviders(<ProfileScreen />, { locale, session: SESSION });
+      const soon = locale === "en" ? "soon" : "скоро";
+      for (const id of ["row-connected-accounts", "row-currency"]) {
+        const row = screen.getByTestId(id);
+        // Exactly the title and the marker: no third text node carrying a value.
+        expect(within(row).getAllByText(/.+/)).toHaveLength(2);
+        expect(within(row).getByText(soon)).toBeOnTheScreen();
+      }
+      expect(screen.queryByText("Booking.com")).not.toBeOnTheScreen();
+      expect(screen.queryByText("EUR")).not.toBeOnTheScreen();
+    },
+  );
+
+  it("speaks only the row title for a stub row (no value to announce) (AC-65)", async () => {
     await renderWithProviders(<ProfileScreen />, { session: SESSION });
-    expect(within(screen.getByTestId("row-connected-accounts")).getByText("Booking.com")).toBeOnTheScreen();
-    expect(within(screen.getByTestId("row-currency")).getByText("EUR")).toBeOnTheScreen();
+    const spoken = (id: string) => String(screen.getByTestId(id).props.accessibilityLabel);
+    expect(spoken("row-connected-accounts")).not.toContain(",");
+    expect(spoken("row-currency")).not.toContain(",");
+    expect(spoken("row-connected-accounts")).toBe("Connected accounts");
+    expect(spoken("row-currency")).toBe("Currency");
   });
 
   it("marks every stub row with 'soon' and announces it (Q7)", async () => {
@@ -104,10 +122,6 @@ describe("ProfileScreen (S6)", () => {
     expect(screen.getByTestId("profile-name")).toHaveTextContent("Lena Novak");
     expect(screen.getByTestId("profile-email")).toHaveTextContent("lena.novak@example.org");
     expect(within(screen.getByTestId("profile-screen")).getByText("L", { includeHiddenElements: true })).toBeOnTheScreen();
-  });
-
-  it("keeps no name or email in the mock user: only the two stub-row values remain (AC-25)", () => {
-    expect(Object.keys(MOCK_USER).sort()).toEqual(["connectedAccount", "currency"]);
   });
 
   it("shows the email's local part and a non-empty initial without a display name (AC-26)", async () => {

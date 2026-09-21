@@ -3,16 +3,6 @@ export const trips = {
   a11y: {
     newTrip: "Новая поездка",
   },
-  // Mock-era keys: still read by the skeleton screens, deleted together with the mocks (PLAN-03 step 12).
-  cities: {
-    lisbon: "Лиссабон",
-    barcelona: "Барселона",
-    vienna: "Вена",
-    tokyo: "Токио",
-    rome: "Рим",
-    prague: "Прага",
-    amsterdam: "Амстердам",
-  },
   newTrip: {
     title: "Новая поездка",
     city: "Город",

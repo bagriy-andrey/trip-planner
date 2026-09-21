@@ -6,7 +6,6 @@ import { signOut } from "@/features/auth";
 import { useTranslation } from "@/lib/i18n";
 import { displayNameOf, useSession } from "@/lib/session";
 import { spacing } from "@/lib/theme";
-import { MOCK_USER } from "@/mocks";
 
 import { ProfileHeader } from "./components/ProfileHeader";
 import { SoonSettingRow } from "./components/SoonSettingRow";
@@ -17,7 +16,7 @@ const TAB_EDGES: readonly Edge[] = ["top", "left", "right"];
 
 /**
  * S6 — profile tab. Name and email come from the session (AC-25). Theme is the only working
- * setting; the other rows are "soon" stubs. There is deliberately no language row: the UI language
+ * setting; the other rows are "soon" stubs with a marker and NO value (AC-65). There is deliberately no language row: the UI language
  * follows the device (AC-40).
  */
 export function ProfileScreen() {
@@ -39,16 +38,8 @@ export function ProfileScreen() {
       <GlassSurface style={styles.group}>
         <ThemeSettingRow />
         <SoonSettingRow label={t("rows.notifications")} testID="row-notifications" />
-        <SoonSettingRow
-          label={t("rows.connectedAccounts")}
-          value={MOCK_USER.connectedAccount}
-          testID="row-connected-accounts"
-        />
-        <SoonSettingRow
-          label={t("rows.currency")}
-          value={MOCK_USER.currency}
-          testID="row-currency"
-        />
+        <SoonSettingRow label={t("rows.connectedAccounts")} testID="row-connected-accounts" />
+        <SoonSettingRow label={t("rows.currency")} testID="row-currency" />
       </GlassSurface>
       <View style={styles.logout}>
         <SecondaryButton
