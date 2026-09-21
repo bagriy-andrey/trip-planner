@@ -1,11 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { THEME_STORAGE_KEY } from "@/lib/theme/preference";
+import { STORAGE_KEYS } from "./keys";
 
-// The ONLY module that touches AsyncStorage. The skeleton persists exactly one
-// non-secret key (the theme choice, AC-33); anything else is refused. Adding a
-// key here is a deliberate, reviewed decision — AsyncStorage is unencrypted.
-export const ALLOWED_SETTING_KEYS = [THEME_STORAGE_KEY] as const;
+// Plain (unencrypted) settings boundary: ONLY non-secret preferences pass through here — today
+// the theme choice (SPEC-01 AC-33). The other registry keys have their own writers in this
+// folder (`sessionSecureStorage` for the encrypted session, `freshInstall` for the launch flag).
+// Adding a key is a deliberate, reviewed decision — AsyncStorage is unencrypted — and secret
+// keys must never be listed here (`guardrails.test.ts` checks it against `keys.ts`).
+export const ALLOWED_SETTING_KEYS = [STORAGE_KEYS.theme.key] as const;
 
 export type SettingKey = (typeof ALLOWED_SETTING_KEYS)[number];
 
