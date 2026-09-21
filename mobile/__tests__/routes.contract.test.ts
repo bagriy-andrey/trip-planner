@@ -21,7 +21,7 @@ const path = jest.requireActual<NodePath>("node:path");
 
 const APP_DIR = path.resolve(__dirname, "../app");
 
-// SPEC-01 "Карта маршрутов (контракт)" + `/reset-password` (SPEC-02 S10b) + the two service routes.
+// SPEC-01 "Карта маршрутов (контракт)" + `/reset-password` (SPEC-02 S10b) + `/trips/[tripId]/edit` (SPEC-03 S8b) + the two service routes.
 const SPEC_ROUTES = [
   "/onboarding",
   "/sign-in",
@@ -35,6 +35,7 @@ const SPEC_ROUTES = [
   "/profile",
   "/trips/new",
   "/trips/[tripId]",
+  "/trips/[tripId]/edit",
   "/trips/[tripId]/flights/new",
   "/trips/[tripId]/flights/[flightId]",
   "/trips/[tripId]/hotels/new",
