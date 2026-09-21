@@ -1,0 +1,102 @@
+appId: com.anonymous.tripplanner
+name: Email auth - sign up, sign out, sign in with the same account (AC-1, AC-10, AC-15, AC-22)
+tags:
+  - auth
+# Run through the runner, which supplies LOCALE, every UI string of that locale and the per-run
+# credentials as env vars:
+#   ./scripts/e2e.sh auth-email [--locale ru|en] [--metro-url http://localhost:8081]
+#
+# Needs the LOCAL Supabase stack up (`supabase start -x vector`, see supabase/README.md) and
+# mobile/.env pointing at it: sign-up and sign-in really hit the server. The runner mints a fresh
+# E2E_EMAIL (from RUN_ID, a timestamp) on every run, so the account never exists beforehand.
+#
+# NOT automated on purpose: password recovery. The 6-digit code arrives by email, which a flow
+# cannot read, and the built-in mailer is rate limited (PLAN-02 R-7): it stays in the manual
+# checklist (M7).
+#
+# Selection rules (AC-19): text / accessibility label / placeholder only, no `id:` / testID.
+# Fields are targeted by PLACEHOLDER, not label: a field's caption Text and its input carry the
+# same label (two matches), and an errored field's label becomes "Label, error text". The
+# placeholder belongs to the input alone and every field here is typed exactly once, while empty.
+---
+- launchApp:
+    clearState: true
+    arguments:
+      "-AppleLanguages": "(${LOCALE})"
+
+- runFlow:
+    when:
+      true: ${DEV_CLIENT_LINK != 'none'}
+    commands:
+      - openLink: ${DEV_CLIENT_LINK}
+      - tapOn:
+          text: "Open|Открыть"
+          optional: true
+      - tapOn:
+          text: "Continue|Продолжить"
+          optional: true
+
+# --- Signed out at start: onboarding (AC-1, no session after clearState) -----------------------
+- extendedWaitUntil:
+    visible: "${ONBOARDING_TITLE}"
+    timeout: 60000
+- tapOn: "${ONBOARDING_START}"
+- assertVisible: "${SIGNUP_TITLE}"
+
+# --- S3 sign up with fresh credentials (AC-10) ---------------------------------------------------
+- tapOn: "${FIELD_NAME_PLACEHOLDER}"
+- inputText: "${E2E_NAME}"
+- tapOn: "${FIELD_EMAIL_PLACEHOLDER}"
+- inputText: "${E2E_EMAIL}"
+- tapOn: "${FIELD_PASSWORD_PLACEHOLDER}"
+- inputText: "${E2E_PASSWORD}"
+# The keyboard (and iOS's strong-password bar) can cover the submit button.
+- hideKeyboard
+- tapOn: "${SIGNUP_SUBMIT}"
+# iOS may offer to save the new password; decline it so it cannot steal focus later.
+- tapOn:
+    text: "${SYSTEM_NOT_NOW}"
+    optional: true
+
+# The account is created on the server: allow for the round trip, then expect the tabs.
+- extendedWaitUntil:
+    visible: "${TAB_TRIPS}"
+    timeout: 30000
+- assertVisible:
+    text: "${TAB_TRIPS}"
+    selected: true
+
+# --- Profile shows the entered name and email (AC-11), then sign out (AC-22) --------------------
+- tapOn: "${TAB_PROFILE}"
+- assertVisible:
+    text: "${TAB_PROFILE}"
+    selected: true
+- assertVisible: "${E2E_NAME}"
+- assertVisible: "${E2E_EMAIL}"
+- tapOn: "${LOGOUT}"
+
+# Back on onboarding with no tab bar left on screen.
+- extendedWaitUntil:
+    visible: "${ONBOARDING_TITLE}"
+    timeout: 15000
+- assertNotVisible: "${TAB_PROFILE}"
+
+# --- S2 sign in with the same account (AC-15) ----------------------------------------------------
+- tapOn: "${ONBOARDING_SIGNIN_LINK}"
+- assertVisible: "${SIGNIN_TITLE}"
+- tapOn: "${FIELD_EMAIL_PLACEHOLDER}"
+- inputText: "${E2E_EMAIL}"
+- tapOn: "${FIELD_PASSWORD_PLACEHOLDER}"
+- inputText: "${E2E_PASSWORD}"
+- hideKeyboard
+- tapOn: "${SIGNIN_SUBMIT}"
+- tapOn:
+    text: "${SYSTEM_NOT_NOW}"
+    optional: true
+
+- extendedWaitUntil:
+    visible: "${TAB_TRIPS}"
+    timeout: 30000
+- assertVisible:
+    text: "${TAB_TRIPS}"
+    selected: true
