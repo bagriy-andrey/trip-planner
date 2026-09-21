@@ -62,10 +62,29 @@ tags:
 - tapOn: "${BACK}"
 - assertVisible: "${SIGNIN_TITLE}"
 
-# Back to S3 through the "create account" link, then submit: the skeleton validates nothing (AC-7).
+# Back to S3 through the "create account" link, then sign up with a fresh account (real server:
+# needs the local Supabase stack up; the runner mints E2E_EMAIL per run). Fields are targeted by
+# placeholder: a field's caption and its input share one label, and an errored field's label
+# becomes "Label, error text".
 - tapOn: "${SIGNIN_CREATE_LINK}"
 - assertVisible: "${SIGNUP_TITLE}"
+- tapOn: "${FIELD_NAME_PLACEHOLDER}"
+- inputText: "${E2E_NAME}"
+- tapOn: "${FIELD_EMAIL_PLACEHOLDER}"
+- inputText: "${E2E_EMAIL}"
+- tapOn: "${FIELD_PASSWORD_PLACEHOLDER}"
+- inputText: "${E2E_PASSWORD}"
+# The keyboard (and iOS's strong-password bar) can cover the submit button.
+- hideKeyboard
 - tapOn: "${SIGNUP_SUBMIT}"
+# iOS may offer to save the new password; decline it so it cannot steal focus later.
+- tapOn:
+    text: "${SYSTEM_NOT_NOW}"
+    optional: true
+# The account is created on the server: allow for the round trip before the tab checks.
+- extendedWaitUntil:
+    visible: "${TAB_TRIPS}"
+    timeout: 30000
 
 # --- Tabs (AC-8): Trips -> History -> Profile -> Trips ---------------------------------------
 - assertVisible:
@@ -119,7 +138,7 @@ tags:
     text: "${TAB_TRIPS}"
     selected: true
 
-# --- Profile -> sign out -> onboarding (AC-13) -------------------------------------------------
+# --- Profile -> sign out -> onboarding (AC-13, AC-22) -------------------------------------------------
 - tapOn: "${TAB_PROFILE}"
 - assertVisible: "${LOGOUT}"
 - tapOn: "${LOGOUT}"

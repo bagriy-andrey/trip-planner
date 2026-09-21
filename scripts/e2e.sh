@@ -4,6 +4,7 @@
 #   ./scripts/e2e.sh <flow> [--locale ru|en] [--metro-url <url>]
 #   ./scripts/e2e.sh skeleton-smoke
 #   ./scripts/e2e.sh skeleton-smoke --locale en
+#   ./scripts/e2e.sh auth-email
 #   ./scripts/e2e.sh theme-persistence --metro-url http://localhost:8081
 #
 # The flows contain NO literal UI text: every selector is an env var (LOCALE plus one variable per
@@ -21,7 +22,7 @@ usage() {
   cat <<'EOF'
 Usage: scripts/e2e.sh <flow> [--locale ru|en] [--metro-url <url>]
 
-  <flow>              flow name in e2e/flows/ without .yaml (skeleton-smoke | theme-persistence)
+  <flow>              flow name in e2e/flows/ without .yaml (skeleton-smoke | auth-email | theme-persistence)
   --locale ru|en      UI language of the run (default: ru). Sent to the app as the launch argument
                       -AppleLanguages "(<locale>)" and used to pick the selector strings.
   --metro-url <url>   dev-client builds only: Metro URL to open after launch, e.g.
@@ -32,6 +33,8 @@ Preconditions (not installed by this script):
   - Maestro:            curl -Ls "https://get.maestro.mobile.dev" | bash
   - Xcode + a booted iOS simulator: open -a Simulator
   - the app installed on it:        cd mobile && npx expo run:ios   (dev client)
+  - auth-email / skeleton-smoke sign up on the LOCAL Supabase stack: supabase start -x vector
+    (see supabase/README.md) with mobile/.env pointing at it. Each run uses a fresh e-mail.
 EOF
 }
 
@@ -162,6 +165,10 @@ fi
 #   FLIGHT_FORM_FROM           bookingForm:flight.from
 #   LOGOUT                     profile:logout
 #   THEME_LIGHT/THEME_DARK     profile:themeOptions.light|dark
+#   FIELD_NAME_PLACEHOLDER     auth:fields.name.placeholder      (fields are typed by placeholder:
+#   FIELD_EMAIL_PLACEHOLDER    auth:fields.email.placeholder      the caption and the input share one
+#   FIELD_PASSWORD_PLACEHOLDER auth:fields.password.placeholder   label, see auth-email.yaml)
+#   SYSTEM_NOT_NOW             NOT an app string: iOS's "Not Now" button on the save-password prompt
 locale_strings() {
   case "$1" in
     ru)
@@ -194,6 +201,10 @@ FLIGHT_FORM_FROM=Откуда
 LOGOUT=Выйти
 THEME_LIGHT=Светлая
 THEME_DARK=Тёмная
+FIELD_NAME_PLACEHOLDER=Andrew
+FIELD_EMAIL_PLACEHOLDER=you@example.com
+FIELD_PASSWORD_PLACEHOLDER=Введите пароль
+SYSTEM_NOT_NOW=Не сейчас
 EOF
       ;;
     en)
@@ -226,12 +237,34 @@ FLIGHT_FORM_FROM=From
 LOGOUT=Sign out
 THEME_LIGHT=Light
 THEME_DARK=Dark
+FIELD_NAME_PLACEHOLDER=Andrew
+FIELD_EMAIL_PLACEHOLDER=you@example.com
+FIELD_PASSWORD_PLACEHOLDER=Enter your password
+SYSTEM_NOT_NOW=Not Now
 EOF
       ;;
   esac
 }
 
-MAESTRO_ARGS=(-e "LOCALE=$LOCALE_ARG" -e "DEV_CLIENT_LINK=$DEV_CLIENT_LINK")
+# --- per-run credentials ---------------------------------------------------------------------
+# Sign-up and sign-in hit the real (local) Supabase, so every run registers a NEW account: the
+# address is derived from a timestamp (+ $RANDOM so two runs in the same second, e.g. the ru and en
+# runs back to back, never collide). RUN_ID may be preset by the caller to replay one account.
+# The password is a fixed, non-secret, local-only value (>= 8 chars, shared/ passwordSchema).
+# The email avoids "+" on purpose: Maestro text selectors are regexes and "+" is a quantifier.
+RUN_ID="${RUN_ID:-$(date +%s)$RANDOM}"
+E2E_NAME="E2E Tester"
+E2E_EMAIL="e2e-${RUN_ID}@example.com"
+E2E_PASSWORD="e2e-local-password-1"
+
+MAESTRO_ARGS=(
+  -e "LOCALE=$LOCALE_ARG"
+  -e "DEV_CLIENT_LINK=$DEV_CLIENT_LINK"
+  -e "RUN_ID=$RUN_ID"
+  -e "E2E_NAME=$E2E_NAME"
+  -e "E2E_EMAIL=$E2E_EMAIL"
+  -e "E2E_PASSWORD=$E2E_PASSWORD"
+)
 while IFS= read -r line; do
   [ -n "$line" ] || continue
   MAESTRO_ARGS+=(-e "$line")
