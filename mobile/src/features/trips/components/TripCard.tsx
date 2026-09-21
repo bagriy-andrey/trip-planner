@@ -66,7 +66,12 @@ export function TripCard({ trip, locale, today, muted = false, onPress, testID }
                 {tCommon("dates.notChosen")}
               </AppText>
             )}
-            <TripStatusPill status={trip.status} startDate={trip.startDate} today={today} />
+            <TripStatusPill
+              status={trip.status}
+              startDate={trip.startDate}
+              today={today}
+              testID={testID === undefined ? undefined : `${testID}-status`}
+            />
           </View>
         </GlassSurface>
       </TripCoverPlaceholder>
