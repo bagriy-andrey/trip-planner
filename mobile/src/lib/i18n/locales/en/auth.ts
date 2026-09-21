@@ -1,8 +1,17 @@
 export const auth = {
   fields: {
-    name: { label: "Name", placeholder: "Anna Smith" },
-    email: { label: "Email", placeholder: "name@example.com" },
-    password: { label: "Password", placeholder: "Enter your password" },
+    name: { label: "Name", placeholder: "Andrew" },
+    email: { label: "Email", placeholder: "you@example.com" },
+    password: {
+      label: "Password",
+      placeholder: "Enter your password",
+      hint: "At least 8 characters",
+    },
+    newPassword: {
+      label: "New password",
+      placeholder: "Enter a new password",
+    },
+    code: { label: "Code from the email", placeholder: "123456" },
   },
   social: {
     apple: "Continue with Apple",
@@ -11,6 +20,7 @@ export const auth = {
   },
   signIn: {
     title: "Welcome back",
+    subtitle: "Sign in to sync your trips",
     forgotPassword: "Forgot password?",
     submit: "Sign in",
     noAccountPrompt: "Don't have an account?",
@@ -18,6 +28,7 @@ export const auth = {
   },
   signUp: {
     title: "Create account",
+    subtitle: "One trip, every detail at hand",
     submit: "Sign up",
     consentPrefix: "By signing up, you agree to the",
     termsLink: "Terms of Use",
@@ -25,10 +36,41 @@ export const auth = {
     privacyLink: "Privacy Policy",
     hasAccountPrompt: "Already have an account?",
     signInLink: "Sign in",
+    emailExistsAction: "Sign in",
   },
   forgotPassword: {
     title: "Reset password",
-    description: "Enter your email and we will send you a link to reset your password.",
-    submit: "Send link",
+    description: "Enter your email and we will send you a code to reset your password.",
+    submit: "Send code",
+  },
+  resetPassword: {
+    title: "New password",
+    notice: "If an account with this email exists, we sent a code to it",
+    submit: "Save password",
+    resend: "Send code again",
+    resendIn: "Send code again in {{seconds}}s",
+  },
+  validation: {
+    email: { invalid: "Enter a valid email" },
+    password: { tooShort: "At least 8 characters" },
+    name: {
+      empty: "Enter your name",
+      tooLong: "Name must be at most 64 characters",
+    },
+    code: {
+      length: "Enter the 6 digits from the email",
+      digits: "The code contains digits only",
+    },
+  },
+  errors: {
+    invalidCredentials: "Incorrect email or password",
+    emailExists: "An account with this email already exists",
+    weakPassword: "This password is too weak. Use at least 8 characters",
+    otpInvalidOrExpired: "The code is incorrect or has expired",
+    samePassword: "The new password must differ from the old one",
+    rateLimited: "Too many attempts, please try again later",
+    emailRateLimited: "Too often, please try again later",
+    offline: "No connection. Check your internet and try again",
+    unknown: "Something went wrong. Please try again",
   },
 };
