@@ -1,9 +1,11 @@
-// Navigation topology (PLAN-01 §1.2, Step 9: SPEC-01 AC-1, 6, 8, 9, 10, 13) and route gating
-// by session (PLAN-02 Step 7: SPEC-02 AC-1, 20, 21, 24). Runs the REAL route files and layouts
-// through expo-router's in-memory navigator (`renderRouter`).
+// Navigation topology (PLAN-01 §1.2, Step 9: SPEC-01 AC-1, 6, 8, 9, 10, 13), route gating
+// by session (PLAN-02 Step 7: SPEC-02 AC-1, 20, 21, 24) and the trips routes (PLAN-03 Step 11:
+// SPEC-03 AC-30, 44, 62, 75, 76). Runs the REAL route files and layouts through expo-router's
+// in-memory navigator (`renderRouter`).
 //
 // The session is set by mocking the backend auth client (`@/lib/supabase`), never by tapping
 // «Sign in»: the real SessionProvider, shell and `Stack.Protected` gating run on top of it.
+// Trips data comes from a MOCKED api layer (`@/features/trips/api`) backed by an in-memory store.
 //
 // Lives in `mobile/__tests__/`, not `mobile/app/__tests__/` as the plan says: expo-router
 // treats every file under `app/` as a route (its require.context matches any `.tsx`), so a
@@ -21,6 +23,9 @@ import * as TripsTab from "../app/(tabs)/trips";
 import * as TermsRoute from "../app/legal/terms";
 import { i18n } from "@/lib/i18n";
 import type { Session } from "@/lib/supabase";
+import type { Trip } from "@tripplanner/shared";
+
+import { createTrip, getTrip, listTrips, updateTrip } from "@/features/trips/api";
 
 interface AuthMock {
   getSession: jest.Mock;
@@ -42,7 +47,57 @@ jest.mock("@/lib/supabase", () => {
   return { __esModule: true, supabase: { auth }, __auth: auth };
 });
 
+jest.mock("@/features/trips/api", () => ({
+  ...jest.requireActual("@/features/trips/api"),
+  listTrips: jest.fn(),
+  getTrip: jest.fn(),
+  createTrip: jest.fn(),
+  updateTrip: jest.fn(),
+}));
+
 const auth = (jest.requireMock("@/lib/supabase") as { __auth: AuthMock }).__auth;
+const listTripsMock = listTrips as jest.Mock;
+const getTripMock = getTrip as jest.Mock;
+const createTripMock = createTrip as jest.Mock;
+const updateTripMock = updateTrip as jest.Mock;
+
+function makeTrip(overrides: Partial<Trip> & Pick<Trip, "id" | "destination">): Trip {
+  return {
+    place: { kind: "custom" },
+    title: null,
+    startDate: null,
+    endDate: null,
+    archivedAt: null,
+    createdAt: "2026-09-01T10:00:00.000Z",
+    updatedAt: "2026-09-01T10:00:00.000Z",
+    ...overrides,
+  };
+}
+
+// An open draft (Trips tab) and an archived trip (History tab): neither depends on today's date.
+const LISBON = makeTrip({ id: "trip-lisbon", destination: "Lisbon" });
+const ROME = makeTrip({ id: "trip-rome", destination: "Rome", archivedAt: "2026-08-01T10:00:00.000Z" });
+
+/** The "server": what the mocked api answers. Reset before every test. */
+let store: Trip[] = [];
+
+function resetApi() {
+  store = [LISBON, ROME];
+  listTripsMock.mockImplementation(async () => ({ ok: true, data: [...store] }));
+  getTripMock.mockImplementation(async (id: string) => {
+    const found = store.find((trip) => trip.id === id);
+    return found === undefined ? { ok: false, kind: "notFound" } : { ok: true, data: found };
+  });
+  createTripMock.mockImplementation(async (form: { destination: string }) => {
+    const created = makeTrip({ id: "trip-new", destination: form.destination });
+    store = [created, ...store];
+    return { ok: true, data: created };
+  });
+  updateTripMock.mockImplementation(async (id: string, form: { destination: string }) => {
+    store = store.map((trip) => (trip.id === id ? { ...trip, destination: form.destination } : trip));
+    return { ok: true, data: store.find((trip) => trip.id === id) };
+  });
+}
 
 const SESSION: Session = {
   access_token: "access-token-value",
@@ -95,6 +150,20 @@ async function renderApp(initialUrl = "/", { session }: Launch = { session: null
   return utils;
 }
 
+/** Cold start at a trip's details; waits until the trip itself (not its loading state) is shown. */
+async function renderDetails(tripId: string) {
+  await renderApp(`/trips/${tripId}`, signedIn);
+  await waitFor(() => expect(screen.getByTestId("trip-hero")).toBeOnTheScreen());
+}
+
+/** The top entry of the root stack: route NAME and params, as the router state holds them. */
+function topRoute() {
+  const stack = current.getRouterState()?.routes[0]?.state?.routes ?? [];
+  const top = stack[stack.length - 1];
+  // React Navigation types params as a bare `object`; read the entry without a cast.
+  return { name: top?.name, params: Object.fromEntries(Object.entries(top?.params ?? {})) };
+}
+
 /** Cold start with a stored session at `/`: lands on the tabs (AC-1). */
 const signedIn = { session: SESSION };
 const signedOut = { session: null };
@@ -116,6 +185,7 @@ let warnSpy: jest.SpyInstance;
 
 beforeEach(async () => {
   jest.clearAllMocks();
+  resetApi();
   warnSpy = jest.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
     if (typeof args[0] === "string" && args[0].includes('No route named "reset-password"')) return;
     realWarn(...args);
@@ -226,11 +296,28 @@ describe("navigation topology", () => {
   });
 
   it("AC-9: the tab bar is not shown on the trip details (S7)", async () => {
-    await renderApp("/trips/x", signedIn);
+    await renderDetails("trip-lisbon");
     expect(screen.getByTestId("trip-detail-screen")).toBeOnTheScreen();
     for (const label of ["Trips", "History", "Profile"]) {
       expect(queryTab(label)).not.toBeOnTheScreen();
     }
+  });
+
+  it("AC-44: an unknown trip id shows «Trip not found», never another trip", async () => {
+    await renderApp("/trips/x", signedIn);
+    await waitFor(() => expect(screen.getByTestId("trip-not-found")).toBeOnTheScreen());
+    expect(screen.getByText("Trip not found")).toBeOnTheScreen();
+    expect(screen.queryByTestId("trip-hero")).not.toBeOnTheScreen();
+    expect(getTripMock).toHaveBeenCalledWith("x");
+    expect(current.getPathname()).toBe("/trips/x");
+  });
+
+  it("AC-44: from «Trip not found» opened by a link, the back button lands on /trips", async () => {
+    await renderApp("/trips/x", signedIn);
+    await waitFor(() => expect(screen.getByTestId("trip-not-found")).toBeOnTheScreen());
+    fireEvent.press(screen.getByTestId("trip-state-back"));
+    await expectPath("/trips");
+    expect(screen.getByTestId("trips-screen")).toBeOnTheScreen();
   });
 
   it("AC-10: back from the details returns to the tab it was opened from (/history)", async () => {
@@ -238,7 +325,8 @@ describe("navigation topology", () => {
     fireEvent.press(tab("History"));
     await expectPath("/history");
 
-    fireEvent.press(screen.getByTestId("trip-card-trip-rome"));
+    // The card comes from the list the (mocked) api served, not from a bundled fixture.
+    fireEvent.press(await screen.findByTestId("trip-card-trip-rome"));
     await expectPath("/trips/trip-rome");
     expect(queryTab("History")).not.toBeOnTheScreen();
 
@@ -248,10 +336,20 @@ describe("navigation topology", () => {
     expect(screen.getByRole("button", { name: "History", selected: true })).toBeOnTheScreen();
   });
 
+  it("opens the details of a trip from its card on the Trips tab", async () => {
+    await renderApp("/", signedIn);
+    fireEvent.press(await screen.findByTestId("trip-card-trip-lisbon"));
+    await expectPath("/trips/trip-lisbon");
+    await waitFor(() => expect(screen.getByTestId("trip-hero")).toBeOnTheScreen());
+    expect(getTripMock).toHaveBeenCalledWith("trip-lisbon");
+    expect(topRoute()).toEqual({ name: "trips/[tripId]/index", params: { tripId: "trip-lisbon" } });
+  });
+
   it("presents the form routes as modals over the root stack", async () => {
-    await renderApp("/trips/x", signedIn);
+    await renderDetails("trip-lisbon");
     for (const path of [
       "/trips/new",
+      "/trips/x/edit",
       "/trips/x/flights/new",
       "/trips/x/flights/abc",
       "/trips/x/hotels/new",
@@ -264,15 +362,11 @@ describe("navigation topology", () => {
   });
 
   it("opens the booking forms of the trip from the S7 buttons (typed object hrefs)", async () => {
-    await renderApp("/trips/trip-lisbon", signedIn);
+    await renderDetails("trip-lisbon");
     fireEvent.press(screen.getByTestId("add-flight"));
     await expectPath("/trips/trip-lisbon/flights/new");
     act(() => router.back());
     await expectPath("/trips/trip-lisbon");
-
-    fireEvent.press(screen.getByTestId("flight-card-flight-lisbon-outbound"));
-    await expectPath("/trips/trip-lisbon/flights/flight-lisbon-outbound");
-    act(() => router.back());
 
     fireEvent.press(screen.getByTestId("add-hotel"));
     await expectPath("/trips/trip-lisbon/hotels/new");
@@ -282,21 +376,120 @@ describe("navigation topology", () => {
     await expectPath("/trips/trip-lisbon/cars/new");
   });
 
-  it("keeps a hostile trip id inside its own path segment", async () => {
-    await renderApp("/trips/trip-lisbon", signedIn);
-    // What TripDetailScreen pushes for tripId "../../etc": expo-router must encode the param
-    // so it stays ONE segment (the unit test only checks the object handed to the router).
-    // `getPathname()` returns the decoded path, so assert on the matched route + its params.
-    act(() =>
-      router.push({ pathname: "/trips/[tripId]/flights/new", params: { tripId: "../../etc" } }),
-    );
-    await waitFor(() => {
-      const stack = current.getRouterState()?.routes[0]?.state?.routes ?? [];
-      const top = stack[stack.length - 1];
-      expect(top?.name).toBe("trips/[tripId]/flights/new");
-      // React Navigation types params as a bare `object`; read the entry without a cast.
-      expect(Object.fromEntries(Object.entries(top?.params ?? {})).tripId).toBe("../../etc");
+  // What the screens push for tripId "../../etc": expo-router must encode the param so it stays
+  // ONE segment (unit tests only check the object handed to the router). `getPathname()` returns
+  // the decoded path, so assert on the matched route NAME + its params (AC-76).
+  it.each([
+    ["/trips/[tripId]", "trips/[tripId]/index"],
+    ["/trips/[tripId]/edit", "trips/[tripId]/edit"],
+    ["/trips/[tripId]/flights/new", "trips/[tripId]/flights/new"],
+    ["/trips/[tripId]/hotels/new", "trips/[tripId]/hotels/new"],
+    ["/trips/[tripId]/cars/new", "trips/[tripId]/cars/new"],
+  ] as const)(
+    "keeps a hostile trip id inside its own path segment: %s (AC-76)",
+    async (pathname, routeName) => {
+      await renderDetails("trip-lisbon");
+      act(() => router.push({ pathname, params: { tripId: "../../etc" } }));
+      await waitFor(() => {
+        expect(topRoute().name).toBe(routeName);
+        expect(topRoute().params.tripId).toBe("../../etc");
+      });
+    },
+  );
+
+  it("shows «Trip not found» for a hostile id and asks the api for exactly that id (AC-44, AC-76)", async () => {
+    await renderDetails("trip-lisbon");
+    act(() => router.push({ pathname: "/trips/[tripId]", params: { tripId: "../../etc" } }));
+    await waitFor(() => expect(screen.getByTestId("trip-not-found")).toBeOnTheScreen());
+    expect(getTripMock).toHaveBeenCalledWith("../../etc");
+    expect(screen.queryByTestId("trip-hero")).not.toBeOnTheScreen();
+  });
+});
+
+describe("trip sheets: create, edit (SPEC-03 AC-30, 75)", () => {
+  async function fillDestinationAndSubmit(text: string, { noDates }: { noDates: boolean }) {
+    fireEvent.changeText(screen.getByTestId("trip-form-destination"), text);
+    if (noDates) fireEvent.press(screen.getByRole("checkbox", { name: "No dates yet" }));
+    fireEvent.press(screen.getByTestId("trip-form-submit"));
+  }
+
+  it("AC-30: creating a trip REPLACES the sheet with the details; back goes to the list, not the sheet", async () => {
+    const { getRouterState } = await renderApp("/", signedIn);
+    await screen.findByTestId("trip-card-trip-lisbon");
+    fireEvent.press(screen.getByTestId("trips-add"));
+    await expectPath("/trips/new");
+    expect(rootRouteNames(getRouterState())).toEqual(["(tabs)", "trips/new"]);
+
+    await fillDestinationAndSubmit("Porto", { noDates: true });
+    await expectPath("/trips/trip-new");
+    await waitFor(() => expect(screen.getByTestId("trip-hero")).toBeOnTheScreen());
+    expect(createTripMock).toHaveBeenCalledTimes(1);
+    // The sheet is gone from the stack: details sit directly over the tabs.
+    expect(rootRouteNames(getRouterState())).toEqual(["(tabs)", "trips/[tripId]/index"]);
+    expect(topRoute()).toEqual({ name: "trips/[tripId]/index", params: { tripId: "trip-new" } });
+
+    act(() => router.back());
+    await expectPath("/trips");
+    expect(rootRouteNames(getRouterState())).toEqual(["(tabs)"]);
+    expect(screen.queryByTestId("trip-form-screen")).not.toBeOnTheScreen();
+    expect(screen.getByTestId("trips-screen")).toBeOnTheScreen();
+  });
+
+  it("AC-75: «Edit» in the details menu opens the edit sheet of THAT trip; saving returns to the details", async () => {
+    const { getRouterState } = await renderApp("/", signedIn);
+    fireEvent.press(await screen.findByTestId("trip-card-trip-lisbon"));
+    await waitFor(() => expect(screen.getByTestId("trip-hero")).toBeOnTheScreen());
+    fireEvent.press(screen.getByTestId("trip-hero-more"));
+    fireEvent.press(await screen.findByTestId("menu-edit"));
+
+    await expectPath("/trips/trip-lisbon/edit");
+    expect(topRoute()).toEqual({ name: "trips/[tripId]/edit", params: { tripId: "trip-lisbon" } });
+    await waitFor(() => expect(screen.getByTestId("trip-form-destination")).toHaveDisplayValue("Lisbon"));
+
+    await fillDestinationAndSubmit("Lisbon, PT", { noDates: false });
+    await expectPath("/trips/trip-lisbon");
+    expect(updateTripMock).toHaveBeenCalledWith("trip-lisbon", expect.anything());
+    expect(rootRouteNames(getRouterState())).toEqual(["(tabs)", "trips/[tripId]/index"]);
+  });
+
+  it("«Cancel» on the edit sheet returns to the details without saving", async () => {
+    await renderDetails("trip-lisbon");
+    act(() => router.push({ pathname: "/trips/[tripId]/edit", params: { tripId: "trip-lisbon" } }));
+    await expectPath("/trips/trip-lisbon/edit");
+    await waitFor(() => expect(screen.getByTestId("trip-form-destination")).toBeOnTheScreen());
+    fireEvent.press(screen.getByRole("button", { name: "Cancel" }));
+    await expectPath("/trips/trip-lisbon");
+    expect(updateTripMock).not.toHaveBeenCalled();
+  });
+
+  it("editing an unknown trip shows «Trip not found» in the sheet (AC-44)", async () => {
+    await renderApp("/trips/x/edit", signedIn);
+    await waitFor(() => expect(screen.getByTestId("trip-form-not-found")).toBeOnTheScreen());
+    expect(getTripMock).toHaveBeenCalledWith("x");
+  });
+});
+
+describe("the cache never outlives the account (query cache hygiene)", () => {
+  it("user B does not see user A's trips while B's own list is still loading", async () => {
+    await renderApp("/", signedIn);
+    await screen.findByTestId("trip-card-trip-lisbon");
+    await endSession();
+    await expectPath("/onboarding");
+
+    // B's list request stays pending: whatever is on screen now can only come from a cache.
+    let answer!: (value: unknown) => void;
+    listTripsMock.mockImplementation(() => new Promise((resolve) => (answer = resolve)));
+    await act(async () => {
+      auth.emit("SIGNED_IN", { ...SESSION, user: { ...SESSION.user, id: "user-2" } });
     });
+    await expectPath("/trips");
+    await waitFor(() => expect(listTripsMock).toHaveBeenCalledTimes(2));
+    expect(screen.queryByTestId("trip-card-trip-lisbon")).not.toBeOnTheScreen();
+
+    await act(async () => {
+      answer({ ok: true, data: [] });
+    });
+    expect(screen.queryByTestId("trip-card-trip-lisbon")).not.toBeOnTheScreen();
   });
 });
 
@@ -318,7 +511,7 @@ describe("the session ends while the app runs (SPEC-02 AC-24; SPEC-01 AC-13 topo
     const { getRouterState } = await renderApp("/", signedIn);
     fireEvent.press(tab("History"));
     await expectPath("/history");
-    fireEvent.press(screen.getByTestId("trip-card-trip-rome"));
+    fireEvent.press(await screen.findByTestId("trip-card-trip-rome"));
     await expectPath("/trips/trip-rome");
     act(() => router.back());
     await expectPath("/history");
@@ -333,6 +526,7 @@ describe("the session ends while the app runs (SPEC-02 AC-24; SPEC-01 AC-13 topo
 
   it("from a modal over the trip details: lands on /onboarding", async () => {
     const { getRouterState } = await renderApp("/trips/trip-lisbon", signedIn);
+    await waitFor(() => expect(screen.getByTestId("trip-hero")).toBeOnTheScreen());
     act(() => router.push("/trips/trip-lisbon/flights/new"));
     await expectPath("/trips/trip-lisbon/flights/new");
 
@@ -360,6 +554,7 @@ describe("gating of the tabs and trips/* without a session (SPEC-02 AC-20)", () 
     "/profile",
     "/trips/x",
     "/trips/new",
+    "/trips/x/edit",
     "/trips/x/flights/new",
     "/trips/x/flights/abc",
     "/trips/x/hotels/new",
@@ -374,6 +569,9 @@ describe("gating of the tabs and trips/* without a session (SPEC-02 AC-20)", () 
       for (const label of ["Trips", "History", "Profile"]) {
         expect(queryTab(label)).not.toBeOnTheScreen();
       }
+      // No request leaves the device without a session (SPEC-03 AC-62).
+      expect(listTripsMock).not.toHaveBeenCalled();
+      expect(getTripMock).not.toHaveBeenCalled();
     },
   );
 
@@ -382,6 +580,14 @@ describe("gating of the tabs and trips/* without a session (SPEC-02 AC-20)", () 
     act(() => router.push("/trips/x"));
     await expectPath("/onboarding");
     expect(screen.queryByTestId("trip-detail-screen")).not.toBeOnTheScreen();
+  });
+
+  it("an in-app push of the edit route is refused too (AC-75)", async () => {
+    await renderApp("/", signedOut);
+    act(() => router.push({ pathname: "/trips/[tripId]/edit", params: { tripId: "trip-lisbon" } }));
+    await expectPath("/onboarding");
+    expect(screen.queryByTestId("trip-form-screen")).not.toBeOnTheScreen();
+    expect(getTripMock).not.toHaveBeenCalled();
   });
 });
 

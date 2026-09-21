@@ -1,12 +1,12 @@
-import { QueryClient } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import { render } from "@testing-library/react-native";
-import type { ReactNode } from "react";
+import type { ReactElement } from "react";
 
 import { SessionContext } from "@/lib/session/useSession";
 import type { SessionContextValue } from "@/lib/session/useSession";
 import { makeTestUser } from "@/test-utils/renderWithProviders";
 
-import { QueryCacheGuard, QueryProvider } from "..";
+import { createQueryClient, QueryCacheGuard, QueryProvider } from "..";
 
 const KEY = ["trips"] as const;
 
@@ -19,7 +19,7 @@ function sessionOf(status: SessionContextValue["status"], userId?: string): Sess
   };
 }
 
-function tree(client: QueryClient, session: SessionContextValue): ReactNode {
+function tree(client: QueryClient, session: SessionContextValue): ReactElement {
   return (
     <SessionContext.Provider value={session}>
       <QueryProvider client={client}>
@@ -30,7 +30,7 @@ function tree(client: QueryClient, session: SessionContextValue): ReactNode {
 }
 
 function setup(initial: SessionContextValue) {
-  const client = new QueryClient();
+  const client = createQueryClient({ retry: false, gcTime: Infinity });
   client.setQueryData(KEY, ["user A's trip"]);
   const view = render(tree(client, initial));
   return { client, rerender: (next: SessionContextValue) => view.rerender(tree(client, next)) };
