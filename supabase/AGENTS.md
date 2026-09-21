@@ -12,4 +12,7 @@ Decision record: `docs/decisions/ADR-001-backend-supabase.md`.
 - Never run `db reset` / `db push` against the hosted project without the user's go-ahead.
 
 ## Status
-Not scaffolded yet (`supabase init` is part of the first SPEC).
+Project initialised by SPEC-02 / PLAN-02, local stack only — nothing is applied to a hosted project.
+- Present: `config.toml` with the auth settings pinned explicitly (change them there, never in a dashboard), `templates/recovery.html` (password-reset email carrying the 6-digit `{{ .Token }}`), `README.md` (run, `mobile/.env` values, Mailpit).
+- Still NO migrations, tables, RLS policies, pgTAP tests or Edge Functions (no data model yet); auth users live in the built-in `auth` schema only.
+- Local stack on Rancher Desktop: `supabase start -x vector` (plain `supabase start` fails on the `vector` mount). Mail catcher is Mailpit on `http://127.0.0.1:54324`.
