@@ -29,6 +29,8 @@ export { Screen } from "./Screen";
 export type { ScreenProps } from "./Screen";
 export { SecondaryButton } from "./SecondaryButton";
 export type { SecondaryButtonProps } from "./SecondaryButton";
+export { TextField } from "./TextField";
+export type { TextFieldProps, TextFieldVariant } from "./TextField";
 export { SoonBadge } from "./SoonBadge";
 export { Stepper } from "./Stepper";
 export type { StepperProps } from "./Stepper";

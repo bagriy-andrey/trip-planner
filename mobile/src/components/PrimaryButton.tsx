@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
 import type { ReactNode } from "react";
 
@@ -13,6 +13,12 @@ export interface PrimaryButtonProps extends AccessibleProps {
   label: string;
   onPress?: () => void;
   disabled?: boolean;
+  /**
+   * Request in flight: a spinner replaces `leading` inside the button and presses are blocked
+   * (no modal spinner, no double submit). The button keeps its active look: it is busy, not
+   * unavailable.
+   */
+  loading?: boolean;
   /** Optional node before the label (e.g. a provider glyph). */
   leading?: ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -22,6 +28,7 @@ export function PrimaryButton({
   label,
   onPress,
   disabled = false,
+  loading = false,
   leading,
   style,
   accessibilityLabel,
@@ -29,24 +36,40 @@ export function PrimaryButton({
   testID,
 }: PrimaryButtonProps) {
   const { tokens } = useTheme();
+  const blocked = disabled || loading;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
+      accessibilityState={{ disabled: blocked, busy: loading }}
+      disabled={blocked}
       onPress={onPress}
       testID={testID}
       style={({ pressed }) => [
         styles.base,
-        { backgroundColor: tokens.accent, opacity: disabled ? 0.4 : pressed ? 0.8 : 1 },
+        // Disabled is a colour state (`divider` + `textTertiary`), never opacity on the active
+        // style: opacity drags the text down with it and breaks contrast (design/tokens.md).
+        disabled
+          ? { backgroundColor: tokens.divider }
+          : { backgroundColor: tokens.accent, opacity: pressed ? 0.8 : 1 },
         style,
       ]}
     >
       <View style={styles.content}>
-        {leading}
-        <AppText variant="button" color="onAccent" style={styles.label}>
+        {loading ? (
+          <ActivityIndicator
+            color={tokens.onAccent}
+            testID={testID ? `${testID}-spinner` : undefined}
+          />
+        ) : (
+          leading
+        )}
+        <AppText
+          variant="button"
+          color={disabled ? "textTertiary" : "onAccent"}
+          style={styles.label}
+        >
           {label}
         </AppText>
       </View>
