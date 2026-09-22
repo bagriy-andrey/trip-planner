@@ -1,6 +1,6 @@
 # Spec: Поездки — реальные данные, создание, правка, архив и удаление  |  Spec ID: SPEC-03  |  Status: draft
 Supersedes: — (SPEC-01 и SPEC-02 остаются в силе; перечень их AC, которые этот спек заменяет, — в разделе «Что заменяется в SPEC-01 и SPEC-02»)
-Implementation Plan: not yet planned
+Implementation Plan: specs/plans/PLAN-03-trips-crud.md
 
 ## Проблема й навіщо
 

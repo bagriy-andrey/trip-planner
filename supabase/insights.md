@@ -5,11 +5,18 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 ## What Works
 ## What Doesn't Work
 ## Codebase Patterns
+- 2026-09-22: pgTAP fixtures for `auth.users` need only `id` (plus `email`) on this GoTrue schema; every other column has a default, so the trips tests insert bare users instead of mirroring the whole table.
+- 2026-09-22: `btrim(x)` strips only U+0020, so a "non-blank" check constraint on user text must be `btrim(x, E' \t\r\n') <> ''` (`trips_destination_len`); a tab- or newline-only destination would otherwise pass.
+- 2026-09-22: `now()` is frozen for the whole transaction and every pgTAP test runs in one, so an `updated_at` trigger cannot be tested by comparing before/after `now()`: insert the row with an OLD `updated_at`, update it, then assert `updated_at = now()`.
+- 2026-09-22: Under `anon` with no policy, `select`/`update`/`delete` return 0 rows (the default grants exist, RLS just filters everything) while `insert` raises `42501`. Assert counts for the first three and `throws_ok` only for the insert.
 ## Tool & Library Notes
 - 2026-09-21: Supabase CLI 2.117 local stack: the mail catcher is now Mailpit on port 54324 (config section `[local_smtp]`; `supabase status` still prints an `INBUCKET_URL` alias); `supabase status` lists `PUBLISHABLE_KEY`/`SECRET_KEY` next to the legacy `ANON_KEY`/`SERVICE_ROLE_KEY` — the mobile app uses `ANON_KEY` as `EXPO_PUBLIC_SUPABASE_ANON_KEY` and must never receive the secret/service_role key. Under an AI agent `supabase status` prints JSON: use `--agent no` or `-o env`.
 - 2026-09-21: The CLI template ships `max_frequency = "1s"` for auth email sends; SPEC-02 needs 60 s, so `config.toml` sets it (and `otp_expiry = 600`) explicitly — don't rely on template defaults for anything a spec pins. The `email_sent` rate-limit comment in the generated config says it only applies with a custom SMTP server enabled, so the built-in mailer's limit can't be tuned locally.
 - 2026-09-21: Recovery flow on the wire: `POST /auth/v1/recover` sends the mail rendered from `templates/recovery.html`, which must contain the 6-digit `{{ .Token }}` (not `{{ .ConfirmationURL }}` — a mobile app has no web page to land on); `POST /auth/v1/verify` with `type=recovery` + email + token consumes it AND returns a session.
+- 2026-09-22: `supabase test db` (CLI 2.117) creates pgTAP itself before running the files: `create extension if not exists pgtap with schema extensions` inside a test is a no-op and leaves nothing in `pg_extension`, so no `enable_pgtap` migration is needed (and none should be added to a hosted project just for tests).
+- 2026-09-22: `archived_at: "now"` sent through PostgREST relies on Postgres reading the literal `'now'` as a `timestamptz` special input. It was verified with `json_populate_record` in SQL but NOT through a real PostgREST request: confirm it in the manual check (M7 of PLAN-03) and fall back to an ISO instant from the client if it is rejected.
 ## Recurring Errors & Fixes
 - 2026-09-21: Rancher Desktop breaks the `vector` container's docker.sock mount (`error while creating mount source path`), so plain `supabase start` fails — use `supabase start -x vector` (logs/analytics container only; nothing the app or auth needs).
+- 2026-09-22: `supabase db reset` run from a git worktree hits the SHARED local stack (containers are keyed by `project_id` in `config.toml`, not by directory) and wipes the local dev data of every checkout, including the accounts the mobile app and the e2e flows use. Run it deliberately, from one place, and re-create the accounts afterwards.
 ## Session Notes
 ## Open Questions
