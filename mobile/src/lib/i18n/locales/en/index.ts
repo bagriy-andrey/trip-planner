@@ -5,7 +5,19 @@ import { history } from "./history";
 import { legal } from "./legal";
 import { onboarding } from "./onboarding";
 import { profile } from "./profile";
+import { transport } from "./transport";
 import { tripDetail } from "./tripDetail";
 import { trips } from "./trips";
 
-export const en = { common, onboarding, auth, legal, trips, history, profile, tripDetail, bookingForm };
+export const en = {
+  common,
+  onboarding,
+  auth,
+  legal,
+  trips,
+  history,
+  profile,
+  tripDetail,
+  bookingForm,
+  transport,
+};
