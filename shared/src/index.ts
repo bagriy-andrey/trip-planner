@@ -2,6 +2,7 @@
 export * from "./airlines";
 export * from "./auth";
 export * from "./places";
+export * from "./segments";
 export * from "./trips";
 export { parseForm } from "./forms/parse";
 export type { FormFieldErrors, FormResult } from "./forms/parse";
