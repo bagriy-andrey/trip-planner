@@ -2,6 +2,11 @@
 // Durations/dates are never glued by hand: `formatDuration`/`formatStopoverDays`/
 // `formatSegmentDateTime` in `lib/i18n/format.ts` compose these templates.
 export const transport = {
+  // S13 header title ("Route"); the "+" and "back" reuse `tripDetail`/`common` labels (same
+  // actions as elsewhere), so only the title itself is new here.
+  screen: {
+    title: "Route",
+  },
   field: {
     flightNumber: "Flight number",
     from: "From",
@@ -48,10 +53,22 @@ export const transport = {
     notClosedText: "The last segment leaves you in a different city from where the trip started.",
     // {{city}} = city of the open end of the route.
     addFlightFrom: "Add flight from {{city}}",
+    // The S7 "Transport" block banner — one line, {{city}} = city of the open end of the route.
+    notClosedBanner: "Route not closed — no flight from {{city}}",
   },
   segment: {
     notFound: "Segment not found",
     delete: "Delete flight",
+  },
+  // S7 "Transport" block summary row: "{{title}} · {{segments}}, {{layovers}}" composed in code
+  // (i18next plural interpolation only drives ONE count per key, so the two counts are separate
+  // pluralized fragments).
+  summary: {
+    title: "Whole route",
+    segments_one: "{{count}} flight",
+    segments_other: "{{count}} flights",
+    layovers_one: "{{count}} layover",
+    layovers_other: "{{count}} layovers",
   },
   // Decorative chain elements (line, filled/hollow nodes) are hidden from the a11y tree
   // (AC-91); these describe the elements that do carry semantics on their own.

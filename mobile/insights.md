@@ -69,6 +69,27 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 ## Session Notes
 - 2026-09-21: Before any auth/Supabase work in `mobile/`: `__tests__/guardrails.test.ts` (SPEC-01 AC-25/AC-33) statically fails on the literal `supabase` (incl. `@supabase/supabase-js`), `fetch(`, `XMLHttpRequest`, `axios` anywhere in `app/` + `src/` (rule `no-backend-or-network`; comments are exempt), and pins `ALLOWED_SETTING_KEYS` to exactly one key with one `setItem` call site. Adding `lib/supabase` or an encrypted-session key in AsyncStorage turns `pnpm test` red until those rules are deliberately rewritten (SPEC-02 lists this under "что заменяется в SPEC-01"); likewise `e2e/flows/skeleton-smoke.yaml` taps `SIGNUP_SUBMIT` and expects tabs, which stops holding once sign-up is real.
 - 2026-09-22: `no-credentials-in-logs` (any `src/features/*/api/**`, plus `lib/supabase|storage|session`) does not allow every "safe-looking" identifier — its `LOGGABLE_IDENTIFIERS` allow-list is exactly `operation` and `errorCode` (string/template literals also pass); a new feature api's `console.warn("[x]", operation, "failed", kind)` fails the guardrail even though `kind` is a closed union with no request data, purely because the variable isn't named `errorCode` — rename the local binding, don't add a new allowed name (`features/transport/api/segmentsApi.ts`). Also confirmed: importing a sibling feature's top-level public `index.ts` (not its `api/` submodule) from inside another feature's OWN `api/` file is the sanctioned way to reuse an error classifier/type across features (PLAN-04 R-5) — `isFeatureApi`/`mayMentionSupabase` in the guardrail already scope `src/features/*/api/` as legal ground for cross-feature imports, and no test anywhere needs `@/features/trips` mocked (it's pure re-exports at that boundary).
+- 2026-09-22 (PLAN-04 step 7, transport route chain): step 6's declared file list included
+  `hooks/**` but never created `hooks/useRouteView.ts`, and step 4's `lib/i18n/index.ts` barrel
+  never re-exported `formatDuration`/`formatStopoverDays`/`formatSegmentDateTime` even though
+  `format.ts` (step 4's own file) defines them — both are step-ownership gaps only visible once a
+  later step actually needs the missing piece. Fix used: add the missing hook where the plan
+  itself said it belonged (`hooks/useRouteView.ts`, useMemo over `buildRoute` + `useNow()`) rather
+  than reinvent route math in a component; import the three formatters directly from
+  `@/lib/i18n/format` (not the barrel) rather than edit a file outside the step's own list. Also:
+  the transport locale namespace (step 4) covers every FORM/warning/gap string but not the S13
+  screen title ("Маршрут") or the S7 "Транспорт" block's own summary line ("Весь маршрут · N
+  рейсов, M пересадок") / "not closed" banner sentence — those three keys had to be added to
+  `locales/{ru,en}/transport.ts` in step 7 (kept minimal/additive, both locales in the same edit so
+  `parity.test.ts` stays green); everything else in the new UI reuses existing `tripDetail`/`common`
+  strings (`flight.route`, `flight.baggageIncluded`, `notFound.*`, `actions.retry`) instead of
+  minting near-duplicates.
+- 2026-09-22 (PLAN-04 step 7): `TransportBlock` (the S7 "Транспорт" block content) and `SegmentCard`
+  (the S13 chain link) are deliberately different components with different field sets — the trip
+  detail spec's "Карточка записи" (codes + BOTH times + baggage/passenger chips) is not the same
+  card as the route chain's compact two-line design (codes + ONE time + flight number). Do not try
+  to unify them into one `SegmentCard` variant; `TransportBlock` builds its own private
+  `NearestSegmentCard` instead.
 ## Open Questions
 - 2026-09-22: PLAN-04 step 5 contrast recheck of `warnBg`/`warnBorder`/`danger` (`design/tokens.md`)
   found the LIGHT theme's `danger` (`#C0503C`) at only ≈4.2:1 on `bg` — below the 4.5:1 rule for
