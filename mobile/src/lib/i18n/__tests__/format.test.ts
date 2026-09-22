@@ -2,9 +2,12 @@ import {
   formatCalendarDate,
   formatCalendarRange,
   formatDateRange,
+  formatDuration,
   formatNights,
   formatRelativeDays,
+  formatSegmentDateTime,
   formatShortDate,
+  formatStopoverDays,
   formatTime,
   formatTripDateLine,
 } from "../format";
@@ -204,6 +207,82 @@ describe("calendar dates", () => {
     it("counts nights over a DST change without an off-by-one", () => {
       // US DST began 2026-03-08 (a 23-hour local day): still exactly 2 nights.
       expect(formatTripDateLine("en", "2026-03-07", "2026-03-09")).toMatch(/· 2 nights$/);
+    });
+  });
+});
+
+describe("formatDuration", () => {
+  it("formats an hour-and-minutes layover in both locales", () => {
+    expect(formatDuration("ru", 65 * 60 * 1000)).toBe("1 ч 05 мин");
+    expect(formatDuration("en", 65 * 60 * 1000)).toBe("1 h 05 min");
+  });
+
+  it("pads single-digit minutes when combined with hours", () => {
+    expect(formatDuration("ru", 60 * 60 * 1000 + 5 * 60 * 1000)).toBe("1 ч 05 мин");
+    expect(formatDuration("en", 2 * 60 * 60 * 1000 + 9 * 60 * 1000)).toBe("2 h 09 min");
+  });
+
+  it("omits the hours part under one hour", () => {
+    expect(formatDuration("ru", 45 * 60 * 1000)).toBe("45 мин");
+    expect(formatDuration("en", 45 * 60 * 1000)).toBe("45 min");
+  });
+
+  it("rounds to the nearest whole minute", () => {
+    expect(formatDuration("en", 65 * 60 * 1000 + 40 * 1000)).toBe("1 h 06 min");
+  });
+});
+
+describe("formatStopoverDays", () => {
+  it.each([
+    [1, "1 день в Порту"],
+    [2, "2 дня в Порту"],
+    [4, "4 дня в Порту"],
+    [5, "5 дней в Порту"],
+    [11, "11 дней в Порту"],
+    [21, "21 день в Порту"],
+  ])("ru %i -> %s", (days, expected) => {
+    expect(formatStopoverDays("ru", days, "Порту")).toBe(expected);
+  });
+
+  it.each([
+    [1, "1 day in Porto"],
+    [2, "2 days in Porto"],
+    [5, "5 days in Porto"],
+  ])("en %i -> %s", (days, expected) => {
+    expect(formatStopoverDays("en", days, "Porto")).toBe(expected);
+  });
+});
+
+describe("formatSegmentDateTime", () => {
+  const instant = utc("2026-09-12T23:30:00Z");
+
+  it("requires an explicit time zone (no UTC default) and renders that zone's local time", () => {
+    expect(plain(formatSegmentDateTime("en", instant, "Asia/Tokyo"))).toBe("Sep 13, 8:30 AM");
+    expect(plain(formatSegmentDateTime("en", instant, "UTC"))).toBe("Sep 12, 11:30 PM");
+  });
+
+  // Device time zone override: prove a segment keeps its OWN airport's local time
+  // even when the device (an unspecified `Intl.DateTimeFormat` zone) is a THIRD zone.
+  describe("stays anchored to the segment's own zone under a different device zone", () => {
+    const RealDateTimeFormat = Intl.DateTimeFormat;
+    beforeAll(() => {
+      jest.spyOn(Intl, "DateTimeFormat").mockImplementation(
+        (locales?: ConstructorParameters<typeof Intl.DateTimeFormat>[0], options?: Intl.DateTimeFormatOptions) =>
+          new RealDateTimeFormat(locales, { timeZone: "America/Los_Angeles", ...options }),
+      );
+    });
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it("really simulates a third device zone (precondition)", () => {
+      expect(new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(instant)).toMatch(
+        /4:30\sPM/,
+      );
+    });
+
+    it("still shows the Tokyo airport's own local time, not the device's", () => {
+      expect(plain(formatSegmentDateTime("en", instant, "Asia/Tokyo"))).toBe("Sep 13, 8:30 AM");
     });
   });
 });

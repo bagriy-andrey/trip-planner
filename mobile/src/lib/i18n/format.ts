@@ -105,3 +105,45 @@ export function formatRelativeDays(locale: Locale, target: Date, now: Date): str
   if (days === 0) return t("status.today");
   return t("status.inDays", { count: days });
 }
+
+// --- Transport (route chain: durations, stopovers, local segment time) ------------------------
+
+const HOUR_MS = 60 * 60 * 1000;
+const MINUTE_MS = 60 * 1000;
+
+/**
+ * "1 ч 05 мин" / "1 h 05 min" — whole minutes rounded, abbreviated units (never
+ * grammatically declined, so a single non-plural template covers every locale).
+ * Below one hour: "45 мин" / "45 min" (no leading "0 ч").
+ */
+export function formatDuration(locale: Locale, ms: number): string {
+  const totalMinutes = Math.round(Math.abs(ms) / MINUTE_MS);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const t = i18n.getFixedT(locale, "transport");
+  if (hours === 0) return t("duration.minutesOnly", { minutes: String(minutes) });
+  return t("duration.hoursMinutes", { hours: String(hours), minutes: String(minutes).padStart(2, "0") });
+}
+
+/**
+ * "5 дней в Порту" / "5 days in Porto" — a stopover between two segments.
+ * `cityName` is supplied pre-formatted (grammatical case is the caller's concern,
+ * this function only picks the plural category for `days`).
+ */
+export function formatStopoverDays(locale: Locale, days: number, cityName: string): string {
+  return i18n.getFixedT(locale, "transport")("gap.stopover", { count: days, city: cityName });
+}
+
+/**
+ * "12 сент., 07:40" — a segment's date and clock time in the LOCAL zone of its own
+ * airport. Unlike the trip-level formatters above, there is no UTC default here:
+ * a card that forgets to pass a zone shows the wrong wall-clock time for that
+ * airport (mobile/insights.md), so `timeZone` is a required argument.
+ */
+export function formatSegmentDateTime(locale: Locale, instant: Date, timeZone: string): string {
+  return dateFormat(
+    locale,
+    { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" },
+    timeZone,
+  ).format(instant);
+}
