@@ -385,6 +385,7 @@ describe("navigation topology", () => {
     ["/trips/[tripId]/flights/new", "trips/[tripId]/flights/new"],
     ["/trips/[tripId]/hotels/new", "trips/[tripId]/hotels/new"],
     ["/trips/[tripId]/cars/new", "trips/[tripId]/cars/new"],
+    ["/trips/[tripId]/route", "trips/[tripId]/route"],
   ] as const)(
     "keeps a hostile trip id inside its own path segment: %s (AC-76)",
     async (pathname, routeName) => {
@@ -559,6 +560,7 @@ describe("gating of the tabs and trips/* without a session (SPEC-02 AC-20)", () 
     "/trips/x/flights/abc",
     "/trips/x/hotels/new",
     "/trips/x/cars/new",
+    "/trips/x/route",
   ])(
     "opening %s (a tripplanner:// link, i.e. the initial URL) leads to /onboarding",
     async (url) => {

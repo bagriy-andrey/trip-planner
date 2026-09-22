@@ -56,6 +56,7 @@ function AppShell() {
         <Stack.Protected guard={isRoutedAsSignedIn}>
           <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
           <Stack.Screen name="trips/[tripId]/index" />
+          <Stack.Screen name="trips/[tripId]/route" />
           <Stack.Screen name="trips/new" options={{ presentation: "modal" }} />
           <Stack.Screen name="trips/[tripId]/edit" options={{ presentation: "modal" }} />
           <Stack.Screen name="trips/[tripId]/flights/new" options={{ presentation: "modal" }} />

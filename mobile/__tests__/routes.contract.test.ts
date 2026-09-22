@@ -36,6 +36,7 @@ const SPEC_ROUTES = [
   "/trips/new",
   "/trips/[tripId]",
   "/trips/[tripId]/edit",
+  "/trips/[tripId]/route",
   "/trips/[tripId]/flights/new",
   "/trips/[tripId]/flights/[flightId]",
   "/trips/[tripId]/hotels/new",
