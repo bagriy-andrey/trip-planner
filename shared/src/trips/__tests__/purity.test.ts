@@ -65,6 +65,7 @@ describe("runtime neutrality of the places / trips / forms modules", () => {
     const offenders: string[] = [];
     for (const [path, source] of files) {
       if (path.endsWith("/places/directory.ts")) continue; // place NAMES are data, not UI text
+      if (path.endsWith("/places/airports.ts")) continue; // airport NAMES are data, not UI text (PLAN-04 step 2)
       const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
       if (path.endsWith("/places/fold.ts")) continue; // Cyrillic letters of the fold table
       if (cyrillic.test(code)) offenders.push(path);
