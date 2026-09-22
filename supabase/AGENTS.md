@@ -14,5 +14,5 @@ Decision record: `docs/decisions/ADR-001-backend-supabase.md`.
 ## Status
 Project initialised by SPEC-02 / PLAN-02, local stack only — nothing is applied to a hosted project.
 - Present: `config.toml` with the auth settings pinned explicitly (change them there, never in a dashboard), `templates/recovery.html` (password-reset email carrying the 6-digit `{{ .Token }}`), `README.md` (run, `mobile/.env` values, Mailpit).
-- Still NO migrations, tables, RLS policies, pgTAP tests or Edge Functions (no data model yet); auth users live in the built-in `auth` schema only.
+- Migrations: exactly one, `migrations/20260921193935_trips.sql` (SPEC-03 / PLAN-03): the `trips` table (owned by `auth.users` with `on delete cascade`, check constraints, indexes, `set_updated_at` trigger) and its RLS policies (all `to authenticated`). pgTAP: `tests/trips_rls.test.sql` (25) + `tests/trips_constraints.test.sql` (33) = 58 tests in 2 files (`supabase test db`). Applied to the LOCAL stack only; the hosted project is untouched. No other tables, no Edge Functions, no Storage buckets yet.
 - Local stack on Rancher Desktop: `supabase start -x vector` (plain `supabase start` fails on the `vector` mount). Mail catcher is Mailpit on `http://127.0.0.1:54324`.
