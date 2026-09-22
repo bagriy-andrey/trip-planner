@@ -14,6 +14,8 @@
 // `no-service-role` covers tests too.
 // Comments are ignored for the "code" rules (a comment may say "no Platform.OS here"),
 // but NOT for suppression directives: `@ts-ignore` in a comment is still a violation.
+// SPEC-03 added two rules on top (never replacing one): `no-mocks-directory` (AC-63) and
+// `no-direct-clock-outside-clock` (AC-64).
 // Every failure lists `file:line` so the offender is one click away.
 
 import ts from "typescript";
@@ -28,6 +30,7 @@ interface DirEntry {
   isDirectory(): boolean;
 }
 interface NodeFs {
+  existsSync(target: string): boolean;
   readdirSync(dir: string, options: { withFileTypes: true }): DirEntry[];
   readFileSync(file: string, encoding: "utf8"): string;
 }
@@ -58,12 +61,33 @@ const PLATFORM_DIR = "src/platform/";
 const STORAGE_DIR = "src/lib/storage/";
 const SUPABASE_DIR = "src/lib/supabase/";
 const SESSION_DIR = "src/lib/session/";
+/** The injectable clock: the ONLY place that may read the system time (SPEC-03 AC-64). */
+const CLOCK_DIR = "src/lib/clock/";
 /** The ONLY file that may import `@supabase/supabase-js` (SPEC-02 AC-8). */
 const SUPABASE_CLIENT = "src/lib/supabase/client.ts";
 // The font loader maps family names to bundled assets. It imports `@expo-google-fonts/*`
 // (package paths contain the family names) and takes every family NAME from the theme's
 // `family`, so it is the theme's asset half, not a second source of truth (AC-17).
 const FONT_LOADER = "src/lib/fonts.ts";
+
+// `Date.now(` in the auth feature measures ELAPSED milliseconds for the resend cooldown (a
+// duration between two instants, never a calendar "today"), so the injectable day-clock does not
+// apply. These two files are the entire exception; the "not stale" self-test below fails the moment
+// one stops using `Date.now(`, so the allowance cannot outlive its reason.
+const ELAPSED_TIME_FILES: ReadonlySet<string> = new Set([
+  "src/features/auth/flowState.ts",
+  "src/features/auth/hooks/useResendCountdown.ts",
+]);
+
+// The forbidden "frozen now" names and the mocks import path are assembled from parts, like the
+// secret terms below, so this very file (scanned by the `mobile-all` rules) never contains them.
+const FROZEN_NOW_NAMES = [["MOCK", "NOW"].join("_"), ["FIXED", "NOW"].join("_")];
+const FROZEN_NOW_NAME = new RegExp(`\\b(?:${FROZEN_NOW_NAMES.join("|")})\\b`);
+const MOCKS_DIR_NAME = ["mo", "cks"].join("");
+/** A quoted import/mock specifier pointing into a mocks directory: alias (`@/…`) or relative. */
+const MOCKS_SPECIFIER = new RegExp(
+  "[\"'`](?:@/|(?:\\.\\.?/)+)(?:[^\"'`\\s]*/)?" + MOCKS_DIR_NAME + "(?:/[^\"'`]*)?[\"'`]",
+);
 
 /** `src/features/<feature>/api/**` — the feature-level backend modules. */
 function isFeatureApi(file: string): boolean {
@@ -378,6 +402,28 @@ const RULES: Rule[] = [
     test: (line) =>
       (line.match(/EXPO_PUBLIC_[A-Za-z0-9_]*/g) ?? []).some((name) => !ALLOWED_PUBLIC_ENV.has(name)),
   },
+  // --- SPEC-03: no mock data, no hard-wired "now" --------------------------------------------
+  {
+    id: "no-mocks-directory",
+    ac: "SPEC-03 AC-63: no import from a mocks directory, in product code or in tests",
+    scope: "mobile-all",
+    pattern: MOCKS_SPECIFIER,
+  },
+  {
+    id: "no-direct-clock-outside-clock",
+    ac: "SPEC-03 AC-64: `new Date()` / `Date.now(` only in src/lib/clock/**",
+    // Constructors WITH arguments (`new Date(y, m, d)`, `new Date(iso)`, `new Date(Date.UTC(..))`)
+    // are pure conversions, not clock reads, and stay legal. Tests are out of this scope (they
+    // build relative timestamps and drive fake timers); product code is what AC-64 protects.
+    pattern: /\bnew\s+Date\s*\(\s*\)|\bDate\s*\.\s*now\s*\(/,
+    allowed: (file) => file.startsWith(CLOCK_DIR) || ELAPSED_TIME_FILES.has(file),
+  },
+  {
+    id: "no-direct-clock-outside-clock",
+    ac: "SPEC-03 AC-64: no fixed-`now` constant anywhere (tests included)",
+    scope: "mobile-all",
+    pattern: FROZEN_NOW_NAME,
+  },
 ];
 
 /** Every violation of `rules` in one file's text. */
@@ -577,6 +623,100 @@ describe("guardrail scanner (self-test)", () => {
         { line: 1, args: "KEY, ciphertext" },
         { line: 2, args: `[["a", "b"]]` },
       ]);
+    });
+  });
+
+  describe("no-mocks-directory (SPEC-03 AC-63)", () => {
+    const alias = ["@", MOCKS_DIR_NAME].join("/");
+
+    it("flags an import of / a mock of a mocks directory, in feature code and in tests", () => {
+      const feature = "src/features/x/X.tsx";
+      expect(scan(feature, `import { MOCK_USER } from "${alias}";`)).toContain("no-mocks-directory");
+      expect(scan(feature, `import { a } from '${alias}/trips';`)).toContain("no-mocks-directory");
+      expect(scan(feature, `import { a } from "../../${MOCKS_DIR_NAME}/user";`)).toContain(
+        "no-mocks-directory",
+      );
+      expect(scan(feature, `import { a } from "../${MOCKS_DIR_NAME}";`)).toContain("no-mocks-directory");
+      expect(scan(feature, `const a = require("./data/${MOCKS_DIR_NAME}/x");`)).toContain(
+        "no-mocks-directory",
+      );
+      expect(scan("src/features/x/__tests__/X.test.tsx", `import { a } from "${alias}";`)).toContain(
+        "no-mocks-directory",
+      );
+      expect(scan("src/features/x/__tests__/X.test.tsx", `jest.mock("${alias}/trips");`)).toContain(
+        "no-mocks-directory",
+      );
+    });
+
+    it("does not flag look-alikes (jest `__mocks__`, prose, unrelated paths)", () => {
+      const feature = "src/features/x/X.tsx";
+      expect(scan(feature, `import { a } from "./__${MOCKS_DIR_NAME}__/x";`)).toEqual([]);
+      expect(scan(feature, `import { a } from "@/lib/${MOCKS_DIR_NAME}ter";`)).toEqual([]);
+      expect(scan(feature, `// no import from ${alias}\nexport const a = 1;`)).toEqual([]);
+    });
+  });
+
+  describe("no-direct-clock-outside-clock (SPEC-03 AC-64)", () => {
+    const feature = "src/features/trips/TripsScreen.tsx";
+    const [mockNow, fixedNow] = FROZEN_NOW_NAMES as [string, string];
+
+    it("flags the empty-argument `new Date()` and `Date.now(` outside src/lib/clock", () => {
+      expect(scan(feature, `const today = new Date();`)).toContain("no-direct-clock-outside-clock");
+      expect(scan(feature, `const today = new  Date( );`)).toContain("no-direct-clock-outside-clock");
+      expect(scan(feature, `const t = Date.now();`)).toContain("no-direct-clock-outside-clock");
+      expect(scan(feature, `const t = Date . now ();`)).toContain("no-direct-clock-outside-clock");
+      expect(scan("src/lib/dates/x.ts", `export const t = () => Date.now();`)).toContain(
+        "no-direct-clock-outside-clock",
+      );
+      expect(scan("app/index.tsx", `const d = new Date();`)).toContain("no-direct-clock-outside-clock");
+    });
+
+    it("lets src/lib/clock/** read the system time", () => {
+      expect(scan("src/lib/clock/clock.ts", `createClock(() => new Date());`)).toEqual([]);
+      expect(scan("src/lib/clock/x.ts", `const t = Date.now();`)).toEqual([]);
+    });
+
+    it("keeps constructors WITH arguments legal (pure conversions, not clock reads)", () => {
+      expect(scan(feature, `const d = new Date(2026, 8, 22);`)).toEqual([]);
+      expect(scan(feature, `const d = new Date(iso);`)).toEqual([]);
+      expect(scan(feature, `const d = new Date(Date.UTC(2026, 8, 22));`)).toEqual([]);
+      expect(scan(feature, `const d = new Date(someMillis);`)).toEqual([]);
+    });
+
+    it("ignores comments; the clock-read pattern is scoped to non-test source files", () => {
+      expect(scan(feature, `// new Date() and Date.now( are read in the clock\nexport const a = 1;`)).toEqual([]);
+      // `scan` applies every rule to any path; test files are excluded by discovery (`source` scope).
+      const clockRules = RULES.filter((rule) => rule.id === "no-direct-clock-outside-clock");
+      expect(clockRules.map((rule) => rule.scope ?? "source").sort()).toEqual(["mobile-all", "source"]);
+    });
+
+    it("flags a fixed-now constant anywhere, tests included", () => {
+      for (const name of [mockNow, fixedNow]) {
+        expect(scan(feature, `const ${name} = new Date(2026, 8, 22);`)).toContain(
+          "no-direct-clock-outside-clock",
+        );
+        expect(scan("src/lib/dates/x.ts", `export { ${name} } from "./y";`)).toContain(
+          "no-direct-clock-outside-clock",
+        );
+        expect(scan("src/features/x/__tests__/X.test.ts", `expect(${name}).toBeDefined();`)).toContain(
+          "no-direct-clock-outside-clock",
+        );
+        // Not even in the clock module: a frozen constant defeats the injectable source.
+        expect(scan("src/lib/clock/clock.ts", `const ${name} = 1;`)).toContain(
+          "no-direct-clock-outside-clock",
+        );
+      }
+      expect(scan(feature, `const NOWHERE = 1; const MOCK_NOWHERE = 2;`)).toEqual([]);
+    });
+
+    it("keeps the auth elapsed-time allowance narrow and not stale", () => {
+      const line = `const t = Date.now();`;
+      for (const file of ELAPSED_TIME_FILES) {
+        expect(scan(file, line)).toEqual([]);
+        expect(maskComments(file, readMobile(file))).toMatch(/\bDate\s*\.\s*now\s*\(/);
+      }
+      expect(scan("src/features/auth/SignInScreen.tsx", line)).toContain("no-direct-clock-outside-clock");
+      expect(scan("src/features/auth/hooks/useOther.ts", line)).toContain("no-direct-clock-outside-clock");
     });
   });
 
@@ -787,5 +927,22 @@ describe("source guardrails", () => {
 
   it("SPEC-02 AC-39: credential code never logs request data", () => {
     expect(violationsOf("no-credentials-in-logs")).toEqual([]);
+  });
+
+  it("SPEC-03 AC-63: src/mocks does not exist and nothing imports a mocks directory", () => {
+    expect(fs.existsSync(path.join(MOBILE_ROOT, "src", MOCKS_DIR_NAME))).toBe(false);
+    expect(mobileFiles.filter((file) => file.split("/").includes(MOCKS_DIR_NAME))).toEqual([]);
+    expect(violationsOf("no-mocks-directory")).toEqual([]);
+  });
+
+  it("SPEC-03 AC-64: the system time is read only in src/lib/clock; no fixed-`now` constant exists", () => {
+    expect(violationsOf("no-direct-clock-outside-clock")).toEqual([]);
+    // The rule is not vacuous: the clock module really reads the system time.
+    const clockReaders = files.filter(
+      (file) =>
+        file.startsWith(CLOCK_DIR) &&
+        /\bnew\s+Date\s*\(\s*\)|\bDate\s*\.\s*now\s*\(/.test(maskComments(file, readMobile(file))),
+    );
+    expect(clockReaders).toContain("src/lib/clock/clock.ts");
   });
 });

@@ -89,6 +89,16 @@ describe("ru/en parity (AC-34)", () => {
   });
 });
 
+describe("mock-era city names (SPEC-03 AC-66)", () => {
+  it.each([
+    ["ru", ru, ruEntries],
+    ["en", en, enEntries],
+  ] as const)("%s has no `trips.cities` block and no `cities.*` key anywhere", (_locale, locale, entries) => {
+    expect(Object.keys(locale.trips)).not.toContain("cities");
+    expect(entries.filter(({ path }) => /(^|\.)cities(\.|$)/.test(path)).map(({ path }) => path)).toEqual([]);
+  });
+});
+
 describe("iOS metadata locales", () => {
   it("shows the single-source app name in both locales", () => {
     expect(ruMeta.CFBundleDisplayName).toBe(APP_NAME);

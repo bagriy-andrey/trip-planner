@@ -6,6 +6,7 @@ export const common = {
     done: "Готово",
     save: "Сохранить",
     back: "Назад",
+    retry: "Повторить",
   },
   tabs: {
     trips: "Поездки",
@@ -27,6 +28,15 @@ export const common = {
     inDays_many: "через {{count}} дней",
     inDays_other: "через {{count}} дня",
     draft: "план · дата не выбрана",
+    // Chip of a trip without dates (S4/S7); the caption under it is `dates.notChosen`.
+    plan: "план",
+    // Chip of an archived trip in History (AC-37); deliberately not "завершено".
+    archived: "архив",
+  },
+  dates: {
+    notChosen: "дата не выбрана",
+    // Range + nights of a trip header, composed by `formatTripDateLine` (never glued by hand, AC-74).
+    line: "{{range}} · {{nights}}",
   },
   nights_one: "{{count}} ночь",
   nights_few: "{{count}} ночи",

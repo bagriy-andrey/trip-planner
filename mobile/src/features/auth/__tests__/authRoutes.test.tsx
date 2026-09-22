@@ -43,6 +43,13 @@ jest.mock("@/lib/supabase", () => {
   return { __esModule: true, supabase: { auth }, __auth: auth };
 });
 
+// The trips tab behind the sign-in lands on the real list screen (a query in the root layout's
+// QueryProvider); it gets an empty list instead of a failing request to the mocked client.
+jest.mock("@/features/trips/api", () => ({
+  ...jest.requireActual("@/features/trips/api"),
+  listTrips: jest.fn(async () => ({ ok: true, data: [] })),
+}));
+
 const auth = (jest.requireMock("@/lib/supabase") as { __auth: AuthMock }).__auth;
 
 const SESSION: Session = {

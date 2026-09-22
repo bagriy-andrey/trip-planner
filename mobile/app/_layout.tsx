@@ -8,6 +8,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { useAppFonts } from "@/lib/fonts";
 import { i18n, useDeviceLocaleSync } from "@/lib/i18n";
+import { QueryCacheGuard, QueryProvider } from "@/lib/query";
 import { SessionProvider, useSession } from "@/lib/session";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 
@@ -56,6 +57,7 @@ function AppShell() {
           <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
           <Stack.Screen name="trips/[tripId]/index" />
           <Stack.Screen name="trips/new" options={{ presentation: "modal" }} />
+          <Stack.Screen name="trips/[tripId]/edit" options={{ presentation: "modal" }} />
           <Stack.Screen name="trips/[tripId]/flights/new" options={{ presentation: "modal" }} />
           <Stack.Screen name="trips/[tripId]/flights/[flightId]" options={{ presentation: "modal" }} />
           <Stack.Screen name="trips/[tripId]/hotels/new" options={{ presentation: "modal" }} />
@@ -79,7 +81,11 @@ export default function RootLayout() {
       <ThemeProvider>
         <I18nextProvider i18n={i18n}>
           <SessionProvider>
-            <AppShell />
+            <QueryProvider>
+              {/* Drops the cached server data when the account ends or changes (["trips"] has no user id). */}
+              <QueryCacheGuard />
+              <AppShell />
+            </QueryProvider>
           </SessionProvider>
         </I18nextProvider>
       </ThemeProvider>

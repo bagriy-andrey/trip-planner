@@ -1,9 +1,10 @@
 import { StyleSheet, View } from "react-native";
+import type { CalendarDate } from "@tripplanner/shared";
 
 import { AppText, GlassSurface, PressableRow } from "@/components";
-import { formatDateRange } from "@/lib/i18n";
+import { formatCalendarRange, useTranslation } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
-import { radius, spacing } from "@/lib/theme";
+import { layout, radius, spacing } from "@/lib/theme";
 
 import type { TripCardData } from "../types";
 
@@ -13,9 +14,9 @@ import { TripStatusPill, useTripStatusLabel } from "./TripStatusPill";
 export interface TripCardProps {
   trip: TripCardData;
   locale: Locale;
-  /** Reference "now" for the relative status label. */
-  now: Date;
-  /** Dimmed card for finished trips (History). */
+  /** Reference "today" for the relative status label. */
+  today: CalendarDate;
+  /** History look: the cover backing is desaturated (never the card as a whole). */
   muted?: boolean;
   onPress: () => void;
   testID?: string;
@@ -27,12 +28,20 @@ export interface TripCardProps {
  * "timeline" design means replacing this file only; `TripsScreen` and
  * `HistoryScreen` pass the same `TripCardProps` and don't care what is drawn.
  */
-export function TripCard({ trip, locale, now, muted = false, onPress, testID }: TripCardProps) {
+export function TripCard({ trip, locale, today, muted = false, onPress, testID }: TripCardProps) {
+  const { t } = useTranslation("trips");
+  const { t: tCommon } = useTranslation("common");
   const range =
-    trip.start !== null && trip.end !== null ? formatDateRange(locale, trip.start, trip.end) : null;
-  const status = useTripStatusLabel({ status: trip.status, start: trip.start, locale, now });
-  // The card is one accessible element: city, dates and status read as one phrase.
-  const spokenLabel = [trip.city, range, status].filter((part) => part !== null).join(", ");
+    trip.startDate !== null && trip.endDate !== null
+      ? formatCalendarRange(locale, trip.startDate, trip.endDate)
+      : null;
+  const status = useTripStatusLabel({ status: trip.status, startDate: trip.startDate, today });
+  // The card is one accessible element: place, status and dates read as one phrase.
+  const spokenLabel = t("list.a11y.card", {
+    title: trip.placeName,
+    status,
+    dates: range ?? tCommon("dates.notChosen"),
+  });
   return (
     <PressableRow
       accessibilityRole="button"
@@ -44,15 +53,25 @@ export function TripCard({ trip, locale, now, muted = false, onPress, testID }: 
       <TripCoverPlaceholder variant={trip.coverIndex} muted={muted}>
         <GlassSurface style={styles.panel}>
           <AppText variant="cardTitle" numberOfLines={1} ellipsizeMode="tail">
-            {trip.city}
+            {trip.placeName}
           </AppText>
           <View style={styles.meta}>
             {range !== null ? (
+              // Ticket data: the dates of a card are the one mono text on it (AC-68).
               <AppText variant="monoSmall" color="textSecondary" numberOfLines={1}>
                 {range}
               </AppText>
-            ) : null}
-            <TripStatusPill status={trip.status} start={trip.start} locale={locale} now={now} />
+            ) : (
+              <AppText variant="small" color="textTertiary" numberOfLines={1}>
+                {tCommon("dates.notChosen")}
+              </AppText>
+            )}
+            <TripStatusPill
+              status={trip.status}
+              startDate={trip.startDate}
+              today={today}
+              testID={testID === undefined ? undefined : `${testID}-status`}
+            />
           </View>
         </GlassSurface>
       </TripCoverPlaceholder>
@@ -61,7 +80,7 @@ export function TripCard({ trip, locale, now, muted = false, onPress, testID }: 
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: radius.cover, overflow: "hidden" },
+  card: { minHeight: layout.coverHeight, borderRadius: radius.cover, overflow: "hidden" },
   panel: { padding: spacing.md, gap: spacing.xs },
   meta: {
     flexDirection: "row",

@@ -4,7 +4,7 @@
 - Scope: Expo SDK 57 skeleton (`mobile/`, PLAN-01 Step 10), iOS.
 - Result: `iosPrivacyManifests` in `mobile/app.privacy.ts` mirrors the union below into `ios.privacyManifests`.
   Apple does not reliably parse manifests of statically linked pods, so the app-level manifest repeats them.
-- Latest entry: 2026-09-21, SPEC-02 email auth (`expo-secure-store`, `expo-crypto`, `aes-js`) - see "Audit 2026-09-21" at the end. Union unchanged.
+- Latest entry: 2026-09-21, SPEC-03 trips CRUD (`@react-native-community/datetimepicker` 9.1.0, `@tanstack/react-query`) - see "Audit 2026-09-21 (SPEC-03 ...)" at the end. Union unchanged. Earlier: 2026-09-21, SPEC-02 email auth (`expo-secure-store`, `expo-crypto`, `aes-js`). Union unchanged.
 - Re-run on every Expo SDK bump and on every new native dependency (a new native module also means a new dev-client build).
 
 ## How it was done
@@ -86,3 +86,24 @@ Scope: the native/JS dependencies added by SPEC-02 Step 1. Same procedure as abo
 ### Data collection (App Store Connect declaration)
 
 From SPEC-02 the app collects email and display name, linked to the user's identity (purpose: authentication). The App Store Connect data-collection declaration (App Privacy questionnaire; and `NSPrivacyCollectedDataTypes` if declared in the app manifest) is therefore no longer empty. This is an obligation of the release spec; the open item above ("skeleton has no data collection") is superseded by this line. `NSPrivacyTracking` stays `false`.
+
+## Audit 2026-09-21 (SPEC-03 trips CRUD, PLAN-03 Step 2)
+
+Scope: the dependencies added by SPEC-03 Step 1. Same procedure as above (pnpm store walked by real paths under `node_modules/.pnpm`; linked pods checked; iOS source grep for the required-reason symbols from step 3, widened with `NSFileManager`, `NSProcessInfo`, `NSURLResource`, `contentModificationDate`, `NSFileSystem*`; podspec check).
+
+| Package | Version | Kind | Linked pod | `PrivacyInfo.xcprivacy` | Required-reason API in iOS sources | Verdict |
+|---|---|---|---|---|---|---|
+| `@react-native-community/datetimepicker` | 9.1.0 | native (RN autolinking, not an Expo module) | `RNDateTimePicker` (`ios/**/*.{h,m,mm,cpp}`; `ios/fabric` only with the new architecture) | none (`find -L` over the package finds no `*.xcprivacy`; the podspec declares no `resource_bundles`) | none (no hit for any of the symbols above in `ios/*.m`, `ios/*.h`, `ios/fabric/**`; it wraps `UIDatePicker`) | no manifest needed |
+| `@tanstack/react-query` (+ `@tanstack/query-core`) | 5.103.1 | pure JS | none (not linked) | not applicable | not applicable | no manifest needed |
+
+- Actual `PrivacyInfo.xcprivacy` contents of the module: there is no file, so nothing to copy. Required-reason codes contributed by the module: none.
+- Store contents: one copy of `datetimepicker@9.1.0`, one of `@tanstack/react-query@5.103.1`. The set of `PrivacyInfo.xcprivacy` files in the store is identical to the 2026-09-19 audit (async-storage 2.2.0, expo-constants 57.0.18/57.0.19, expo-file-system 57.0.7, expo-localization 57.0.2, expo-system-ui 57.0.4, plus the `react-native` ones); no new package brings one.
+- Result: no new `NSPrivacyAccessedAPITypes` categories or reason codes. `iosPrivacyManifests` in `mobile/app.privacy.ts` is unchanged apart from a comment recording this audit. Existing entries (FileTimestamp C617.1/0A2A.1/3B52.1, UserDefaults CA92.1, SystemBootTime 35F9.1, DiskSpace E174.1/85F4.1) are kept.
+- Stop-signal check: the module does not touch a required-reason API, with or without a manifest. No new stop-signal. The two `debugOnly` findings from 2026-09-19 (`expo-dev-launcher`, `expo-dev-menu`) still apply, unchanged.
+- Permissions: no `NS*UsageDescription` is added (a date picker requests no system permission); `ios.infoPlist` stays free of them.
+- Config plugin: `npx expo install` hints at `plugins: ["@react-native-community/datetimepicker"]`. Its `app.plugin.js` (`plugin/build/withDateTimePickerStyles.js`) only writes Android `styles.xml` theme attributes for the date/time picker dialogs; it has no iOS effect and adds no privacy manifest or usage string. It is therefore irrelevant to the privacy audit; register it in `app.config.ts` only if Android picker theming is wanted (Android is not a first-phase target).
+- The module is native, so a new dev-client build is required (already done in SPEC-03 Step 1).
+
+### Data collection (App Store Connect declaration)
+
+From SPEC-03 the app stores user content: place and trip titles (and the other trip fields) tied to the user's account on the backend. Add a "user content" category (Other User Content, linked to the user's identity, purpose: app functionality) to the App Store Connect data-collection declaration (App Privacy questionnaire; and `NSPrivacyCollectedDataTypes` if declared in the app manifest), alongside the email and name from SPEC-02. This is an obligation of the release spec; `NSPrivacyTracking` stays `false`.

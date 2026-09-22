@@ -1,35 +1,45 @@
+import { daysBetween } from "@tripplanner/shared";
+import type { CalendarDate } from "@tripplanner/shared";
+
 import { Pill } from "@/components";
 import type { PillTone } from "@/components";
-import { formatRelativeDays, useTranslation } from "@/lib/i18n";
-import type { Locale } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n";
 
 import type { TripStatusKind } from "../types";
 
 export interface TripStatusPillProps {
   status: TripStatusKind;
-  start: Date | null;
-  locale: Locale;
-  /** Reference "now" for the relative label; injected so output is deterministic. */
-  now: Date;
+  startDate: CalendarDate | null;
+  /** Reference "today" for the relative label; injected (`useToday()`) so output is deterministic. */
+  today: CalendarDate;
+  testID?: string;
 }
 
+// Only the nearest trip is loud (AC-23); everything else is `divider` + `textSecondary` (AC-37).
 const TONE: Record<TripStatusKind, PillTone> = {
   upcoming: "accent",
-  planned: "neutral",
-  draft: "neutral",
+  planned: "muted",
+  draft: "muted",
   completed: "muted",
+  archived: "muted",
 };
 
-/** Localized status text: relative days, "plan · no date yet" or "completed". */
-export function useTripStatusLabel({ status, start, locale, now }: TripStatusPillProps): string {
+/**
+ * Localized status text: "in N days" / "today", "plan" (no dates), "completed" or "archived".
+ * A trip that has already started (the nearest one may be under way) reads "today" rather than a
+ * negative count.
+ */
+export function useTripStatusLabel({ status, startDate, today }: TripStatusPillProps): string {
   const { t } = useTranslation("common");
   if (status === "completed") return t("status.completed");
-  if (status === "draft" || start === null) return t("status.draft");
-  return formatRelativeDays(locale, start, now);
+  if (status === "archived") return t("status.archived");
+  if (status === "draft" || startDate === null) return t("status.plan");
+  const days = daysBetween(today, startDate);
+  return days <= 0 ? t("status.today") : t("status.inDays", { count: days });
 }
 
-/** Status chip of a trip card. */
+/** Status chip of a trip (S4/S5 card, S7 header). */
 export function TripStatusPill(props: TripStatusPillProps) {
   const label = useTripStatusLabel(props);
-  return <Pill tone={TONE[props.status]} label={label} />;
+  return <Pill tone={TONE[props.status]} label={label} testID={props.testID} />;
 }

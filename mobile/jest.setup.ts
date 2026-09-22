@@ -64,6 +64,53 @@ jest.mock("expo-secure-store", () => {
   };
 });
 
+// Native date picker (SPEC-03 AC-77): the real component needs the native module. The mock is a
+// pressable that reports its own `value` through `onChange` as a "set" event, so a form test can
+// drive it with `fireEvent.press(getByTestId(...))` (or `userEvent.press`) without a native
+// module. Tests that need a specific date pass it as the `value` prop. The imperative Android
+// API (`DateTimePickerAndroid`) is mocked the same way: `open` immediately "sets" its `value`.
+jest.mock("@react-native-community/datetimepicker", () => {
+  const React = require("react");
+  const { Pressable } = require("react-native");
+
+  const setEvent = (value: Date) => ({
+    type: "set",
+    nativeEvent: { timestamp: value.getTime(), utcOffset: 0 },
+  });
+
+  const DateTimePicker = ({
+    value,
+    onChange,
+    testID = "datetimepicker",
+    accessibilityLabel,
+  }: {
+    value: Date;
+    onChange?: (event: ReturnType<typeof setEvent>, date?: Date) => void;
+    testID?: string;
+    accessibilityLabel?: string;
+  }) =>
+    React.createElement(Pressable, {
+      testID,
+      accessibilityLabel,
+      onPress: () => onChange?.(setEvent(value), value),
+    });
+
+  const DateTimePickerAndroid = {
+    open: jest.fn(
+      ({
+        value,
+        onChange,
+      }: {
+        value: Date;
+        onChange?: (event: ReturnType<typeof setEvent>, date?: Date) => void;
+      }) => onChange?.(setEvent(value), value),
+    ),
+    dismiss: jest.fn(() => Promise.resolve(true)),
+  };
+
+  return { __esModule: true, default: DateTimePicker, DateTimePickerAndroid };
+});
+
 // Deterministic "random" bytes: tests must not depend on randomness.
 jest.mock("expo-crypto", () => {
   const getRandomBytes = (byteCount: number) =>

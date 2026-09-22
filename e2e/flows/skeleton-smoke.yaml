@@ -7,11 +7,19 @@ tags:
 #
 # Selection rules (AC-19): text / accessibility label only. No `id:` / testID anywhere.
 # Maestro `text:` is a full-string REGEX, so:
-#   - trip cards carry one long label ("City, date range, status") and are matched as ".*City.*";
+#   - trip cards carry one long label ("place, status, dates") and are matched as "<place>,.*"
+#     (the comma tells a card from the details header, whose text is the bare place);
 #   - strings with regex metacharacters are pre-escaped by the runner (e.g. "Forgot password\?").
 # Uniqueness: a label that appears twice on one screen (tab label == screen title on S4/S5/S6) is
 # only ever TAPPED from a screen where it is the tab alone (see the tab steps), and asserted with
 # `selected: true`, which only the active tab button carries.
+#
+# Trips: a fresh account has NO trips (the mocks are gone), so the S7 part of the walk first CREATES
+# one through S8 (free-text place, "no dates yet", real local Supabase like the sign-up above) and
+# reaches S7 that way, then re-opens it from the Trips card. The History card -> S7 step of the
+# earlier skeleton is gone: History can only hold completed/archived trips, which needs the archive
+# journey that trip-crud.yaml covers (it opens the archived card from History). The full CRUD path
+# is trip-crud.yaml; this flow only proves that every screen is reachable.
 ---
 - launchApp:
     clearState: true
@@ -103,37 +111,63 @@ tags:
     text: "${TAB_TRIPS}"
     selected: true
 
-# --- History card -> S7 -> back (AC-9, AC-10) -------------------------------------------------
-- tapOn: "${TAB_HISTORY}"
-- tapOn: ".*${CITY_ROME}.*"
-# S7 is recognised by its "add flight" button (any trip's details screen has it).
-- assertVisible: "${ADD_FLIGHT}"
+# --- "+" -> new-trip modal (S8) -> cancel (AC-12: the modal closes onto Trips) -----------------
+- tapOn: "${NEW_TRIP_A11Y}"
+# The title "New trip" equals the "+" label, so assert the S8-only submit button instead.
+- extendedWaitUntil:
+    visible: "${FORM_CREATE}"
+    timeout: 10000
+- tapOn: "${CANCEL}"
+- assertVisible:
+    text: "${TAB_TRIPS}"
+    selected: true
+
+# --- "+" again -> create a trip (free-text place, no dates) -> lands on S7 ---------------------
+- tapOn: "${NEW_TRIP_A11Y}"
+- extendedWaitUntil:
+    visible: "${FORM_DESTINATION_PLACEHOLDER}"
+    timeout: 10000
+- tapOn: "${FORM_DESTINATION_PLACEHOLDER}"
+- inputText: "${E2E_PLACE}"
+# The keyboard can cover the checkbox and the submit button.
+- hideKeyboard
+# Dates start unset and "no dates" is off: an undated trip needs the checkbox first.
+- tapOn: "${FORM_NO_DATES}"
+- assertVisible: "${FORM_NO_DATES_HINT}"
+- tapOn: "${FORM_CREATE}"
+
+# --- S7 (AC-9, AC-10) -> flight form (S9) -> cancel -> back ------------------------------------
+# The sheet is replaced by the details once the server has created the trip. S7 is recognised by
+# its "add flight" button (any trip's details screen has it), not by the place (the form's input
+# still holds it until the sheet is gone).
+- extendedWaitUntil:
+    visible: "${ADD_FLIGHT}"
+    timeout: 30000
+- assertVisible: "${E2E_PLACE}"
 # AC-9: S7 has no tab bar, so none of the three tab labels is on screen.
 - assertNotVisible: "${TAB_TRIPS}"
 - assertNotVisible: "${TAB_HISTORY}"
 - assertNotVisible: "${TAB_PROFILE}"
-- tapOn: "${BACK}"
-# AC-10: back lands on History, with its tab still the active one.
-- assertVisible:
-    text: "${TAB_HISTORY}"
-    selected: true
-
-# --- Trips card -> S7 -> flight form (S9) -> cancel -> back ------------------------------------
-- tapOn: "${TAB_TRIPS}"
-- tapOn: ".*${CITY_LISBON}.*"
-- assertVisible: "${ADD_FLIGHT}"
 - tapOn: "${ADD_FLIGHT}"
 - assertVisible: "${FLIGHT_FORM_FROM}"
 - tapOn: "${CANCEL}"
 # AC-12: cancel closes the modal and we are on S7 again.
 - assertVisible: "${ADD_FLIGHT}"
 - tapOn: "${BACK}"
+# AC-10: back lands on Trips, with its tab still the active one, and the new trip's card is there.
+- assertVisible:
+    text: "${TAB_TRIPS}"
+    selected: true
+- extendedWaitUntil:
+    visible: "${E2E_PLACE},.*"
+    timeout: 15000
 
-# --- Floating "+" -> new trip modal (S8) -> cancel ---------------------------------------------
-- tapOn: "${NEW_TRIP_A11Y}"
-# The title "New trip" equals the "+" label, so assert the S8-only field caption instead.
-- assertVisible: "${NEW_TRIP_CITY_LABEL}"
-- tapOn: "${CANCEL}"
+# --- Trips card -> S7 -> back --------------------------------------------------------------------
+- tapOn: "${E2E_PLACE},.*"
+- extendedWaitUntil:
+    visible: "${ADD_FLIGHT}"
+    timeout: 15000
+- tapOn: "${BACK}"
 - assertVisible:
     text: "${TAB_TRIPS}"
     selected: true
