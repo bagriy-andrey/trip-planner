@@ -18,3 +18,4 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 ## Recurring Errors & Fixes
 ## Session Notes
 ## Open Questions
+- 2026-09-22: `places` city records model exactly ONE `airportCode` per city (the "main" airport). SPEC-04 (flight segments/route) needs multi-airport cities to be distinguishable (e.g. Barcelona El Prat `BCN` vs Girona `GRO`) so the "wrong airport" route warning can compare by airport code, not city — the directory schema/data will need an airport-per-city model before that AC can be implemented.
