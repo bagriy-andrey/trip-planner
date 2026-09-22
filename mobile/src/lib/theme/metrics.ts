@@ -55,6 +55,15 @@ export const layout = {
   switchW: 44,
   switchH: 24,
   switchKnob: 20,
+  /** Vertical line of the route chain (S13). */
+  chainLine: 2,
+  /** Filled node marking a segment card on the chain line. */
+  chainNode: 8,
+  /** Hollow node marking a pause (layover/stopover) on the chain line. */
+  chainGapNode: 10,
+  /** Dashed border of the "route not closed" warning card — heavier than `borderWidth`
+   * (1) so a dashed, warning-toned border reads as distinct from the plain empty-state dash. */
+  dashBorderWidth: 1.5,
 } as const;
 
 /** Icon glyph sizes: sm next to mono text/in chips, md in round buttons and the tab bar, lg on the FAB. */

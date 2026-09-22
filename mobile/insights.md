@@ -39,6 +39,15 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 - 2026-09-22: `QueryClient.clear()` does not stop the 5-minute gc timer of finished MUTATIONS, so a jest file that runs mutations hangs unless each test unmounts, destroys the mutations (`getMutationCache().getAll()` -> `destroy()`) and only then clears the client (`useTripMutations.test.tsx`). The full mobile run still prints one "worker failed to exit gracefully" line.
 - 2026-09-22: macOS has no `timeout` command (use the tool's timeout or a background run). A full jest run of `navigation.test.tsx` without a `QueryClient` took ~19 minutes before `QueryProvider` was in the layout; with it the whole mobile suite (919 tests) runs in ~30 s.
 ## Recurring Errors & Fixes
+- 2026-09-22: Jest modern fake timers (`jest.useFakeTimers()`) tie `Date`/`Date.now()` to the
+  virtual clock, so calling `jest.setSystemTime(t)` AND THEN `jest.advanceTimersByTime(ms)`
+  double-moves time (the advance is added on top of the manually set instant, not from where the
+  timers last stood) — a test asserting an exact elapsed-time boundary (e.g. "the minute-interval
+  timer fires at exactly 60s, not 59s") must pick ONE mechanism: either drive time purely with
+  `advanceTimersByTime` from mount (timers and `new Date()` stay in lockstep), or use
+  `setSystemTime` alone with no timer advance (for "an event fires and reads the clock instantly,
+  no timer involved" cases). Mixing both in the same assertion produces a silently-wrong expected
+  value (`mobile/src/lib/clock/__tests__/useNow.test.tsx`).
 - 2026-09-22: An ALREADY-INSTALLED dev-client does not reconnect to a freshly started `npx expo start` — it keeps rendering whatever JS it last successfully loaded (from before `src/mocks/` was deleted, in this case), and never makes a bundle request to the new Metro at all (nothing in the Metro log). `mobile/.env` pointing at the right Supabase URL/key is irrelevant here — the app is not even running current JS. Symptom: a brand-new signed-up account shows old mock trips/history. Starting Metro is NOT enough to pick up code changes on a device/simulator whose dev-client was built before those changes; a second `npx expo start` on the same port just refuses (asks to use another port) instead of "waking up" the stale one. Fix: `npx expo run:ios --device "<name>"` to rebuild and reinstall the dev-client, which relaunches it pointed at the current Metro (confirmed by an "iOS Bundled … (N modules)" line appearing in the Metro log right after).
 
 - 2026-09-21: The session codec must not use aes-js `utils.utf8`: it corrupts 4-byte characters (an emoji in `display_name` broke the stored session on the next read). `sessionSecureStorage.ts` goes through `encodeURIComponent`/`decodeURIComponent` instead; the test pins an emoji round trip.
@@ -60,3 +69,9 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 ## Session Notes
 - 2026-09-21: Before any auth/Supabase work in `mobile/`: `__tests__/guardrails.test.ts` (SPEC-01 AC-25/AC-33) statically fails on the literal `supabase` (incl. `@supabase/supabase-js`), `fetch(`, `XMLHttpRequest`, `axios` anywhere in `app/` + `src/` (rule `no-backend-or-network`; comments are exempt), and pins `ALLOWED_SETTING_KEYS` to exactly one key with one `setItem` call site. Adding `lib/supabase` or an encrypted-session key in AsyncStorage turns `pnpm test` red until those rules are deliberately rewritten (SPEC-02 lists this under "что заменяется в SPEC-01"); likewise `e2e/flows/skeleton-smoke.yaml` taps `SIGNUP_SUBMIT` and expects tabs, which stops holding once sign-up is real.
 ## Open Questions
+- 2026-09-22: PLAN-04 step 5 contrast recheck of `warnBg`/`warnBorder`/`danger` (`design/tokens.md`)
+  found the LIGHT theme's `danger` (`#C0503C`) at only ≈4.2:1 on `bg` — below the 4.5:1 rule for
+  its existing `small`-text usages (`trip-detail`, `auth`, `trip-form`, `account`). Pre-existing,
+  not introduced by this step; `mobile/src/lib/theme/tokens.ts` is outside step 5's file list, so
+  the value was documented but not changed. Needs a theme-owner follow-up (darken the light
+  `danger` value, then update `tokens.test.ts`'s snapshot).

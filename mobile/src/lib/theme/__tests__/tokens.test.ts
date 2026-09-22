@@ -104,6 +104,10 @@ describe("sizes (design/tokens.md, «Размеры и отступы»)", () =>
       switchW: 44,
       switchH: 24,
       switchKnob: 20,
+      chainLine: 2,
+      chainNode: 8,
+      chainGapNode: 10,
+      dashBorderWidth: 1.5,
     });
   });
 
