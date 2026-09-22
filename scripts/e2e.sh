@@ -5,6 +5,7 @@
 #   ./scripts/e2e.sh skeleton-smoke
 #   ./scripts/e2e.sh skeleton-smoke --locale en
 #   ./scripts/e2e.sh auth-email
+#   ./scripts/e2e.sh trip-crud --locale en
 #   ./scripts/e2e.sh theme-persistence --metro-url http://localhost:8081
 #
 # The flows contain NO literal UI text: every selector is an env var (LOCALE plus one variable per
@@ -22,7 +23,7 @@ usage() {
   cat <<'EOF'
 Usage: scripts/e2e.sh <flow> [--locale ru|en] [--metro-url <url>]
 
-  <flow>              flow name in e2e/flows/ without .yaml (skeleton-smoke | auth-email | theme-persistence)
+  <flow>              flow name in e2e/flows/ without .yaml (skeleton-smoke | auth-email | theme-persistence | trip-crud)
   --locale ru|en      UI language of the run (default: ru). Sent to the app as the launch argument
                       -AppleLanguages "(<locale>)" and used to pick the selector strings.
   --metro-url <url>   dev-client builds only: Metro URL to open after launch, e.g.
@@ -33,8 +34,9 @@ Preconditions (not installed by this script):
   - Maestro:            curl -Ls "https://get.maestro.mobile.dev" | bash
   - Xcode + a booted iOS simulator: open -a Simulator
   - the app installed on it:        cd mobile && npx expo run:ios   (dev client)
-  - auth-email / skeleton-smoke sign up on the LOCAL Supabase stack: supabase start -x vector
-    (see supabase/README.md) with mobile/.env pointing at it. Each run uses a fresh e-mail.
+  - auth-email / skeleton-smoke / theme-persistence / trip-crud sign up on the LOCAL Supabase stack:
+    supabase start -x vector (see supabase/README.md; migrations applied, trip-crud and
+    skeleton-smoke create trips) with mobile/.env pointing at it. Each run uses a fresh e-mail.
 EOF
 }
 
@@ -158,9 +160,18 @@ fi
 #   SIGNIN_CREATE_LINK         auth:signIn.createLink
 #   FORGOT_TITLE               auth:forgotPassword.title
 #   LEGAL_BODY                 legal:placeholderBody
-#   CITY_LISBON, CITY_ROME     trips:cities.lisbon, trips:cities.rome
 #   NEW_TRIP_A11Y              trips:a11y.newTrip
-#   NEW_TRIP_CITY_LABEL        trips:newTrip.city
+#   TRIPS_EMPTY_TITLE          trips:list.emptyTitle
+#   HISTORY_EMPTY              history:empty
+#   FORM_DESTINATION_PLACEHOLDER trips:form.destination.placeholder (typed by placeholder, like the
+#                              auth fields: caption and input share one label)
+#   FORM_NO_DATES / _HINT      trips:form.dates.noDates, trips:form.dates.noDatesHint
+#   FORM_CREATE                trips:form.create
+#   STATUS_ARCHIVED            common:status.archived (chip text; also the status part of a card label)
+#   MORE_ACTIONS               tripDetail:a11y.more
+#   MENU_ARCHIVE / MENU_DELETE tripDetail:menu.archive, tripDetail:menu.delete
+#   DELETE_CONFIRM_TITLE       tripDetail:deleteConfirm.title (regex-escaped "?")
+#   DELETE_CONFIRM             tripDetail:deleteConfirm.confirm
 #   ADD_FLIGHT                 tripDetail:a11y.addFlight
 #   FLIGHT_FORM_FROM           bookingForm:flight.from
 #   LOGOUT                     profile:logout
@@ -192,10 +203,19 @@ SIGNIN_SUBMIT=Войти
 SIGNIN_CREATE_LINK=Создать
 FORGOT_TITLE=Восстановление пароля
 LEGAL_BODY=Текст будет добавлен позже
-CITY_LISBON=Лиссабон
-CITY_ROME=Рим
 NEW_TRIP_A11Y=Новая поездка
-NEW_TRIP_CITY_LABEL=Город
+TRIPS_EMPTY_TITLE=Поездок пока нет
+HISTORY_EMPTY=Завершённых поездок пока нет
+FORM_DESTINATION_PLACEHOLDER=Город или страна
+FORM_NO_DATES=Пока без дат
+FORM_NO_DATES_HINT=Поездка сохранится как черновик. Даты можно добавить позже
+FORM_CREATE=Создать поездку
+STATUS_ARCHIVED=архив
+MORE_ACTIONS=Дополнительные действия
+MENU_ARCHIVE=Отправить в архив
+MENU_DELETE=Удалить навсегда
+DELETE_CONFIRM_TITLE=Удалить поездку навсегда\?
+DELETE_CONFIRM=Удалить навсегда
 ADD_FLIGHT=Добавить рейс
 FLIGHT_FORM_FROM=Откуда
 LOGOUT=Выйти
@@ -228,10 +248,19 @@ SIGNIN_SUBMIT=Sign in
 SIGNIN_CREATE_LINK=Create one
 FORGOT_TITLE=Reset password
 LEGAL_BODY=Text will be added later
-CITY_LISBON=Lisbon
-CITY_ROME=Rome
 NEW_TRIP_A11Y=New trip
-NEW_TRIP_CITY_LABEL=City
+TRIPS_EMPTY_TITLE=No trips yet
+HISTORY_EMPTY=No past trips yet
+FORM_DESTINATION_PLACEHOLDER=City or country
+FORM_NO_DATES=No dates yet
+FORM_NO_DATES_HINT=The trip is saved as a draft. You can add dates later
+FORM_CREATE=Create trip
+STATUS_ARCHIVED=archived
+MORE_ACTIONS=More actions
+MENU_ARCHIVE=Move to archive
+MENU_DELETE=Delete permanently
+DELETE_CONFIRM_TITLE=Delete this trip permanently\?
+DELETE_CONFIRM=Delete permanently
 ADD_FLIGHT=Add flight
 FLIGHT_FORM_FROM=From
 LOGOUT=Sign out
@@ -252,10 +281,14 @@ EOF
 # runs back to back, never collide). RUN_ID may be preset by the caller to replay one account.
 # The password is a fixed, non-secret, local-only value (>= 8 chars, shared/ passwordSchema).
 # The email avoids "+" on purpose: Maestro text selectors are regexes and "+" is a quantifier.
+# E2E_PLACE is the free-text place the trip flows type into the new-trip form (a directory
+# suggestion is never tapped, so the flows do not depend on the place directory). It embeds the
+# RUN_ID, is the same in both locales, and holds letters, digits and spaces only (regex-safe).
 RUN_ID="${RUN_ID:-$(date +%s)$RANDOM}"
 E2E_NAME="E2E Tester"
 E2E_EMAIL="e2e-${RUN_ID}@example.com"
 E2E_PASSWORD="e2e-local-password-1"
+E2E_PLACE="E2E Place ${RUN_ID}"
 
 MAESTRO_ARGS=(
   -e "LOCALE=$LOCALE_ARG"
@@ -264,6 +297,7 @@ MAESTRO_ARGS=(
   -e "E2E_NAME=$E2E_NAME"
   -e "E2E_EMAIL=$E2E_EMAIL"
   -e "E2E_PASSWORD=$E2E_PASSWORD"
+  -e "E2E_PLACE=$E2E_PLACE"
 )
 while IFS= read -r line; do
   [ -n "$line" ] || continue

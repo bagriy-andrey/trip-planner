@@ -1,0 +1,171 @@
+appId: com.anonymous.tripplanner
+name: Trip CRUD - create, list, archive, History, delete permanently (SPEC-03 AC-80)
+tags:
+  - trips
+# Run through the runner, which supplies LOCALE, every UI string of that locale and the per-run
+# account and place as env vars:
+#   ./scripts/e2e.sh trip-crud [--locale ru|en] [--metro-url http://localhost:8081]
+#
+# Needs the LOCAL Supabase stack up (`supabase start -x vector`, see supabase/README.md) with the
+# trips migration applied and mobile/.env pointing at it: this is the first flow that CREATES and
+# DELETES server data. The runner mints a fresh account (E2E_EMAIL from RUN_ID) on every run, so
+# both lists are empty at the start and the flow ends with both empty again.
+#
+# The journey: sign up -> "+" -> free-text place, "no dates yet" -> create (lands on the details)
+# -> back -> the card is on Trips -> open it -> "..." -> archive -> the card left Trips -> History
+# shows it with the archived chip -> open it -> "..." -> delete permanently -> confirm -> neither
+# Trips nor History has it.
+#
+# Selection rules (AC-19): text / accessibility label / placeholder only, no `id:` / testID, and no
+# literal interface string here.
+#   - A trip card is ONE element whose label is "place, status, dates" (trips:list.a11y.card), so it
+#     is matched as "<place>,.*" (Maestro `text:` is a full-string regex): the comma tells the card
+#     from the details header, whose text is the bare place. The archived chip is the status part
+#     of that label: "<place>,.*<archived>.*". "Nothing shows the place" is the broad ".*<place>.*".
+#   - E2E_PLACE is free text on purpose (no directory suggestion is tapped, so the flow does not
+#     depend on the place directory) and is unique per run; it holds no regex metacharacters.
+#   - The place field is typed by PLACEHOLDER, like the auth fields (its caption and its input
+#     share one label).
+#   - "Delete permanently" is on screen twice over the journey (menu item, then confirm button) but
+#     never at once: the confirmation REPLACES the menu, so each tap has a single match.
+---
+- launchApp:
+    clearState: true
+    arguments:
+      "-AppleLanguages": "(${LOCALE})"
+
+- runFlow:
+    when:
+      true: ${DEV_CLIENT_LINK != 'none'}
+    commands:
+      - openLink: ${DEV_CLIENT_LINK}
+      - tapOn:
+          text: "Open|Открыть"
+          optional: true
+      - tapOn:
+          text: "Continue|Продолжить"
+          optional: true
+
+# --- Sign up with a fresh account (real server; the account is new, so both lists are empty) ----
+- extendedWaitUntil:
+    visible: "${ONBOARDING_TITLE}"
+    timeout: 60000
+- tapOn: "${ONBOARDING_START}"
+- assertVisible: "${SIGNUP_TITLE}"
+- tapOn: "${FIELD_NAME_PLACEHOLDER}"
+- inputText: "${E2E_NAME}"
+- tapOn: "${FIELD_EMAIL_PLACEHOLDER}"
+- inputText: "${E2E_EMAIL}"
+- tapOn: "${FIELD_PASSWORD_PLACEHOLDER}"
+- inputText: "${E2E_PASSWORD}"
+- hideKeyboard
+- tapOn: "${SIGNUP_SUBMIT}"
+- tapOn:
+    text: "${SYSTEM_NOT_NOW}"
+    optional: true
+- extendedWaitUntil:
+    visible: "${TAB_TRIPS}"
+    timeout: 30000
+- assertVisible:
+    text: "${TAB_TRIPS}"
+    selected: true
+
+# A new account has no trips: the Trips empty state, and no card of ours.
+- extendedWaitUntil:
+    visible: "${TRIPS_EMPTY_TITLE}"
+    timeout: 15000
+
+# --- Create: "+" -> free-text place, "no dates yet" -> "Create trip" ---------------------------
+- tapOn: "${NEW_TRIP_A11Y}"
+- extendedWaitUntil:
+    visible: "${FORM_DESTINATION_PLACEHOLDER}"
+    timeout: 10000
+- tapOn: "${FORM_DESTINATION_PLACEHOLDER}"
+- inputText: "${E2E_PLACE}"
+# The keyboard can cover the checkbox and the submit button.
+- hideKeyboard
+# Dates start unset and "no dates" is off, so an undated trip needs the checkbox (else the form
+# rejects it with "set both dates"). The hint under the checkbox appears once it is ticked.
+- tapOn: "${FORM_NO_DATES}"
+- assertVisible: "${FORM_NO_DATES_HINT}"
+- tapOn: "${FORM_CREATE}"
+
+# The trip is created on the server and the sheet is REPLACED by its details. Wait for an S7-only
+# control, NOT for the place text: the form's input still holds the place until the sheet is gone.
+- extendedWaitUntil:
+    visible: "${ADD_FLIGHT}"
+    timeout: 30000
+- assertVisible: "${E2E_PLACE}"
+# S7 has no tab bar.
+- assertNotVisible: "${TAB_TRIPS}"
+- assertNotVisible: "${TAB_HISTORY}"
+
+# --- Back: the card is in the Trips list (and the empty state is gone) -----------------------------
+- tapOn: "${BACK}"
+- extendedWaitUntil:
+    visible: "${E2E_PLACE},.*"
+    timeout: 15000
+- assertVisible:
+    text: "${TAB_TRIPS}"
+    selected: true
+- assertNotVisible: "${TRIPS_EMPTY_TITLE}"
+
+# --- Open it -> "..." -> a live trip offers no "Delete permanently" (AC-47), only archive ----------
+- tapOn: "${E2E_PLACE},.*"
+- extendedWaitUntil:
+    visible: "${E2E_PLACE}"
+    timeout: 15000
+- tapOn: "${MORE_ACTIONS}"
+- assertVisible: "${MENU_ARCHIVE}"
+- assertNotVisible: "${MENU_DELETE}"
+- tapOn: "${MENU_ARCHIVE}"
+
+# The details stay open and the status chip becomes "archived" once the trip is refetched.
+- extendedWaitUntil:
+    visible: "${STATUS_ARCHIVED}"
+    timeout: 30000
+
+# --- Back: the archived trip has left Trips --------------------------------------------------------
+- tapOn: "${BACK}"
+- extendedWaitUntil:
+    visible: "${TRIPS_EMPTY_TITLE}"
+    timeout: 15000
+- assertNotVisible: ".*${E2E_PLACE}.*"
+
+# --- History: the card is there with the archived chip ---------------------------------------------
+- tapOn: "${TAB_HISTORY}"
+- assertVisible:
+    text: "${TAB_HISTORY}"
+    selected: true
+- extendedWaitUntil:
+    visible: "${E2E_PLACE},.*${STATUS_ARCHIVED}.*"
+    timeout: 15000
+- assertNotVisible: "${HISTORY_EMPTY}"
+
+# --- Open it -> "..." -> an archived trip offers "Delete permanently" -> confirm ------------------
+- tapOn: "${E2E_PLACE},.*${STATUS_ARCHIVED}.*"
+- extendedWaitUntil:
+    visible: "${STATUS_ARCHIVED}"
+    timeout: 15000
+- assertVisible: "${E2E_PLACE}"
+- tapOn: "${MORE_ACTIONS}"
+- tapOn: "${MENU_DELETE}"
+# The confirmation states that nothing was deleted yet: it asks first.
+- assertVisible: "${DELETE_CONFIRM_TITLE}"
+- tapOn: "${DELETE_CONFIRM}"
+
+# --- Deleted: the details close onto History, which no longer has the card ------------------------
+- extendedWaitUntil:
+    visible: "${HISTORY_EMPTY}"
+    timeout: 30000
+- assertNotVisible: ".*${E2E_PLACE}.*"
+
+# ... and Trips has neither.
+- tapOn: "${TAB_TRIPS}"
+- assertVisible:
+    text: "${TAB_TRIPS}"
+    selected: true
+- extendedWaitUntil:
+    visible: "${TRIPS_EMPTY_TITLE}"
+    timeout: 15000
+- assertNotVisible: ".*${E2E_PLACE}.*"
