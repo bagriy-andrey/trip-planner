@@ -58,3 +58,27 @@ export type PlaceRecord = z.infer<typeof placeRecordSchema>;
 export type PlaceKind = PlaceRecord["kind"];
 /** UI languages a place can be named in. */
 export type PlaceLanguage = "ru" | "en";
+
+/**
+ * An airport, one city can have several (Q-A / SPEC-04). Lives NEXT TO `placeRecordSchema`, not
+ * inside it: `placeRecordSchema` stays a union of city|country ONLY, because `searchPlaces` (S8,
+ * trip origin/destination) and `trips.place_kind` in the DB must keep accepting exactly
+ * `city|country|custom` — adding `airport` there would be a silent contract change nobody asked
+ * for. `cityId` must reference a `CityRecord` already in `PLACE_DIRECTORY` (shared/insights.md:
+ * ids are stable forever, never invented ad hoc).
+ */
+export const airportRecordSchema = z.object({
+  id: z.string().min(1),
+  kind: z.literal("airport"),
+  iata: z.string().regex(AIRPORT_CODE_PATTERN),
+  ru: z.string().min(1),
+  en: z.string().min(1),
+  cityId: z.string().min(1),
+  /** Duplicated from the owning city for cheap lookups without a join. */
+  countryCode,
+  timeZone: z.string().refine(isValidTimeZone),
+  /** Exactly one airport per city carries `true` (AC-13); it is the one `city.airportCode` names. */
+  isPrimary: z.boolean(),
+});
+
+export type AirportRecord = z.infer<typeof airportRecordSchema>;

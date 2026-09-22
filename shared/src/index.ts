@@ -1,4 +1,5 @@
 // Public surface of @tripplanner/shared.
+export * from "./airlines";
 export * from "./auth";
 export * from "./places";
 export * from "./trips";
