@@ -34,6 +34,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      trip_hotels: {
+        Row: {
+          address: string | null
+          booking_ref: string | null
+          breakfast: string
+          breakfast_days: number | null
+          check_in_at: string
+          check_out_at: string
+          city_place_id: string
+          cost_amount: number | null
+          cost_currency: string | null
+          created_at: string
+          guests: number
+          id: string
+          maps_url: string | null
+          name: string
+          notes: string | null
+          parking: string
+          source: string
+          time_zone: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          booking_ref?: string | null
+          breakfast?: string
+          breakfast_days?: number | null
+          check_in_at: string
+          check_out_at: string
+          city_place_id: string
+          cost_amount?: number | null
+          cost_currency?: string | null
+          created_at?: string
+          guests?: number
+          id?: string
+          maps_url?: string | null
+          name: string
+          notes?: string | null
+          parking?: string
+          source?: string
+          time_zone: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          booking_ref?: string | null
+          breakfast?: string
+          breakfast_days?: number | null
+          check_in_at?: string
+          check_out_at?: string
+          city_place_id?: string
+          cost_amount?: number | null
+          cost_currency?: string | null
+          created_at?: string
+          guests?: number
+          id?: string
+          maps_url?: string | null
+          name?: string
+          notes?: string | null
+          parking?: string
+          source?: string
+          time_zone?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_hotels_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_segments: {
         Row: {
           arrival_at: string | null
