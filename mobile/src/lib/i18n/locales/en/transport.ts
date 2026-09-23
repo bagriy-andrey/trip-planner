@@ -78,4 +78,43 @@ export const transport = {
     gapNode: "Gap between flights",
     riskyGapNode: "Risky layover",
   },
+  // S9/S9b (segment form) strings step 4 did not anticipate: the bottom "save and add next"
+  // button, the unsaved-changes confirmation and the field-error texts keyed by the SHARED
+  // `SEGMENT_FIELD_ERROR` ids (`{{group}}.{{key}}`, e.g. "from.required" -> validation.from.required)
+  // so a form component can translate an id directly with no extra mapping table. Everything else
+  // the form needs (labels, captions, carrier line, delete label, not-found title) already exists
+  // above or in `common`/`bookingForm`/`trips` and is reused as-is.
+  form: {
+    saveAndNext: "Save and add next",
+    deleteConfirmMessage: "The flight will be deleted and cannot be restored.",
+    unsaved: {
+      title: "Close without saving?",
+      message: "Your changes will be lost.",
+      discard: "Discard changes",
+    },
+    validation: {
+      flightNumber: { format: "Check the flight number" },
+      from: {
+        required: "Choose a departure airport",
+        notInDirectory: "Choose an airport from the list; you can search by code",
+      },
+      to: {
+        required: "Choose an arrival airport",
+        notInDirectory: "Choose an airport from the list; you can search by code",
+        sameAsFrom: "Arrival airport is the same as departure",
+      },
+      departure: {
+        dateRequired: "Choose a departure date",
+        timeRequired: "Choose a departure time",
+      },
+      arrival: {
+        incomplete: "Choose both an arrival date and time",
+        notAfterDeparture: "Arrival must be later than departure",
+        tooLong: "A flight cannot last longer than 48 hours",
+      },
+      passengers: { range: "1 to 9 passengers" },
+      seat: { tooLong: "Seat is at most 16 characters" },
+      ticketNumber: { tooLong: "Ticket number is at most 32 characters" },
+    },
+  },
 };

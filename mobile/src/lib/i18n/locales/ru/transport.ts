@@ -84,4 +84,43 @@ export const transport = {
     gapNode: "Пауза между рейсами",
     riskyGapNode: "Рискованная пересадка",
   },
+  // S9/S9b (segment form) strings step 4 did not anticipate: the bottom "save and add next"
+  // button, the unsaved-changes confirmation and the field-error texts keyed by the SHARED
+  // `SEGMENT_FIELD_ERROR` ids (`{{group}}.{{key}}`, e.g. "from.required" -> validation.from.required)
+  // so a form component can translate an id directly with no extra mapping table. Everything else
+  // the form needs (labels, captions, carrier line, delete label, not-found title) already exists
+  // above or in `common`/`bookingForm`/`trips` and is reused as-is.
+  form: {
+    saveAndNext: "Сохранить и добавить следующий",
+    deleteConfirmMessage: "Рейс будет удалён без возможности восстановления.",
+    unsaved: {
+      title: "Закрыть без сохранения?",
+      message: "Изменения будут потеряны.",
+      discard: "Не сохранять",
+    },
+    validation: {
+      flightNumber: { format: "Проверьте номер рейса" },
+      from: {
+        required: "Укажите аэропорт вылета",
+        notInDirectory: "Выберите аэропорт из списка, можно искать по коду",
+      },
+      to: {
+        required: "Укажите аэропорт прилёта",
+        notInDirectory: "Выберите аэропорт из списка, можно искать по коду",
+        sameAsFrom: "Аэропорт прилёта совпадает с аэропортом вылета",
+      },
+      departure: {
+        dateRequired: "Укажите дату вылета",
+        timeRequired: "Укажите время вылета",
+      },
+      arrival: {
+        incomplete: "Укажите и дату, и время прилёта",
+        notAfterDeparture: "Прилёт должен быть позже вылета",
+        tooLong: "Рейс не может длиться дольше 48 часов",
+      },
+      passengers: { range: "От 1 до 9 пассажиров" },
+      seat: { tooLong: "Место не длиннее 16 символов" },
+      ticketNumber: { tooLong: "Номер билета не длиннее 32 символов" },
+    },
+  },
 };
