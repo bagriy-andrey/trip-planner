@@ -63,8 +63,6 @@ const PRESETS: Record<TextFieldVariant, InputTraits> = {
   currency: { autoCapitalize: "characters", autoCorrect: false, maxLength: 3 },
 };
 
-/** Multiline fields are at least two touch targets tall. */
-const MULTILINE_MIN_HEIGHT = layout.minTouch * 2;
 
 export interface TextFieldProps
   extends InputTraits,
@@ -197,5 +195,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  multiline: { minHeight: MULTILINE_MIN_HEIGHT, textAlignVertical: "top" },
+  multiline: { minHeight: layout.textAreaMinHeight, textAlignVertical: "top" },
 });

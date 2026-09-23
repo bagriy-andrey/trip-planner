@@ -119,6 +119,7 @@ scale = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 }
 ```ts
 layout = {
   minTouch:      44,
+  textAreaMinHeight: 88,   // мин. высота многострочного поля
   borderWidth:    1,   // не hairlineWidth
   tabBarHeight:  64,
   tabBarInsetX:  24,

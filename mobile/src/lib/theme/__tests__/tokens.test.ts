@@ -84,6 +84,7 @@ describe("sizes (design/tokens.md, «Размеры и отступы»)", () =>
   it("layout metrics", () => {
     expect(layout).toEqual({
       minTouch: 44,
+      textAreaMinHeight: 88,
       borderWidth: 1,
       tabBarHeight: 64,
       tabBarInsetX: 24,
