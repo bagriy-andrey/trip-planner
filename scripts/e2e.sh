@@ -183,7 +183,7 @@ fi
 #   DEPARTURE_TIME_LABEL       transport:field.departureTime (NOTE: the i18n VALUE is "Departure"/
 #                              "Вылет", not "Departure time" — see the source key name vs. its value)
 #   SEGMENT_SAVE_NEXT          transport:form.saveAndNext
-#   DONE                       common:actions.done
+#   SEGMENT_SAVE               transport:form.save
 #   DELETE_FLIGHT               transport:segment.delete
 #   DELETE_CONFIRM_MESSAGE     transport:form.deleteConfirmMessage
 #   NOT_CLOSED_TITLE           transport:route.notClosedTitle
@@ -246,7 +246,7 @@ FLIGHT_FORM_TO=Куда
 DEPARTURE_DATE_LABEL=Дата вылета
 DEPARTURE_TIME_LABEL=Вылет
 SEGMENT_SAVE_NEXT=Сохранить и добавить следующий
-DONE=Готово
+SEGMENT_SAVE=Сохранить
 DELETE_FLIGHT=Удалить рейс
 DELETE_CONFIRM_MESSAGE=Рейс будет удалён без возможности восстановления.
 NOT_CLOSED_TITLE=Маршрут не замкнут
@@ -304,7 +304,7 @@ FLIGHT_FORM_TO=To
 DEPARTURE_DATE_LABEL=Departure date
 DEPARTURE_TIME_LABEL=Departure
 SEGMENT_SAVE_NEXT=Save and add next
-DONE=Done
+SEGMENT_SAVE=Save
 DELETE_FLIGHT=Delete flight
 DELETE_CONFIRM_MESSAGE=The flight will be deleted and cannot be restored.
 NOT_CLOSED_TITLE=Route not closed

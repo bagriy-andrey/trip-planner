@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import type { Segment } from "@tripplanner/shared";
 
-import { AppText, GlassSurface, Icon, PressableRow } from "@/components";
+import { AppText, GlassSurface, Icon } from "@/components";
 import { useTranslation } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 // `formatSegmentDateTime` is not re-exported by `lib/i18n`'s barrel (a step-4 gap found while
@@ -12,21 +12,18 @@ import { radius, spacing } from "@/lib/theme";
 export interface SegmentCardProps {
   segment: Segment;
   locale: Locale;
-  /** Reports the tapped segment's id; the caller (Step 8/9) decides where "edit" leads. */
-  onPress: (segmentId: string) => void;
   testID?: string;
 }
 
 /**
  * One chain link (AC-64, design/screens/route.md "Цепочка"): two compact lines — the airport
- * codes with a route arrow and a trailing chevron, then the DEPARTURE date/time in the departure
+ * codes with a route arrow, then the DEPARTURE date/time in the departure
  * airport's own zone (never UTC — a card that defaults shows the wrong wall-clock time,
  * `mobile/insights.md`) with the flight number at `textTertiary`. Only the codes, the date/time
- * and the flight number are mono (AGENTS.md "Дизайн и стили" — ticket data only); the tap reports
- * the segment id, the actual navigation target is wired once the segment-form route exists
- * (Step 9).
+ * and the flight number are mono (AGENTS.md "Дизайн и стили" — ticket data only). The route
+ * screen is view-only: the card is not pressable and has no chevron.
  */
-export function SegmentCard({ segment, locale, onPress, testID }: SegmentCardProps) {
+export function SegmentCard({ segment, locale, testID }: SegmentCardProps) {
   const { t } = useTranslation("tripDetail");
   const route = t("flight.route", { from: segment.from.iata, to: segment.to.iata });
   const dateTime = formatSegmentDateTime(locale, segment.departureAt, segment.from.timeZone);
@@ -34,13 +31,7 @@ export function SegmentCard({ segment, locale, onPress, testID }: SegmentCardPro
     segment.flightNumber === null ? `${route}, ${dateTime}` : `${route}, ${dateTime}, ${segment.flightNumber}`;
 
   return (
-    <PressableRow
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={() => onPress(segment.id)}
-      testID={testID}
-      style={styles.pressable}
-    >
+    <View accessible accessibilityLabel={label} testID={testID} style={styles.pressable}>
       <GlassSurface style={styles.card}>
         <View style={styles.row}>
           <View style={styles.codes}>
@@ -48,7 +39,6 @@ export function SegmentCard({ segment, locale, onPress, testID }: SegmentCardPro
             <Icon name="forward" size="sm" color="textSecondary" />
             <AppText variant="mono">{segment.to.iata}</AppText>
           </View>
-          <Icon name="chevron" color="textTertiary" />
         </View>
         <View style={styles.row}>
           <AppText variant="monoSmall" color="textSecondary">
@@ -61,7 +51,7 @@ export function SegmentCard({ segment, locale, onPress, testID }: SegmentCardPro
           ) : null}
         </View>
       </GlassSurface>
-    </PressableRow>
+    </View>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AccessibilityInfo, StyleSheet, TextInput, View } from "react-native";
 
 import { AppText } from "@/components";
@@ -19,6 +19,12 @@ export interface FlightNumberFieldProps {
   /** "Airline not recognized" (already translated). */
   unrecognizedText: string;
   errorText?: string;
+  placeholder?: string;
+  /** Neutral format hint shown while the field is empty. */
+  hint?: string;
+  /** The typed text is not a valid flight number; the error shows once the field loses focus. */
+  formatInvalid?: boolean;
+  formatInvalidText?: string;
   testID?: string;
 }
 
@@ -36,10 +42,16 @@ export function FlightNumberField({
   carrier,
   recognizedText,
   unrecognizedText,
-  errorText,
+  errorText: submitErrorText,
+  placeholder,
+  hint,
+  formatInvalid = false,
+  formatInvalidText,
   testID,
 }: FlightNumberFieldProps) {
   const { tokens } = useTheme();
+  const [blurred, setBlurred] = useState(false);
+  const errorText = submitErrorText ?? (blurred && formatInvalid ? formatInvalidText : undefined);
   const hasError = errorText !== undefined && errorText !== "";
   const recognized = carrier.kind === "recognized";
 
@@ -57,6 +69,9 @@ export function FlightNumberField({
       <TextInput
         value={value}
         onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={tokens.textSecondary}
+        onBlur={() => setBlurred(true)}
         autoCapitalize="characters"
         autoCorrect={false}
         returnKeyType="done"
@@ -68,6 +83,11 @@ export function FlightNumberField({
           { color: tokens.text, backgroundColor: tokens.surface, borderColor },
         ]}
       />
+      {carrier.kind === "empty" && hint !== undefined ? (
+        <AppText variant="small" color="textSecondary">
+          {hint}
+        </AppText>
+      ) : null}
       {carrier.kind === "recognized" ? (
         <AppText variant="small" color="accent" testID={testID ? `${testID}-carrier` : undefined}>
           {recognizedText(carrier.name)}

@@ -15,9 +15,9 @@ tags:
 # The journey (AC-99): sign up -> "+" -> free-text place, "no dates yet" -> create (lands on S7)
 # -> "Add flight" (S9) -> outbound LIS -> OPO -> "Save and add next" -> the form resets in place,
 # prefilled OPO -> LIS (nextSegmentPrefill nudges the loop closed, shared/src/segments/prefill.ts)
-# -> pick a departure time for the return leg -> "Done" -> back on S7 -> open "Маршрут"/"Route"
+# -> pick a departure time for the return leg -> "Save" -> back on S7 -> open "Маршрут"/"Route"
 # (S13): two segments, route CLOSED (no "not closed" card) -> back to S7 (see the note on
-# route.tsx below) -> open the nearest segment from the "Транспорт"/"Transport" block -> delete it
+# route.tsx below) -> open one of the segment cards in the "Транспорт"/"Transport" block -> delete it
 # -> back on S7 -> "Маршрут" again: the route is open again ("not closed" card is back).
 #
 # AIRPORT_FROM_CODE/AIRPORT_TO_CODE (LIS/OPO, shared/src/places/airports.ts) are both Portugal,
@@ -57,14 +57,9 @@ tags:
 # and stays out of Maestro's reach here — that was already manual checklist M2/M4 and still is; AC-100's
 # "move the time steps to the manual checklist" fallback was NOT needed for this flow.
 #
-# --- Known gap this flow works around (not fixed here — outside this step's file list) ------------
-# `mobile/app/trips/[tripId]/route.tsx` (S13, PLAN-04 step 8) still passes no-op callbacks for
-# `onAddSegment`/`onSegmentPress`/`onAddFromNotClosed`: neither step 9 (segment-form) nor step 10
-# (trip-detail) owns that file, so nothing ever wired the Route screen's OWN chain-tap/"+"/
-# not-closed-card navigation. This flow therefore never taps a segment or "+" FROM the Route screen
-# itself — every add/edit/delete goes through S7's "Add flight" button and the "Транспорт" block's
-# nearest-segment card (both correctly wired in trip-detail); the Route screen is only used to ASSERT
-# the chain/closed state. See e2e/insights.md for the full note.
+# The Route screen (S13) is view-only by design (nothing on it is tappable but "back"): every
+# add/edit/delete goes through S7 — the empty block's button / the "+" and the segment cards of the
+# "Транспорт" block — and the Route screen is only used to ASSERT the chain/closed state.
 ---
 - launchApp:
     clearState: true
@@ -169,7 +164,7 @@ tags:
 - tapOn:
     text: "${DEPARTURE_TIME_LABEL}"
     index: 1
-- tapOn: "${DONE}"
+- tapOn: "${SEGMENT_SAVE}"
 
 # --- Back on S7: open "Маршрут"/"Route" (S13) -> two segments, route CLOSED -----------------------
 - extendedWaitUntil:
@@ -182,15 +177,13 @@ tags:
 - assertVisible: "${SEGMENT_RETURN_ROUTE},.*"
 - assertNotVisible: "${NOT_CLOSED_TITLE}"
 
-# --- Back to S7 (Route screen's own chain-tap navigation is unwired, see the header note above) ---
+# --- Back to S7 (the Route screen is view-only) --------------------------------------------------
 - tapOn: "${BACK}"
 - extendedWaitUntil:
     visible: "${ADD_FLIGHT}"
     timeout: 15000
 
-# --- Open the nearest segment from the "Транспорт"/"Transport" block, delete it --------------------
-# Either leg can be "nearest" (both share the same departureAt instant, see e2e/insights.md): match
-# whichever one is actually shown.
+# --- Open a segment card from the "Транспорт"/"Transport" block (both legs are listed), delete it --
 - tapOn: "(${SEGMENT_OUTBOUND_ROUTE}|${SEGMENT_RETURN_ROUTE}),.*"
 - extendedWaitUntil:
     visible:

@@ -119,7 +119,12 @@ function buildGaps(chain: readonly RouteNode[], warnings: RouteWarning[]): Route
   return gaps;
 }
 
-/** `segment.outsideTripDates`, one case per segment per boundary (AC-55); nothing when the trip has no dates. */
+/**
+ * `segment.outsideTripDates` — AT MOST ONE per segment (AC-55; nothing when the trip has no dates).
+ * A segment that departs AND arrives outside the range used to raise two identical warnings; the
+ * user only needs to hear once that the segment sits outside the trip, so `field` names the first
+ * offending end (departure wins over arrival).
+ */
 function buildTripDateWarnings(chain: readonly RouteNode[], trip: BuildRouteInput["trip"]): RouteWarning[] {
   const { startDate, endDate } = trip;
   if (startDate === null && endDate === null) return [];
@@ -128,6 +133,7 @@ function buildTripDateWarnings(chain: readonly RouteNode[], trip: BuildRouteInpu
     const departureLocal = instantToZonedParts(segment.departureAt, segment.from.timeZone).date;
     if (isOutsideTripRange(departureLocal, startDate, endDate)) {
       warnings.push({ id: "segment.outsideTripDates", segmentId: segment.id, field: "departure" });
+      continue;
     }
     if (segment.arrivalAt !== null) {
       const arrivalLocal = instantToZonedParts(segment.arrivalAt, segment.to.timeZone).date;

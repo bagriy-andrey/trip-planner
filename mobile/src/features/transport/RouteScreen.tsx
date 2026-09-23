@@ -1,6 +1,5 @@
 import { StyleSheet, View } from "react-native";
 import { resolveDestinationName } from "@tripplanner/shared";
-import type { RouteView } from "@tripplanner/shared";
 import type { ReactNode } from "react";
 
 import { AppText, Icon, IconButton, Screen } from "@/components";
@@ -17,30 +16,19 @@ import { useSegmentsQuery } from "./hooks/useSegmentsQuery";
 export interface RouteScreenProps {
   tripId: string;
   onBack: () => void;
-  onAddSegment: () => void;
-  /** Reports the tapped segment's id (chain card tap); the edit destination is Step 9's. */
-  onSegmentPress: (segmentId: string) => void;
-  /** The "not closed" card's button; the segment form (Step 9) prefills "from" with `openAt`. */
-  onAddFromNotClosed: (openAt: NonNullable<RouteView["openAt"]>) => void;
 }
 
 /**
- * S13 — the whole route as one chain (design/screens/route.md). Thin: state comes from
+ * S13 — the whole route as one read-only chain (design/screens/route.md): nothing on it is tappable
+ * except "back"; segments are added and edited from the trip details. Thin: state comes from
  * `useTripQuery` + `useSegmentsQuery` + `useRouteView`, rendering from the `RouteView` they
  * produce. Navigation targets (segment form, "back to trips") are the CALLER's — Step 8 wires the
  * real router once `/trips/[tripId]/route` exists; this screen only reports intent through its
  * callback props (same shape as `TripDetailScreen`'s own thin/state split).
  */
-export function RouteScreen({
-  tripId,
-  onBack,
-  onAddSegment,
-  onSegmentPress,
-  onAddFromNotClosed,
-}: RouteScreenProps) {
+export function RouteScreen({ tripId, onBack }: RouteScreenProps) {
   const { t, i18n } = useTranslation("transport");
   const { t: tCommon } = useTranslation("common");
-  const { t: tTripDetail } = useTranslation("tripDetail");
   const { tokens } = useTheme();
   const locale = resolveLocale([i18n.language]);
 
@@ -70,14 +58,9 @@ export function RouteScreen({
   } else {
     body = (
       <View style={styles.content}>
-        <RouteChain route={route} locale={locale} onSegmentPress={onSegmentPress} testID="route-chain" />
+        <RouteChain route={route} locale={locale} testID="route-chain" />
         {route.closed || route.openAt === undefined ? null : (
-          <NotClosedCard
-            openAt={route.openAt}
-            locale={locale}
-            onAddFlight={onAddFromNotClosed}
-            testID="route-not-closed"
-          />
+          <NotClosedCard openAt={route.openAt} locale={locale} testID="route-not-closed" />
         )}
       </View>
     );
@@ -97,9 +80,7 @@ export function RouteScreen({
         <AppText variant="h2" accessibilityRole="header" style={styles.headerTitle}>
           {t("screen.title")}
         </AppText>
-        <IconButton accessibilityLabel={tTripDetail("a11y.addFlight")} onPress={onAddSegment} testID="route-add">
-          <Icon name="plus" />
-        </IconButton>
+        <View style={styles.headerSide} />
       </View>
       {body}
     </Screen>

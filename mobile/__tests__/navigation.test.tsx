@@ -363,16 +363,16 @@ describe("navigation topology", () => {
 
   it("opens the booking forms of the trip from the S7 buttons (typed object hrefs)", async () => {
     await renderDetails("trip-lisbon");
-    fireEvent.press(screen.getByTestId("add-flight"));
+    fireEvent.press(screen.getByTestId("empty-flight"));
     await expectPath("/trips/trip-lisbon/flights/new");
     act(() => router.back());
     await expectPath("/trips/trip-lisbon");
 
-    fireEvent.press(screen.getByTestId("add-hotel"));
+    fireEvent.press(screen.getByTestId("empty-hotel"));
     await expectPath("/trips/trip-lisbon/hotels/new");
     act(() => router.back());
 
-    fireEvent.press(screen.getByTestId("add-car"));
+    fireEvent.press(screen.getByTestId("empty-car"));
     await expectPath("/trips/trip-lisbon/cars/new");
   });
 

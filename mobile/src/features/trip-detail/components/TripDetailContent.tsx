@@ -88,6 +88,7 @@ export function TripDetailContent({ trip, refetch }: TripDetailContentProps) {
               title={t("sections.flights")}
               addLabel={t("a11y.addFlight")}
               onAdd={() => router.push({ pathname: "/trips/[tripId]/flights/new", params })}
+              hideAdd={!(hasSegments && route !== undefined)}
               testID="section-flights"
               addTestID="add-flight"
             >
@@ -111,6 +112,7 @@ export function TripDetailContent({ trip, refetch }: TripDetailContentProps) {
               title={t("sections.hotel")}
               addLabel={t("a11y.addHotel")}
               onAdd={() => router.push({ pathname: "/trips/[tripId]/hotels/new", params })}
+              hideAdd
               testID="section-hotel"
               addTestID="add-hotel"
             >
@@ -124,6 +126,7 @@ export function TripDetailContent({ trip, refetch }: TripDetailContentProps) {
               title={t("sections.car")}
               addLabel={t("a11y.addCar")}
               onAdd={() => router.push({ pathname: "/trips/[tripId]/cars/new", params })}
+              hideAdd
               testID="section-car"
               addTestID="add-car"
             >

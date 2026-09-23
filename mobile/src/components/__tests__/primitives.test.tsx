@@ -252,6 +252,14 @@ describe("static and composite primitives", () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
+  it("ModalHeader can show a close cross and no Done", async () => {
+    const onCancel = jest.fn();
+    await renderWithProviders(<ModalHeader title="Flight" onCancel={onCancel} cancelAsIcon hideDone />);
+    expect(screen.queryByRole("button", { name: "Done" })).toBeNull();
+    await userEvent.press(screen.getByRole("button", { name: "Cancel" }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
   it("ModalHeader buttons keep a 44pt hit area", async () => {
     await renderWithProviders(<ModalHeader title="New trip" />);
     for (const name of ["Cancel", "Done"]) {

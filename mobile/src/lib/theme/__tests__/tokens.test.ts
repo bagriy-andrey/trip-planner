@@ -42,7 +42,7 @@ describe("colour tokens (AC-16, design/tokens.md)", () => {
       onAccent: "#14171C",
       warnBg: "rgba(242,169,59,0.14)",
       warnBorder: "rgba(242,169,59,0.40)",
-      danger: "#C0503C",
+      danger: "#B3452F",
       scrim: "rgba(0,0,0,0.35)",
       coverScrim: "rgba(0,0,0,0.22)",
       invertedPill: "#14171C",

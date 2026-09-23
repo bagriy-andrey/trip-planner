@@ -108,8 +108,8 @@ describe("segmentRowSchema / toSegment (AC-85)", () => {
     ["passengers = 10", { passengers: 10 }],
     ["a non-integer passengers", { passengers: 2.5 }],
     ["an empty seat (the DB stores null)", { seat: "" }],
-    ["a 17-character seat", { seat: "a".repeat(17) }],
-    ["a 33-character ticket_number", { ticket_number: "a".repeat(33) }],
+    ["a 65-character seat", { seat: "a".repeat(65) }],
+    ["a 161-character ticket_number", { ticket_number: "a".repeat(161) }],
     ["a departure_at without a timezone offset", { departure_at: "2026-06-15T08:00:00" }],
   ])("fails on %s", (_label, patch) => {
     expect(parse({ ...goodRow, ...patch }).success).toBe(false);

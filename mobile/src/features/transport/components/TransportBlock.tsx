@@ -13,7 +13,7 @@ import { radius, spacing, useTheme } from "@/lib/theme";
 export interface TransportBlockProps {
   route: RouteView;
   locale: Locale;
-  /** The nearest segment card was tapped; reports its id (edit target wired later, Step 9/10). */
+  /** A segment card was tapped; reports its id (opens the edit form). */
   onSegmentPress: (segmentId: string) => void;
   /** The summary row or the "not closed" banner was tapped; both lead to the route screen (S13). */
   onOpenRoute: () => void;
@@ -22,26 +22,27 @@ export interface TransportBlockProps {
 
 /**
  * S7's "Транспорт" block CONTENT (AC-71..73, design/screens/trip-detail.md "Блок «Транспорт»"):
- * the nearest segment in full (codes, both times, baggage/passenger chips), a one-line route
- * summary, and the "route not closed" banner when it applies. Exactly ONE card regardless of how
- * many segments the trip has (AC-72) — the whole chain lives only on the route screen
- * (`RouteChain`). Deliberately does NOT render the "Транспорт" title / "+" header: that's the
+ * one full card per segment in departure order (codes, both times, baggage/passenger chips), a
+ * one-line route summary, and the "route not closed" banner when it applies. The layovers and
+ * gaps between cards live only on the route screen (`RouteChain`). Deliberately does NOT render the "Транспорт" title / "+" header: that's the
  * generic booking-section chrome Step 10 already owns in `features/trip-detail`. Returns `null`
  * when there is nothing to show (no segments) — the caller falls back to the empty block, like
  * every other S7 section.
  */
 export function TransportBlock({ route, locale, onSegmentPress, onOpenRoute, testID }: TransportBlockProps) {
-  const nearest = route.chain.find((node) => node.segment.id === route.nearestSegmentId);
-  if (nearest === undefined) return null;
+  if (route.chain.length === 0) return null;
 
   return (
     <View testID={testID} style={styles.root}>
-      <NearestSegmentCard
-        segment={nearest.segment}
-        locale={locale}
-        onPress={onSegmentPress}
-        testID={testID === undefined ? undefined : `${testID}-segment`}
-      />
+      {route.chain.map((node) => (
+        <SegmentCard
+          key={node.segment.id}
+          segment={node.segment}
+          locale={locale}
+          onPress={onSegmentPress}
+          testID={testID === undefined ? undefined : `${testID}-segment-${node.segment.id}`}
+        />
+      ))}
       <RouteSummaryRow
         route={route}
         onPress={onOpenRoute}
@@ -59,7 +60,7 @@ export function TransportBlock({ route, locale, onSegmentPress, onOpenRoute, tes
   );
 }
 
-interface NearestSegmentCardProps {
+interface SegmentCardProps {
   segment: Segment;
   locale: Locale;
   onPress: (segmentId: string) => void;
@@ -67,7 +68,7 @@ interface NearestSegmentCardProps {
 }
 
 /** design/screens/trip-detail.md "Карточка записи" (Рейс variant): codes, both times, two chips. */
-function NearestSegmentCard({ segment, locale, onPress, testID }: NearestSegmentCardProps) {
+function SegmentCard({ segment, locale, onPress, testID }: SegmentCardProps) {
   const { t } = useTranslation("tripDetail");
   const route = t("flight.route", { from: segment.from.iata, to: segment.to.iata });
   const departure = formatSegmentDateTime(locale, segment.departureAt, segment.from.timeZone);

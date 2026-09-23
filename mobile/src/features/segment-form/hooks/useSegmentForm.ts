@@ -1,4 +1,5 @@
 import {
+  SEGMENT_FIELD_ERROR,
   SEGMENT_PASSENGERS_MAX,
   SEGMENT_PASSENGERS_MIN,
   buildRoute,
@@ -8,8 +9,16 @@ import {
   parseSegmentForm,
   searchAirports,
 } from "@tripplanner/shared";
-import type { AirportRecord, CalendarDate, ClockTime, Segment, SegmentFormFieldErrors, SegmentFormInput } from "@tripplanner/shared";
-import { useRouter } from "expo-router";
+import type {
+  AirportRecord,
+  CalendarDate,
+  ClockTime,
+  Segment,
+  SegmentFormFieldErrors,
+  SegmentFormInput,
+  SegmentFormRules,
+} from "@tripplanner/shared";
+import { useNavigation, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 
 import { TripApiError, useTripQuery } from "@/features/trips";
@@ -75,6 +84,7 @@ function toSegmentFormInput(state: SegmentFormState): SegmentFormInput {
  */
 export function useSegmentForm(target: SegmentFormTarget, initial: SegmentFormState) {
   const router = useRouter();
+  const navigation = useNavigation();
   const now = useNow();
   const { t: tTrips } = useTranslation("trips");
   const { i18n } = useTranslation();
@@ -200,16 +210,37 @@ export function useSegmentForm(target: SegmentFormTarget, initial: SegmentFormSt
   const changeSeat = (value: string) => patch({ seat: value }, ["seat"]);
   const changeTicketNumber = (value: string) => patch({ ticketNumber: value }, ["ticketNumber"]);
 
+  // --- Departure rules (past / before the trip) ---------------------------------------------------
+  // Create always checks them; edit only once the departure moment or origin was touched, so an
+  // already-departed segment can still have its seat or ticket fixed.
+  const departureTouched =
+    state.departureDate !== initialState.departureDate ||
+    state.departureTime !== initialState.departureTime ||
+    state.fromAirport?.iata !== initialState.fromAirport?.iata;
+  const rules: SegmentFormRules | undefined =
+    active.mode === "create" || departureTouched
+      ? { now, tripStartDate: tripQuery.trip?.startDate ?? null }
+      : undefined;
+
+  const liveDepartureParse = parseSegmentForm(toSegmentFormInput(state), rules);
+  const liveDepartureId = liveDepartureParse.ok ? undefined : liveDepartureParse.fieldErrors.departureDate;
+  const departureRuleError =
+    liveDepartureId === SEGMENT_FIELD_ERROR.departureInPast ||
+    liveDepartureId === SEGMENT_FIELD_ERROR.departureBeforeTripStart
+      ? liveDepartureId
+      : undefined;
+
   // --- Submit --------------------------------------------------------------------------------------
   const canSubmit =
     state.fromAirport !== null &&
     state.toAirport !== null &&
     state.departureDate !== null &&
-    state.departureTime !== null;
+    state.departureTime !== null &&
+    departureRuleError === undefined;
 
   async function trySubmit(): Promise<Segment | undefined> {
     if (inFlight.current) return undefined;
-    const parsed = parseSegmentForm(toSegmentFormInput(state));
+    const parsed = parseSegmentForm(toSegmentFormInput(state), rules);
     if (!parsed.ok) {
       setErrors(parsed.fieldErrors);
       return undefined;
@@ -236,7 +267,7 @@ export function useSegmentForm(target: SegmentFormTarget, initial: SegmentFormSt
   /** Header "Готово" (AC-45): saves, then leaves to wherever the screen was opened from. */
   const done = async () => {
     const segment = await trySubmit();
-    if (segment !== undefined) router.back();
+    if (segment !== undefined) leave();
   };
 
   /** Bottom "Сохранить и добавить следующий" (AC-41..AC-46). */
@@ -265,13 +296,28 @@ export function useSegmentForm(target: SegmentFormTarget, initial: SegmentFormSt
 
   // --- Close / unsaved changes (AC-40) ------------------------------------------------------------
   const dirty = !segmentFormEquals(initialState, state);
+  // Swipe-down / hardware back go through the navigator, not `requestClose`: intercept them while
+  // there are unsaved edits. Our own exits (saved, deleted, discarded) set `leaving` first.
+  const leaving = useRef(false);
+  useEffect(() => {
+    if (!dirty) return undefined;
+    return navigation.addListener("beforeRemove", (event) => {
+      if (leaving.current) return;
+      event.preventDefault();
+      setCloseConfirmOpen(true);
+    });
+  }, [dirty, navigation]);
+  const leave = () => {
+    leaving.current = true;
+    router.back();
+  };
   const requestClose = () => {
     if (dirty) setCloseConfirmOpen(true);
-    else router.back();
+    else leave();
   };
   const confirmDiscard = () => {
     setCloseConfirmOpen(false);
-    router.back();
+    leave();
   };
   const cancelCloseConfirm = () => setCloseConfirmOpen(false);
 
@@ -295,7 +341,7 @@ export function useSegmentForm(target: SegmentFormTarget, initial: SegmentFormSt
     try {
       await remove.mutateAsync({ tripId: active.tripId, segmentId: active.segmentId });
       setDeleteSheet("closed");
-      router.back();
+      leave();
     } catch (error) {
       setDeleteError(submitErrorKind(error));
     } finally {
@@ -309,6 +355,8 @@ export function useSegmentForm(target: SegmentFormTarget, initial: SegmentFormSt
     isEdit: active.mode === "edit",
     state,
     errors,
+    departureRuleError,
+    flightNumberInvalid: trimmedFlightNumber !== "" && !parsedFlightNumber.valid,
     carrier,
     fromSuggestions,
     toSuggestions,

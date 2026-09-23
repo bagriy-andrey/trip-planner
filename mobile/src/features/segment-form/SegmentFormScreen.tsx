@@ -146,10 +146,9 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
       <ModalHeader
         title={tBookingForm("titles.flight")}
         cancelLabel={tCommon("actions.cancel")}
-        doneLabel={tCommon("actions.done")}
         onCancel={form.requestClose}
-        onDone={form.done}
-        doneDisabled={!form.canSubmit || form.submitting}
+        cancelAsIcon
+        hideDone
       />
       <View style={styles.fields}>
         <FlightNumberField
@@ -160,6 +159,10 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
           recognizedText={(name) => t("carrier.fromDirectoryOffline", { name })}
           unrecognizedText={t("carrier.unrecognized")}
           errorText={fieldError("flightNumber")}
+          placeholder={t("field.flightNumberPlaceholder")}
+          hint={t("caption.flightNumber")}
+          formatInvalid={form.flightNumberInvalid}
+          formatInvalidText={t("form.validation.flightNumber.format")}
           testID="segment-form-flight-number"
         />
         <View style={styles.airport}>
@@ -214,7 +217,11 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
           onChangeDate={form.changeDepartureDate}
           onChangeTime={form.changeDepartureTime}
           dateFallback={today}
-          errorText={fieldError("departureDate") ?? fieldError("departureTime")}
+          errorText={
+            (form.departureRuleError === undefined ? undefined : t(`form.validation.${form.departureRuleError}`)) ??
+            fieldError("departureDate") ??
+            fieldError("departureTime")
+          }
           testID="segment-form-departure"
         />
         <ArrivalBlock
@@ -245,14 +252,16 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
           testID="segment-form-passengers"
         />
         <MonoField
-          label={t("field.seat")}
+          label={t(form.state.passengers > 1 ? "field.seatMany" : "field.seat")}
+          caption={form.state.passengers > 1 ? t("caption.perPassenger") : undefined}
           value={form.state.seat}
           onChangeText={form.changeSeat}
           errorText={fieldError("seat")}
           testID="segment-form-seat"
         />
         <MonoField
-          label={t("field.ticketNumber")}
+          label={t(form.state.passengers > 1 ? "field.ticketNumberMany" : "field.ticketNumber")}
+          caption={form.state.passengers > 1 ? t("caption.perPassenger") : undefined}
           value={form.state.ticketNumber}
           onChangeText={form.changeTicketNumber}
           errorText={fieldError("ticketNumber")}
@@ -265,13 +274,22 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
         </AppText>
       )}
       <PrimaryButton
-        label={t("form.saveAndNext")}
-        accessibilityLabel={form.submitting ? tBookingForm("titles.flight") : t("form.saveAndNext")}
+        label={t("form.save")}
+        accessibilityLabel={t("form.save")}
         disabled={!form.canSubmit}
         loading={form.submitting}
-        onPress={form.saveAndNext}
-        testID="segment-form-save-next"
+        onPress={form.done}
+        testID="segment-form-save"
       />
+      {form.isEdit ? null : (
+        <SecondaryButton
+          label={t("form.saveAndNext")}
+          accessibilityLabel={t("form.saveAndNext")}
+          disabled={!form.canSubmit || form.submitting}
+          onPress={form.saveAndNext}
+          testID="segment-form-save-next"
+        />
+      )}
       {form.canDelete ? (
         <Pressable
           accessibilityRole="button"
@@ -346,13 +364,14 @@ interface MonoFieldProps {
   value: string;
   onChangeText: (text: string) => void;
   errorText?: string;
+  caption?: string;
   testID?: string;
 }
 
 /** Seat / ticket number: mono "ticket data" (AGENTS.md) — `TextField` has no mono variant, so this
  * screen (which owns both fields, neither has its own component in the step's file list) renders
  * them directly. */
-function MonoField({ label, value, onChangeText, errorText, testID }: MonoFieldProps) {
+function MonoField({ label, value, onChangeText, errorText, caption, testID }: MonoFieldProps) {
   const { tokens } = useTheme();
   const hasError = errorText !== undefined && errorText !== "";
   return (
@@ -377,7 +396,11 @@ function MonoField({ label, value, onChangeText, errorText, testID }: MonoFieldP
         <AppText variant="small" color="danger" accessibilityRole="alert">
           {errorText}
         </AppText>
-      ) : null}
+      ) : caption === undefined ? null : (
+        <AppText variant="small" color="textSecondary">
+          {caption}
+        </AppText>
+      )}
     </View>
   );
 }

@@ -20,6 +20,7 @@ export type {
   SegmentFormFieldErrors,
   SegmentFormInput,
   SegmentFormResult,
+  SegmentFormRules,
   SegmentFormValue,
   SegmentRow,
   SegmentWrite,

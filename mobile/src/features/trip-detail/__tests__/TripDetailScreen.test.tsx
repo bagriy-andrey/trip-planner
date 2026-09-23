@@ -263,10 +263,13 @@ describe("TripDetailScreen (S7) — booking blocks", () => {
     expect(screen.queryByText(/insurance|documents/i)).toBeNull();
   });
 
-  it("opens the module forms from the plus button and from the empty block, with the id as a param", async () => {
+  it("shows ONE add button per empty block (no header plus) and opens the forms with the id as a param", async () => {
     const user = userEvent.setup();
     await renderDetail(makeTrip({ id: "../../etc" }));
-    await user.press(within(screen.getByTestId("section-flights")).getByTestId("add-flight"));
+    expect(screen.queryByTestId("add-flight")).toBeNull();
+    expect(screen.queryByTestId("add-hotel")).toBeNull();
+    expect(screen.queryByTestId("add-car")).toBeNull();
+    await user.press(within(screen.getByTestId("section-flights")).getByTestId("empty-flight"));
     expect(mockRouter.push).toHaveBeenLastCalledWith({
       pathname: "/trips/[tripId]/flights/new",
       params: { tripId: "../../etc" },
@@ -276,7 +279,7 @@ describe("TripDetailScreen (S7) — booking blocks", () => {
       pathname: "/trips/[tripId]/hotels/new",
       params: { tripId: "../../etc" },
     });
-    await user.press(screen.getByTestId("add-car"));
+    await user.press(screen.getByTestId("empty-car"));
     expect(mockRouter.push).toHaveBeenLastCalledWith({
       pathname: "/trips/[tripId]/cars/new",
       params: { tripId: "../../etc" },
@@ -299,16 +302,17 @@ describe("TripDetailScreen (S7) — Транспорт block (PLAN-04 step 10)",
     expect(screen.queryByTestId("transport-block")).toBeNull();
   });
 
-  it("shows exactly one card for a single-segment trip (AC-71)", async () => {
+  it("shows one card for a single-segment trip, and the header plus is back (AC-71)", async () => {
     listSegmentsMock.mockResolvedValue({ ok: true, data: [makeSegment()] });
     await renderDetail(makeTrip());
     expect(await screen.findByTestId("transport-block")).toBeOnTheScreen();
-    expect(screen.getByTestId("transport-block-segment")).toBeOnTheScreen();
+    expect(screen.getByTestId("transport-block-segment-segment-1")).toBeOnTheScreen();
+    expect(screen.getByTestId("add-flight")).toBeOnTheScreen();
     expect(screen.queryByTestId("empty-flight")).toBeNull();
     expect(screen.getAllByText("KRK")).toHaveLength(1);
   });
 
-  it("still shows exactly one card for a four-segment, open route (AC-71, AC-72)", async () => {
+  it("shows a card for EACH of four segments on an open route (AC-71, AC-72)", async () => {
     listSegmentsMock.mockResolvedValue({
       ok: true,
       data: [
@@ -320,8 +324,9 @@ describe("TripDetailScreen (S7) — Транспорт block (PLAN-04 step 10)",
     });
     await renderDetail(makeTrip());
     expect(await screen.findByTestId("transport-block")).toBeOnTheScreen();
-    // Exactly one card: exactly one node's `from` code renders, even with four segments.
-    expect(screen.getAllByTestId("transport-block-segment")).toHaveLength(1);
+    for (const id of ["s1", "s2", "s3", "s4"]) {
+      expect(screen.getByTestId(`transport-block-segment-${id}`)).toBeOnTheScreen();
+    }
     expect(screen.getByText("KRK · OPO · BCN · VIE · GRO")).toBeOnTheScreen();
   });
 
@@ -342,11 +347,11 @@ describe("TripDetailScreen (S7) — Транспорт block (PLAN-04 step 10)",
     expect(mockRouter.push).toHaveBeenCalledWith({ pathname: "/trips/[tripId]/route", params: { tripId: "trip-1" } });
   });
 
-  it("tapping the nearest segment's card opens its edit form with the segment id as a param", async () => {
+  it("tapping a segment card opens its edit form with the segment id as a param", async () => {
     const user = userEvent.setup();
     listSegmentsMock.mockResolvedValue({ ok: true, data: [makeSegment({ id: "segment-42" })] });
     await renderDetail(makeTrip());
-    await user.press(await screen.findByTestId("transport-block-segment"));
+    await user.press(await screen.findByTestId("transport-block-segment-segment-42"));
     expect(mockRouter.push).toHaveBeenCalledWith({
       pathname: "/trips/[tripId]/flights/[flightId]",
       params: { tripId: "trip-1", flightId: "segment-42" },

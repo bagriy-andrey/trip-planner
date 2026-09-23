@@ -19,9 +19,14 @@ export const transport = {
     passengers: "Passengers",
     seat: "Seat",
     ticketNumber: "Ticket number",
+    seatMany: "Seats",
+    ticketNumberMany: "Ticket numbers",
+    flightNumberPlaceholder: "LO 1234",
   },
   caption: {
     arrivalOptional: "Optional, only needed to work out layovers",
+    flightNumber: "Airline code and number, e.g. LO 1234",
+    perPassenger: "One per passenger, comma-separated",
     airportFromDirectory: "Choose an airport from the list; you can search by code",
   },
   carrier: {
@@ -50,9 +55,7 @@ export const transport = {
   },
   route: {
     notClosedTitle: "Route not closed",
-    notClosedText: "The last segment leaves you in a different city from where the trip started.",
-    // {{city}} = city of the open end of the route.
-    addFlightFrom: "Add flight from {{city}}",
+    notClosedText: "The last segment leaves you in {{city}}, not where the trip started.",
     // The S7 "Transport" block banner — one line, {{city}} = city of the open end of the route.
     notClosedBanner: "Route not closed — no flight from {{city}}",
   },
@@ -85,6 +88,7 @@ export const transport = {
   // the form needs (labels, captions, carrier line, delete label, not-found title) already exists
   // above or in `common`/`bookingForm`/`trips` and is reused as-is.
   form: {
+    save: "Save",
     saveAndNext: "Save and add next",
     deleteConfirmMessage: "The flight will be deleted and cannot be restored.",
     unsaved: {
@@ -106,6 +110,8 @@ export const transport = {
       departure: {
         dateRequired: "Choose a departure date",
         timeRequired: "Choose a departure time",
+        inPast: "Departure can't be in the past",
+        beforeTripStart: "Departure is before the trip starts",
       },
       arrival: {
         incomplete: "Choose both an arrival date and time",
@@ -113,8 +119,8 @@ export const transport = {
         tooLong: "A flight cannot last longer than 48 hours",
       },
       passengers: { range: "1 to 9 passengers" },
-      seat: { tooLong: "Seat is at most 16 characters" },
-      ticketNumber: { tooLong: "Ticket number is at most 32 characters" },
+      seat: { tooLong: "Seats are at most 64 characters" },
+      ticketNumber: { tooLong: "Ticket numbers are at most 160 characters" },
     },
   },
 };

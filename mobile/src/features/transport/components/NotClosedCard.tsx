@@ -2,7 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { findPlaceById } from "@tripplanner/shared";
 import type { RouteView } from "@tripplanner/shared";
 
-import { AppText, Icon, PrimaryButton } from "@/components";
+import { AppText, Icon } from "@/components";
 import { useTranslation } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { layout, radius, spacing, useTheme } from "@/lib/theme";
@@ -10,8 +10,6 @@ import { layout, radius, spacing, useTheme } from "@/lib/theme";
 export interface NotClosedCardProps {
   openAt: NonNullable<RouteView["openAt"]>;
   locale: Locale;
-  /** Reports where the next segment should start from; the segment form (Step 9) prefills "from". */
-  onAddFlight: (openAt: NonNullable<RouteView["openAt"]>) => void;
   testID?: string;
 }
 
@@ -22,11 +20,10 @@ export interface NotClosedCardProps {
  * and a multi-city route — this component doesn't judge that itself, it only renders what
  * `buildRoute`'s `openAt` already decided.
  */
-export function NotClosedCard({ openAt, locale, onAddFlight, testID }: NotClosedCardProps) {
+export function NotClosedCard({ openAt, locale, testID }: NotClosedCardProps) {
   const { t } = useTranslation("transport");
   const { tokens } = useTheme();
   const cityName = findPlaceById(openAt.cityId)?.[locale] ?? openAt.cityId;
-  const buttonLabel = t("route.addFlightFrom", { city: cityName });
 
   return (
     <View
@@ -39,13 +36,7 @@ export function NotClosedCard({ openAt, locale, onAddFlight, testID }: NotClosed
           {t("route.notClosedTitle")}
         </AppText>
       </View>
-      <AppText color="textSecondary">{t("route.notClosedText")}</AppText>
-      <PrimaryButton
-        label={buttonLabel}
-        accessibilityLabel={buttonLabel}
-        onPress={() => onAddFlight(openAt)}
-        testID={testID === undefined ? undefined : `${testID}-add`}
-      />
+      <AppText color="textSecondary">{t("route.notClosedText", { city: cityName })}</AppText>
     </View>
   );
 }

@@ -13,7 +13,7 @@ describe("RouteChain", () => {
       seg("b", "OPO", "BCN", "2026-06-01T13:00:00Z", "2026-06-01T15:00:00Z"),
     ]);
     await renderWithProviders(
-      <RouteChain route={view} locale="en" onSegmentPress={jest.fn()} testID="chain" />,
+      <RouteChain route={view} locale="en" testID="chain" />,
     );
     expect(screen.getByTestId("chain-segment-a")).toBeTruthy();
     expect(screen.getByTestId("chain-gap-a")).toBeTruthy();
@@ -27,7 +27,7 @@ describe("RouteChain", () => {
     ]);
     expect(view.gaps).toHaveLength(0);
     await renderWithProviders(
-      <RouteChain route={view} locale="en" onSegmentPress={jest.fn()} testID="chain" />,
+      <RouteChain route={view} locale="en" testID="chain" />,
     );
     expect(screen.queryByTestId("chain-gap-a")).toBeNull();
   });
@@ -41,7 +41,7 @@ describe("RouteChain", () => {
     const mismatch = view.warnings.find((w) => w.id === "airport.mismatch" && w.beforeSegmentId === "a");
     expect(mismatch).toBeDefined();
     await renderWithProviders(
-      <RouteChain route={view} locale="en" onSegmentPress={jest.fn()} testID="chain" />,
+      <RouteChain route={view} locale="en" testID="chain" />,
     );
     expect(screen.queryByTestId("chain-gap-a")).toBeNull();
     expect(screen.getByTestId("chain-warning-a-b-0")).toBeTruthy();
@@ -56,7 +56,7 @@ describe("RouteChain", () => {
       warnings: [{ id: "segment.outsideTripDates" as const, segmentId: "a", field: "departure" as const }],
     };
     await renderWithProviders(
-      <RouteChain route={withWarning} locale="en" onSegmentPress={jest.fn()} testID="chain" />,
+      <RouteChain route={withWarning} locale="en" testID="chain" />,
     );
     expect(screen.getByTestId("chain-segment-a")).toBeTruthy();
     expect(screen.getByTestId("chain-warning-a-0")).toBeTruthy();
@@ -68,7 +68,7 @@ describe("RouteChain", () => {
       seg("b", "OPO", "BCN", "2026-06-01T13:00:00Z"),
     ]);
     const { queryAllByTestId } = await renderWithProviders(
-      <RouteChain route={view} locale="en" onSegmentPress={jest.fn()} testID="chain" />,
+      <RouteChain route={view} locale="en" testID="chain" />,
     );
     // Segment/gap cards ARE found without `includeHiddenElements` (they're accessible); the
     // decorative nodes/line are not queried by role/text at all, matching the existing `Icon`

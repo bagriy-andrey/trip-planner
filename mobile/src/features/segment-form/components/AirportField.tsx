@@ -89,7 +89,7 @@ export function AirportField({
       {hintText === undefined ? null : (
         <AppText
           variant="small"
-          color={hasError ? "danger" : "textSecondary"}
+          color="danger"
           accessibilityRole={hasError ? "alert" : undefined}
         >
           {hintText}

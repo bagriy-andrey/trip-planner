@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppState } from "react-native";
+
+import { ClockContext } from "./ClockProvider";
 
 /** How often `useNow()` refreshes on its own, absent a foreground event. A route's "nearest
  * segment" (SPEC-04 AC-61) only needs minute-level freshness, not a per-frame timer. */
@@ -15,19 +17,20 @@ const REFRESH_INTERVAL_MS = 60_000;
  * deliberately not on every render or frame.
  */
 export function useNow(): Date {
-  const [now, setNow] = useState(() => new Date());
+  const source = useContext(ClockContext);
+  const [now, setNow] = useState(() => source.now());
 
   useEffect(() => {
-    setNow(new Date());
-    const interval = setInterval(() => setNow(new Date()), REFRESH_INTERVAL_MS);
+    setNow(source.now());
+    const interval = setInterval(() => setNow(source.now()), REFRESH_INTERVAL_MS);
     const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") setNow(new Date());
+      if (state === "active") setNow(source.now());
     });
     return () => {
       clearInterval(interval);
       subscription.remove();
     };
-  }, []);
+  }, [source]);
 
   return now;
 }

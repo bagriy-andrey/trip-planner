@@ -168,3 +168,5 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
   not introduced by this step; `mobile/src/lib/theme/tokens.ts` is outside step 5's file list, so
   the value was documented but not changed. Needs a theme-owner follow-up (darken the light
   `danger` value, then update `tokens.test.ts`'s snapshot).
+  - RESOLVED 2026-09-23: light `danger` darkened to `#B3452F` (found on a manual click-through: the required-field errors read grey-ish); `tokens.test.ts` and `design/tokens.md` updated.
+- 2026-09-23: "now" rules (a departure in the past) need a clock the tests can pin, but `useNow()` used to read the system time directly, so a fixed-date test fixture silently drifted into the past as real time passed. `useNow()` now goes through `ClockContext` (`ClockSource.now()`), and `fixedClock(date)` answers 14h before that day begins in UTC (before the day has started in every zone), so "any time on the pinned day" is always in the future. When adding time-dependent form rules, drive them from `useNow()`, never `new Date()`.

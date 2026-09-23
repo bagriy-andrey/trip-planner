@@ -22,3 +22,4 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 - 2026-09-22: `supabase db reset` run from a git worktree hits the SHARED local stack (containers are keyed by `project_id` in `config.toml`, not by directory) and wipes the local dev data of every checkout, including the accounts the mobile app and the e2e flows use. Run it deliberately, from one place, and re-create the accounts afterwards.
 ## Session Notes
 ## Open Questions
+- 2026-09-23: the RLS pgTAP files (`trips_rls`, `trip_segments_rls`) count rows table-wide, so they only pass on an EMPTY local database; once the mobile app / e2e has created real trips locally, four assertions fail although the policies are fine. Constraint tests are unaffected. Run the RLS files against a fresh `supabase db reset` (only with the user's consent, it wipes local accounts) or make them count only their own fixtures.

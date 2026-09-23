@@ -55,9 +55,6 @@ describe("RouteScreen", () => {
       <RouteScreen
         tripId="trip-1"
         onBack={jest.fn()}
-        onAddSegment={jest.fn()}
-        onSegmentPress={jest.fn()}
-        onAddFromNotClosed={jest.fn()}
       />,
       SIGNED_IN,
     );
@@ -72,9 +69,6 @@ describe("RouteScreen", () => {
       <RouteScreen
         tripId="ghost"
         onBack={onBack}
-        onAddSegment={jest.fn()}
-        onSegmentPress={jest.fn()}
-        onAddFromNotClosed={jest.fn()}
       />,
       SIGNED_IN,
     );
@@ -90,9 +84,6 @@ describe("RouteScreen", () => {
       <RouteScreen
         tripId="trip-1"
         onBack={jest.fn()}
-        onAddSegment={jest.fn()}
-        onSegmentPress={jest.fn()}
-        onAddFromNotClosed={jest.fn()}
       />,
       SIGNED_IN,
     );
@@ -106,54 +97,30 @@ describe("RouteScreen", () => {
       <RouteScreen
         tripId="trip-1"
         onBack={jest.fn()}
-        onAddSegment={jest.fn()}
-        onSegmentPress={jest.fn()}
-        onAddFromNotClosed={jest.fn()}
       />,
       SIGNED_IN,
     );
     await waitFor(() => expect(screen.getByTestId("route-empty")).toBeTruthy());
   });
 
-  it("renders the chain and the 'not closed' card for an open route, and reports the tap", async () => {
+  it("renders the chain and the 'not closed' card for an open route, all read-only", async () => {
     getTripMock.mockResolvedValue({ ok: true, data: makeTrip() });
     listSegmentsMock.mockResolvedValue({
       ok: true,
       data: [seg("a", "KRK", "OPO", "2026-06-01T08:00:00Z", "2026-06-01T10:00:00Z")],
     });
-    const onAddFromNotClosed = jest.fn();
     await renderWithProviders(
       <RouteScreen
         tripId="trip-1"
         onBack={jest.fn()}
-        onAddSegment={jest.fn()}
-        onSegmentPress={jest.fn()}
-        onAddFromNotClosed={onAddFromNotClosed}
       />,
       SIGNED_IN,
     );
     await waitFor(() => expect(screen.getByTestId("route-chain")).toBeTruthy());
     expect(screen.getByTestId("route-not-closed")).toBeTruthy();
-    fireEvent.press(screen.getByTestId("route-not-closed-add"));
-    expect(onAddFromNotClosed).toHaveBeenCalledTimes(1);
-  });
-
-  it("reports the add-segment tap from the header", async () => {
-    getTripMock.mockResolvedValue({ ok: true, data: makeTrip() });
-    listSegmentsMock.mockResolvedValue({ ok: true, data: [] });
-    const onAddSegment = jest.fn();
-    await renderWithProviders(
-      <RouteScreen
-        tripId="trip-1"
-        onBack={jest.fn()}
-        onAddSegment={onAddSegment}
-        onSegmentPress={jest.fn()}
-        onAddFromNotClosed={jest.fn()}
-      />,
-      SIGNED_IN,
-    );
-    await waitFor(() => expect(screen.getByTestId("route-empty")).toBeTruthy());
-    fireEvent.press(screen.getByTestId("route-add"));
-    expect(onAddSegment).toHaveBeenCalledTimes(1);
+    // View-only: no add button on the card, no "+" in the header, nothing tappable but "back".
+    expect(screen.queryByTestId("route-not-closed-add")).toBeNull();
+    expect(screen.queryByTestId("route-add")).toBeNull();
+    expect(screen.getAllByRole("button")).toHaveLength(1);
   });
 });

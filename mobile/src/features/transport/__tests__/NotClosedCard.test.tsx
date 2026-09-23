@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { screen } from "@testing-library/react-native";
 import { findAirportByCode } from "@tripplanner/shared";
 
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
@@ -8,20 +8,17 @@ import { NotClosedCard } from "../components/NotClosedCard";
 const VIE = findAirportByCode("VIE")!;
 
 describe("NotClosedCard", () => {
-  it("shows the title, the explanation and a button naming the open city", async () => {
-    const onAddFlight = jest.fn();
+  it("shows the title and the explanation naming the open city, with no button (view-only)", async () => {
     await renderWithProviders(
       <NotClosedCard
         openAt={{ cityId: VIE.cityId, airportCode: VIE.iata }}
         locale="en"
-        onAddFlight={onAddFlight}
         testID="not-closed"
       />,
     );
     expect(screen.getByText("Route not closed")).toBeTruthy();
-    const button = screen.getByRole("button", { name: /Add flight from/ });
-    fireEvent.press(button);
-    expect(onAddFlight).toHaveBeenCalledWith({ cityId: VIE.cityId, airportCode: VIE.iata });
+    expect(screen.getByText(/leaves you in Vienna/)).toBeTruthy();
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
   it("has a dashed border (distinct from a plain empty-state frame)", async () => {
@@ -29,7 +26,6 @@ describe("NotClosedCard", () => {
       <NotClosedCard
         openAt={{ cityId: VIE.cityId, airportCode: VIE.iata }}
         locale="en"
-        onAddFlight={jest.fn()}
         testID="not-closed"
       />,
     );

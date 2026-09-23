@@ -5,14 +5,17 @@ import { parseForm, type FormFieldErrors } from "../forms/parse";
 import { findAirportByCode } from "../places/airportSearch";
 import { AIRPORT_CODE_PATTERN, type AirportRecord } from "../places/schema";
 import { isValidTimeZone } from "../places/timeZone";
-import { isCalendarDate } from "../trips/calendarDate";
+import { compareCalendarDates, isCalendarDate, type CalendarDate } from "../trips/calendarDate";
 import { SEGMENT_FIELD_ERROR, isSegmentFieldErrorId, type SegmentFieldErrorId } from "./errorCodes";
-import { isClockTime, zonedDateTimeToInstant } from "./time";
+import { instantToZonedParts, isClockTime, zonedDateTimeToInstant } from "./time";
 
-/** `seat` length limit, in Unicode code points (mirrors `trip_segments_seat_len`). */
-export const SEGMENT_SEAT_MAX_LENGTH = 16;
-/** `ticketNumber` length limit, in Unicode code points (mirrors `trip_segments_ticket_len`). */
-export const SEGMENT_TICKET_NUMBER_MAX_LENGTH = 32;
+/**
+ * `seat` length limit, in Unicode code points (mirrors `trip_segments_seat_len`). One field holds
+ * the seats of ALL passengers, comma-separated ("12A, 12B, 12C"), hence more than one seat's worth.
+ */
+export const SEGMENT_SEAT_MAX_LENGTH = 64;
+/** `ticketNumber` limit, in code points (mirrors `trip_segments_ticket_len`): up to 9 comma-separated tickets. */
+export const SEGMENT_TICKET_NUMBER_MAX_LENGTH = 160;
 /** Longest allowed segment duration (mirrors `trip_segments_duration`, AC-31). */
 export const SEGMENT_MAX_DURATION_MS = 48 * 60 * 60 * 1000;
 export const SEGMENT_PASSENGERS_MIN = 1;
@@ -69,6 +72,19 @@ export type SegmentFormValue = {
 };
 
 export type SegmentFormFieldErrors = FormFieldErrors<SegmentFieldErrorId>;
+
+/**
+ * Optional "when is this segment allowed to depart" rules, applied only when a caller passes them
+ * (create, or an edit that moved the departure). A departure in the past and one before the trip's
+ * first day are ERRORS (they block saving), unlike `buildRoute`'s informational warnings: the
+ * former can never be right for a booking being added today, the latter is what the route screen
+ * still flags for legacy/edited data. `now` is injected — this module never reads the clock.
+ */
+export type SegmentFormRules = {
+  now: Date;
+  /** The trip's first day; `null` when the trip has no dates yet. */
+  tripStartDate: CalendarDate | null;
+};
 
 export type SegmentFormResult =
   | { ok: true; value: SegmentFormValue }
@@ -133,7 +149,8 @@ function resolveAirport(
  * (zod 4, `shared/insights.md`). Errors are `SEGMENT_FIELD_ERROR` ids under the keys `flightNumber`,
  * `fromAirport`, `to`, `departureDate`, `departureTime`, `arrival`, `passengers`, `seat`, `ticketNumber`.
  */
-export const segmentFormSchema = z
+function buildSegmentFormSchema(rules?: SegmentFormRules) {
+  return z
   .object({
     flightNumber: z.unknown().optional(),
     from: z.unknown().optional(),
@@ -200,6 +217,16 @@ export const segmentFormSchema = z
     let departureAt: Date | undefined;
     if (from !== undefined && isCalendarDate(departureDateRaw) && isClockTime(departureTimeRaw)) {
       departureAt = zonedDateTimeToInstant(departureDateRaw, departureTimeRaw, from.timeZone);
+      if (rules !== undefined) {
+        if (departureAt.getTime() < rules.now.getTime()) {
+          report("departureDate", SEGMENT_FIELD_ERROR.departureInPast);
+        } else if (
+          rules.tripStartDate !== null &&
+          compareCalendarDates(instantToZonedParts(departureAt, from.timeZone).date, rules.tripStartDate) < 0
+        ) {
+          report("departureDate", SEGMENT_FIELD_ERROR.departureBeforeTripStart);
+        }
+      }
     }
 
     // --- Arrival (optional; either BOTH fields or NEITHER, AC-27/AC-28) ------------------------
@@ -287,10 +314,18 @@ export const segmentFormSchema = z
     };
     return value;
   });
+}
 
-/** Validates a segment form with `parseForm`: never throws, returns ids (never texts) on failure. */
-export function parseSegmentForm(input: unknown): SegmentFormResult {
-  return parseForm(segmentFormSchema, input, isSegmentFieldErrorId);
+/** The rule-free form schema (shape + normalisation only); `parseSegmentForm` adds `rules`. */
+export const segmentFormSchema = buildSegmentFormSchema();
+
+/**
+ * Validates a segment form with `parseForm`: never throws, returns ids (never texts) on failure.
+ * `rules` (see `SegmentFormRules`) adds the departure-date rules; omit it to validate shape only.
+ */
+export function parseSegmentForm(input: unknown, rules?: SegmentFormRules): SegmentFormResult {
+  const schema = rules === undefined ? segmentFormSchema : buildSegmentFormSchema(rules);
+  return parseForm(schema, input, isSegmentFieldErrorId);
 }
 
 // --- Domain -------------------------------------------------------------------------------------

@@ -44,8 +44,8 @@ select lives_ok(
       values ('a0000000-0000-4000-8000-000000000001', 'flight', 'LO12345', 'LO',
               'JFK', 'America/New_York', 'LHR', 'Europe/London',
               '2026-05-01 10:00:00+00', '2026-05-03 10:00:00+00', true, 9, %L, %L)$$,
-    repeat('s', 16), repeat('t', 32)),
-  'valid: full segment at the boundaries (exactly 48h duration, 9 passengers, 16/32-char seat/ticket)'
+    repeat('s', 64), repeat('t', 160)),
+  'valid: full segment at the boundaries (exactly 48h duration, 9 passengers, 64/160-char seat/ticket)'
 );
 
 -- One failing insert per constraint ------------------------------------------------------------------------
@@ -204,9 +204,9 @@ select throws_ok(
          departure_at, seat)
       values ('a0000000-0000-4000-8000-000000000001', 'flight',
               'JFK', 'America/New_York', 'LHR', 'Europe/London', '2026-05-01 10:00:00+00', %L)$$,
-    repeat('s', 17)),
+    repeat('s', 65)),
   '23514', 'new row for relation "trip_segments" violates check constraint "trip_segments_seat_len"',
-  '17-character seat is rejected'
+  '65-character seat is rejected'
 );
 select throws_ok(
   $$insert into public.trip_segments
@@ -224,9 +224,9 @@ select throws_ok(
          departure_at, ticket_number)
       values ('a0000000-0000-4000-8000-000000000001', 'flight',
               'JFK', 'America/New_York', 'LHR', 'Europe/London', '2026-05-01 10:00:00+00', %L)$$,
-    repeat('t', 33)),
+    repeat('t', 161)),
   '23514', 'new row for relation "trip_segments" violates check constraint "trip_segments_ticket_len"',
-  '33-character ticket_number is rejected'
+  '161-character ticket_number is rejected'
 );
 
 -- Defaults -----------------------------------------------------------------------------------------------

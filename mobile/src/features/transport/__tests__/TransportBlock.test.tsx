@@ -7,7 +7,7 @@ import { TransportBlock } from "../components/TransportBlock";
 import { route, seg } from "./routeFixtures";
 
 describe("TransportBlock", () => {
-  it("renders exactly ONE segment card regardless of the trip's segment count (AC-72)", async () => {
+  it("renders one card per segment, in departure order (AC-72)", async () => {
     const view = route([
       seg("a", "KRK", "OPO", "2026-06-01T08:00:00Z", "2026-06-01T10:00:00Z"),
       seg("b", "OPO", "BCN", "2026-06-01T13:00:00Z", "2026-06-01T15:00:00Z"),
@@ -16,10 +16,12 @@ describe("TransportBlock", () => {
     await renderWithProviders(
       <TransportBlock route={view} locale="en" onSegmentPress={jest.fn()} onOpenRoute={jest.fn()} testID="tb" />,
     );
-    expect(screen.getAllByText("KRK")).toHaveLength(1);
+    expect(screen.getByTestId("tb-segment-a")).toBeTruthy();
+    expect(screen.getByTestId("tb-segment-b")).toBeTruthy();
+    expect(screen.getByTestId("tb-segment-c")).toBeTruthy();
   });
 
-  it("reports the nearest segment id on tap", async () => {
+  it("reports a segment id on tap", async () => {
     const view = route([seg("a", "KRK", "OPO", "2026-06-01T08:00:00Z", "2026-06-01T10:00:00Z")]);
     const onSegmentPress = jest.fn();
     await renderWithProviders(
@@ -31,7 +33,7 @@ describe("TransportBlock", () => {
         testID="tb"
       />,
     );
-    fireEvent.press(screen.getByTestId("tb-segment"));
+    fireEvent.press(screen.getByTestId("tb-segment-a"));
     expect(onSegmentPress).toHaveBeenCalledWith("a");
   });
 

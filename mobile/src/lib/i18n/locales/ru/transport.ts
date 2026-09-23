@@ -19,9 +19,14 @@ export const transport = {
     passengers: "Пассажиры",
     seat: "Место",
     ticketNumber: "Номер билета",
+    seatMany: "Места",
+    ticketNumberMany: "Номера билетов",
+    flightNumberPlaceholder: "LO 1234",
   },
   caption: {
     arrivalOptional: "Необязательно, нужно только для расчёта стыковок",
+    flightNumber: "Код авиакомпании и номер, например LO 1234",
+    perPassenger: "По одному на пассажира, через запятую",
     airportFromDirectory: "Выберите аэропорт из списка, можно искать по коду",
   },
   carrier: {
@@ -52,9 +57,7 @@ export const transport = {
   },
   route: {
     notClosedTitle: "Маршрут не замкнут",
-    notClosedText: "Последний сегмент оставляет вас не в том городе, где поездка началась.",
-    // {{city}} = city of the open end of the route.
-    addFlightFrom: "Добавить рейс из {{city}}",
+    notClosedText: "Последний сегмент оставляет вас в городе {{city}}, а не там, где поездка началась.",
     // The S7 "Transport" block banner — one line, {{city}} = city of the open end of the route.
     notClosedBanner: "Маршрут не замкнут — нет рейса из {{city}}",
   },
@@ -91,6 +94,7 @@ export const transport = {
   // the form needs (labels, captions, carrier line, delete label, not-found title) already exists
   // above or in `common`/`bookingForm`/`trips` and is reused as-is.
   form: {
+    save: "Сохранить",
     saveAndNext: "Сохранить и добавить следующий",
     deleteConfirmMessage: "Рейс будет удалён без возможности восстановления.",
     unsaved: {
@@ -112,6 +116,8 @@ export const transport = {
       departure: {
         dateRequired: "Укажите дату вылета",
         timeRequired: "Укажите время вылета",
+        inPast: "Вылет не может быть в прошлом",
+        beforeTripStart: "Вылет раньше начала поездки",
       },
       arrival: {
         incomplete: "Укажите и дату, и время прилёта",
@@ -119,8 +125,8 @@ export const transport = {
         tooLong: "Рейс не может длиться дольше 48 часов",
       },
       passengers: { range: "От 1 до 9 пассажиров" },
-      seat: { tooLong: "Место не длиннее 16 символов" },
-      ticketNumber: { tooLong: "Номер билета не длиннее 32 символов" },
+      seat: { tooLong: "Мест не больше 64 символов" },
+      ticketNumber: { tooLong: "Номеров билетов не больше 160 символов" },
     },
   },
 };

@@ -18,6 +18,8 @@ export const SEGMENT_FIELD_ERROR = {
   toSameAsFrom: "to.sameAsFrom",
   departureDateRequired: "departure.dateRequired",
   departureTimeRequired: "departure.timeRequired",
+  departureInPast: "departure.inPast",
+  departureBeforeTripStart: "departure.beforeTripStart",
   arrivalIncomplete: "arrival.incomplete",
   arrivalNotAfterDeparture: "arrival.notAfterDeparture",
   arrivalTooLong: "arrival.tooLong",

@@ -147,31 +147,38 @@ describe.each(MODES)("segmentFormSchema / parseSegmentForm (%s)", () => {
   });
 
   it("seat length is measured in code points, not UTF-16 units (an emoji counts once)", () => {
-    const seat = "🧳".repeat(16); // 16 code points, each a surrogate pair (32 UTF-16 units)
+    const seat = "🧳".repeat(64); // 64 code points, each a surrogate pair (128 UTF-16 units)
     const result = parseSegmentForm({ ...validInput, seat });
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.value.seat).toBe(seat);
   });
 
-  it("seat over 16 code points -> seat.tooLong", () => {
-    const result = parseSegmentForm({ ...validInput, seat: "a".repeat(17) });
+  it("seat over 64 code points -> seat.tooLong", () => {
+    const result = parseSegmentForm({ ...validInput, seat: "a".repeat(65) });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.fieldErrors.seat).toBe("seat.tooLong");
   });
 
-  it("seat at exactly 16 code points is valid", () => {
-    const result = parseSegmentForm({ ...validInput, seat: "a".repeat(16) });
+  it("seat at exactly 64 code points is valid", () => {
+    const result = parseSegmentForm({ ...validInput, seat: "a".repeat(64) });
     expect(result.ok).toBe(true);
   });
 
-  it("ticket number over 32 code points -> ticketNumber.tooLong", () => {
-    const result = parseSegmentForm({ ...validInput, ticketNumber: "a".repeat(33) });
+  it("ticket number over 160 code points -> ticketNumber.tooLong", () => {
+    const result = parseSegmentForm({ ...validInput, ticketNumber: "a".repeat(161) });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.fieldErrors.ticketNumber).toBe("ticketNumber.tooLong");
   });
 
-  it("ticket number at exactly 32 code points is valid", () => {
-    const result = parseSegmentForm({ ...validInput, ticketNumber: "a".repeat(32) });
+  it("ticket number at exactly 160 code points is valid", () => {
+    const result = parseSegmentForm({ ...validInput, ticketNumber: "a".repeat(160) });
+    expect(result.ok).toBe(true);
+  });
+
+  it("nine comma-separated tickets and seats (one per passenger) fit", () => {
+    const tickets = Array.from({ length: 9 }, (_, i) => `1234567890${100 + i}`).join(", ");
+    const seats = Array.from({ length: 9 }, (_, i) => `${10 + i}A`).join(", ");
+    const result = parseSegmentForm({ ...validInput, passengers: 9, seat: seats, ticketNumber: tickets });
     expect(result.ok).toBe(true);
   });
 
@@ -220,6 +227,52 @@ describe.each(MODES)("segmentFormSchema / parseSegmentForm (%s)", () => {
   });
 });
 
+describe("departure rules (past / before the trip starts)", () => {
+  // validInput departs 2026-06-15 10:00 Europe/Warsaw = 08:00Z.
+  const before = new Date("2026-06-14T12:00:00Z");
+  const after = new Date("2026-06-15T09:00:00Z");
+
+  it("passes when no rules are given (shape-only validation)", () => {
+    expect(parseSegmentForm(validInput).ok).toBe(true);
+  });
+
+  it("passes when the departure is in the future and inside the trip", () => {
+    const result = parseSegmentForm(validInput, { now: before, tripStartDate: "2026-06-10" });
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects a departure earlier than `now` as departure.inPast", () => {
+    const result = parseSegmentForm(validInput, { now: after, tripStartDate: null });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.fieldErrors.departureDate).toBe("departure.inPast");
+  });
+
+  it("a departure exactly at `now` is not in the past", () => {
+    const at = new Date("2026-06-15T08:00:00Z");
+    expect(parseSegmentForm(validInput, { now: at, tripStartDate: null }).ok).toBe(true);
+  });
+
+  it("rejects a departure on a day before the trip starts as departure.beforeTripStart", () => {
+    const result = parseSegmentForm(validInput, { now: before, tripStartDate: "2026-06-16" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.fieldErrors.departureDate).toBe("departure.beforeTripStart");
+  });
+
+  it("a departure on the trip's first day is fine (compared by the departure airport's local date)", () => {
+    expect(parseSegmentForm(validInput, { now: before, tripStartDate: "2026-06-15" }).ok).toBe(true);
+  });
+
+  it("a trip without dates only enforces the past rule", () => {
+    expect(parseSegmentForm(validInput, { now: before, tripStartDate: null }).ok).toBe(true);
+  });
+
+  it("reports the past error first when both apply", () => {
+    const result = parseSegmentForm(validInput, { now: after, tripStartDate: "2026-06-20" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.fieldErrors.departureDate).toBe("departure.inPast");
+  });
+});
+
 describe("SEGMENT_FIELD_ERROR (AC-37)", () => {
   it("is pinned to exactly this literal list of ids", () => {
     expect(Object.values(SEGMENT_FIELD_ERROR).sort()).toEqual(
@@ -227,7 +280,9 @@ describe("SEGMENT_FIELD_ERROR (AC-37)", () => {
         "arrival.incomplete",
         "arrival.notAfterDeparture",
         "arrival.tooLong",
+        "departure.beforeTripStart",
         "departure.dateRequired",
+        "departure.inPast",
         "departure.timeRequired",
         "flightNumber.format",
         "from.notInDirectory",

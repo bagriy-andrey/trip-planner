@@ -13,7 +13,6 @@ import type { ChainWarning } from "./WarningRow";
 export interface RouteChainProps {
   route: RouteView;
   locale: Locale;
-  onSegmentPress: (segmentId: string) => void;
   testID?: string;
 }
 
@@ -31,7 +30,7 @@ function pairKey(beforeId: string, afterId: string): string {
  * `NotClosedCard`'s job, one level up. The line and the nodes are purely decorative and excluded
  * from the accessibility tree (AC-91); every card/row inside carries its own label.
  */
-export function RouteChain({ route, locale, onSegmentPress, testID }: RouteChainProps) {
+export function RouteChain({ route, locale, testID }: RouteChainProps) {
   const { tokens } = useTheme();
 
   const bySegment = new Map<string, RouteWarning[]>();
@@ -101,7 +100,6 @@ export function RouteChain({ route, locale, onSegmentPress, testID }: RouteChain
                   <SegmentCard
                     segment={segment}
                     locale={locale}
-                    onPress={onSegmentPress}
                     testID={testID === undefined ? undefined : `${testID}-segment-${segment.id}`}
                   />
                   {segmentWarnings.map((warning, warningIndex) => (

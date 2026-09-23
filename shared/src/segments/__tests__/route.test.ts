@@ -183,6 +183,14 @@ describe("buildRoute — trip date warnings (AC-55)", () => {
     expect(route.warnings).toContainEqual({ id: "segment.outsideTripDates", segmentId: "a", field: "arrival" });
   });
 
+  it("a segment that departs AND arrives outside the trip warns ONCE (departure wins)", () => {
+    const s1 = seg("a", "KRK", "OPO", "2026-05-30T08:00:00Z", "2026-05-30T10:00:00Z");
+    const route = buildRoute({ segments: [s1], trip, now: NOW });
+    expect(route.warnings.filter((w) => w.id === "segment.outsideTripDates")).toEqual([
+      { id: "segment.outsideTripDates", segmentId: "a", field: "departure" },
+    ]);
+  });
+
   it("a trip with no dates never warns", () => {
     const s1 = seg("a", "KRK", "OPO", "2020-01-01T08:00:00Z", "2020-01-01T10:00:00Z"); // wildly outside any "range"
     const route = buildRoute({ segments: [s1], trip: NO_DATES, now: NOW });
@@ -268,7 +276,6 @@ describe("buildRoute — warnings order (AC-59)", () => {
       },
       { id: "layover.risky", beforeSegmentId: "b", afterSegmentId: "c", durationMs: 30 * 60 * 1000 },
       { id: "segment.outsideTripDates", segmentId: "a", field: "departure" },
-      { id: "segment.outsideTripDates", segmentId: "a", field: "arrival" },
       { id: "route.notClosed", cityId: "city-vienna", airportCode: "VIE" },
     ]);
   });

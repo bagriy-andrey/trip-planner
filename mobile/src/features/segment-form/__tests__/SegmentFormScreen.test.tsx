@@ -23,7 +23,10 @@ jest.mock("@/features/transport/api", () => ({
 }));
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), navigate: jest.fn(), back: jest.fn(), dismissAll: jest.fn() };
-jest.mock("expo-router", () => ({ useRouter: () => mockRouter }));
+jest.mock("expo-router", () => ({
+  useRouter: () => mockRouter,
+  useNavigation: () => ({ addListener: () => () => undefined }),
+}));
 
 const getTripMock = getTrip as jest.Mock;
 const listSegmentsMock = listSegments as jest.Mock;
@@ -101,7 +104,7 @@ async function renderEdit(segment: Segment = makeSegment()) {
 }
 
 const saveNextButton = () => screen.getByRole("button", { name: "Save and add next" });
-const doneButton = () => screen.getByRole("button", { name: "Done" });
+const saveButton = () => screen.getByRole("button", { name: "Save" });
 
 describe("SegmentFormScreen — field order and composition (AC-25)", () => {
   it("renders exactly the fields from the design spec, in order", async () => {
@@ -131,21 +134,21 @@ describe("SegmentFormScreen — field order and composition (AC-25)", () => {
 describe("SegmentFormScreen — save button gating (AC-26)", () => {
   it("stays disabled until the four required values are filled", async () => {
     await renderCreate();
-    expect(saveNextButton()).toBeDisabled();
+    expect(saveButton()).toBeDisabled();
 
     await userEvent.type(screen.getByTestId("segment-form-from"), "KRK");
     await userEvent.press(await screen.findByTestId("airport-suggestion-airport-krk"));
-    expect(saveNextButton()).toBeDisabled();
+    expect(saveButton()).toBeDisabled();
 
     await userEvent.type(screen.getByTestId("segment-form-to"), "OPO");
     await userEvent.press(await screen.findByTestId("airport-suggestion-airport-opo"));
-    expect(saveNextButton()).toBeDisabled();
+    expect(saveButton()).toBeDisabled();
 
     await userEvent.press(screen.getByTestId("segment-form-departure-date"));
-    expect(saveNextButton()).toBeDisabled();
+    expect(saveButton()).toBeDisabled();
 
     await userEvent.press(screen.getByTestId("segment-form-departure-time"));
-    expect(saveNextButton()).toBeEnabled();
+    expect(saveButton()).toBeEnabled();
   });
 });
 
@@ -192,13 +195,41 @@ async function fillMinimalSegment() {
   await userEvent.press(screen.getByTestId("segment-form-departure-time"));
 }
 
-describe("SegmentFormScreen — Done (AC-45)", () => {
+describe("SegmentFormScreen — Save (AC-45)", () => {
   it("saves then returns to where the screen was opened from", async () => {
     await renderCreate();
     await fillMinimalSegment();
-    await userEvent.press(doneButton());
+    await userEvent.press(saveButton());
     await waitFor(() => expect(createSegmentMock).toHaveBeenCalledTimes(1));
     expect(mockRouter.back).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("SegmentFormScreen — header and buttons", () => {
+  it("has a close cross and no Done in the header; Save is the primary and add-next the secondary", async () => {
+    await renderCreate();
+    expect(screen.queryByRole("button", { name: "Done" })).not.toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeOnTheScreen();
+    expect(saveButton()).toBeOnTheScreen();
+    expect(saveNextButton()).toBeOnTheScreen();
+  });
+});
+
+describe("SegmentFormScreen — departure rules", () => {
+  it("blocks a departure before the trip starts and says so under the departure fields", async () => {
+    // With an existing segment nothing is prefilled, so the picker starts at (test) today, 2026-09-21.
+    await renderCreate({ startDate: "2026-12-01", endDate: "2026-12-10" }, [makeSegment()]);
+    await fillMinimalSegment();
+    expect(screen.getByText("Departure is before the trip starts")).toBeOnTheScreen();
+    expect(saveButton()).toBeDisabled();
+    expect(saveNextButton()).toBeDisabled();
+  });
+
+  it("accepts a departure on or after the trip start", async () => {
+    await renderCreate({ startDate: "2026-09-21", endDate: "2026-09-30" }, [makeSegment()]);
+    await fillMinimalSegment();
+    expect(screen.queryByText("Departure is before the trip starts")).not.toBeOnTheScreen();
+    expect(saveButton()).toBeEnabled();
   });
 });
 
@@ -257,9 +288,10 @@ describe("SegmentFormScreen — edit mode (AC-76, AC-77)", () => {
     expect(screen.getByTestId("segment-form-arrival-date").props.accessibilityLabel).toBe("Arrival date");
   });
 
-  it("uses the same 'Save and add next' path, calling update, not create", async () => {
+  it("saves through update, not create, even for a segment that already departed, and has no 'add next'", async () => {
     await renderEdit();
-    await userEvent.press(saveNextButton());
+    expect(screen.queryByRole("button", { name: "Save and add next" })).not.toBeOnTheScreen();
+    await userEvent.press(saveButton());
     await waitFor(() => expect(updateSegmentMock).toHaveBeenCalledTimes(1));
     expect(createSegmentMock).not.toHaveBeenCalled();
   });
