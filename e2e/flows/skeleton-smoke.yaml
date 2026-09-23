@@ -150,8 +150,15 @@ tags:
 - assertNotVisible: "${TAB_PROFILE}"
 - tapOn: "${ADD_FLIGHT}"
 - assertVisible: "${FLIGHT_FORM_FROM}"
+# S9 is the real segment form since PLAN-04 step 9 (no longer the booking-form stub this smoke walk
+# used to open): its bottom "save and add next" button is proof this is the functional form, not a
+# placeholder — the fuller create/save/delete/route journey is segment-chain.yaml, this walk only
+# proves the screen itself is reachable and closes cleanly, same as every other screen here.
+- assertVisible: "${SEGMENT_SAVE_NEXT}"
 - tapOn: "${CANCEL}"
-# AC-12: cancel closes the modal and we are on S7 again.
+# AC-12: cancel closes the modal and we are on S7 again. Nothing was typed, so the form is not
+# "dirty" and Cancel leaves without the unsaved-changes confirmation (segment-chain.yaml is where
+# that confirmation itself gets exercised, once a field has actually changed).
 - assertVisible: "${ADD_FLIGHT}"
 - tapOn: "${BACK}"
 # AC-10: back lands on Trips, with its tab still the active one, and the new trip's card is there.
