@@ -8,16 +8,6 @@ export const bookingForm = {
     decreasePassengers: "Decrease passengers",
     increasePassengers: "Increase passengers",
   },
-  flight: {
-    from: "From",
-    to: "To",
-    departureDate: "Departure date",
-    time: "Time",
-    baggageIncluded: "Baggage included",
-    passengers: "Passengers",
-    seat: "Seat",
-    ticketNumber: "Ticket number",
-  },
   hotel: {
     name: "Name",
     city: "City",

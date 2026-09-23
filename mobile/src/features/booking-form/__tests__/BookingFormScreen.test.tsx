@@ -1,4 +1,4 @@
-import { fireEvent, screen, userEvent } from "@testing-library/react-native";
+import { screen, userEvent } from "@testing-library/react-native";
 
 import { family } from "@/lib/theme";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
@@ -21,10 +21,6 @@ beforeEach(() => {
 });
 
 const EN_FIELDS: Record<BookingVariant, { title: string; texts: string[] }> = {
-  flight: {
-    title: "Flight",
-    texts: ["From", "To", "Departure date", "Time", "Seat", "Ticket number"],
-  },
   hotel: {
     title: "Hotel",
     texts: ["Name", "City", "Check-in", "Check-out", "Breakfasts"],
@@ -35,8 +31,8 @@ const EN_FIELDS: Record<BookingVariant, { title: string; texts: string[] }> = {
   },
 };
 
-describe("BookingFormScreen (S9)", () => {
-  it.each(["flight", "hotel", "car"] as const)("renders the %s field set from fields.ts", async (variant) => {
+describe("BookingFormScreen (S9, hotel/car stub — flight moved to segment-form)", () => {
+  it.each(["hotel", "car"] as const)("renders the %s field set from fields.ts", async (variant) => {
     await renderWithProviders(<BookingFormScreen variant={variant} />);
     const { title, texts } = EN_FIELDS[variant];
     expect(screen.getByRole("header", { name: title })).toBeOnTheScreen();
@@ -50,47 +46,25 @@ describe("BookingFormScreen (S9)", () => {
     expect(screen.getByRole("button", { name: "Save" })).toBeOnTheScreen();
   });
 
-  it("only the flight form has the baggage switch and the passenger stepper", async () => {
-    const flight = await renderWithProviders(<BookingFormScreen variant="flight" />);
-    expect(screen.getByRole("switch", { name: "Baggage included" })).toBeOnTheScreen();
-    expect(screen.getByLabelText("Passengers, 2")).toBeOnTheScreen();
-    flight.unmount();
-    for (const variant of ["hotel", "car"] as const) {
-      const view = await renderWithProviders(<BookingFormScreen variant={variant} />);
-      expect(screen.queryByRole("switch")).not.toBeOnTheScreen();
-      expect(screen.queryByLabelText(/Passengers/)).not.toBeOnTheScreen();
-      view.unmount();
-    }
-  });
-
-  it("shows a static '2' passengers value that pressing − and + does not change (Q15)", async () => {
-    const user = userEvent.setup();
-    await renderWithProviders(<BookingFormScreen variant="flight" />);
-    expect(screen.getByLabelText("Passengers, 2")).toHaveTextContent("2");
-    await user.press(screen.getByRole("button", { name: "Increase passengers" }));
-    await user.press(screen.getByRole("button", { name: "Decrease passengers" }));
-    await user.press(screen.getByRole("button", { name: "Decrease passengers" }));
-    expect(screen.getByLabelText("Passengers, 2")).toHaveTextContent("2");
-    expect(mockRouter.back).not.toHaveBeenCalled();
-  });
-
-  it("toggles the baggage switch locally without navigating", async () => {
-    await renderWithProviders(<BookingFormScreen variant="flight" />);
-    const toggle = screen.getByRole("switch", { name: "Baggage included" });
-    expect(toggle).toBeChecked();
-    fireEvent(toggle, "valueChange", false);
-    expect(screen.getByRole("switch", { name: "Baggage included" })).not.toBeChecked();
-    expect(mockRouter.back).not.toHaveBeenCalled();
-  });
-
-  it("draws ticket data fields in the mono face (AC-38)", async () => {
-    await renderWithProviders(<BookingFormScreen variant="flight" />);
-    for (const label of ["From", "To", "Seat", "Ticket number"]) {
+  it("draws mono ticket-style data (check-in/out dates) in the mono face (AC-38)", async () => {
+    await renderWithProviders(<BookingFormScreen variant="hotel" />);
+    for (const label of ["Check-in", "Check-out"]) {
       expect(screen.getByLabelText(label)).toHaveStyle({ fontFamily: family.mono });
     }
+    for (const label of ["Name", "City", "Breakfasts"]) {
+      expect(screen.getByLabelText(label)).not.toHaveStyle({ fontFamily: family.mono });
+    }
   });
 
-  it.each(["flight", "hotel", "car"] as const)("closes with back() on every header button and Save (%s, AC-12)", async (variant) => {
+  it("draws the car dates field in the mono face and the rest not (AC-38)", async () => {
+    await renderWithProviders(<BookingFormScreen variant="car" />);
+    expect(screen.getByLabelText("Dates")).toHaveStyle({ fontFamily: family.mono });
+    for (const label of ["Company", "Pick-up", "Drop-off"]) {
+      expect(screen.getByLabelText(label)).not.toHaveStyle({ fontFamily: family.mono });
+    }
+  });
+
+  it.each(["hotel", "car"] as const)("closes with back() on every header button and Save (%s, AC-12)", async (variant) => {
     const user = userEvent.setup();
     await renderWithProviders(<BookingFormScreen variant={variant} />);
     for (const name of ["Cancel", "Done", "Save"]) {
@@ -102,18 +76,17 @@ describe("BookingFormScreen (S9)", () => {
   });
 
   it("uses Russian copy in the ru locale", async () => {
-    await renderWithProviders(<BookingFormScreen variant="flight" />, { locale: "ru" });
-    expect(screen.getByRole("header", { name: "Рейс" })).toBeOnTheScreen();
-    expect(screen.getByLabelText("Номер билета")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Пассажиры, 2")).toBeOnTheScreen();
-    expect(screen.getByRole("switch", { name: "Багаж включён" })).toBeOnTheScreen();
+    await renderWithProviders(<BookingFormScreen variant="hotel" />, { locale: "ru" });
+    expect(screen.getByRole("header", { name: "Отель" })).toBeOnTheScreen();
+    expect(screen.getByLabelText("Завтраки")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Название")).toBeOnTheScreen();
   });
 
   it("gives every button a non-empty accessibility label (AC-19)", async () => {
-    await renderWithProviders(<BookingFormScreen variant="flight" />);
+    await renderWithProviders(<BookingFormScreen variant="hotel" />);
     const buttons = screen.getAllByRole("button");
-    // Cancel, Done, minus, plus, Save.
-    expect(buttons).toHaveLength(5);
+    // Cancel, Done, Save.
+    expect(buttons).toHaveLength(3);
     for (const button of buttons) {
       expect(String(button.props.accessibilityLabel ?? "").length).toBeGreaterThan(0);
     }
