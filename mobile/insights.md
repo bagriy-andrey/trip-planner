@@ -142,6 +142,17 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
   silently expanding scope; a follow-up owning that locale file should rename the key (e.g. add
   `sections.transport` and switch `TripDetailContent`'s title lookup for the flights block, or just
   change the existing value) to close this known design/code mismatch.
+- 2026-09-23 (PLAN-04 step 11, demolition of the booking-form flight stub): "remove `bookingForm.
+  flight.*` keys" is NOT "delete the top-level `flight` branch" — `segment-form/SegmentFormScreen.tsx`
+  (step 9) reads `tBookingForm("titles.flight")` (header/submitting-button title) and
+  `tBookingForm("a11y.decreasePassengers"/"increasePassengers")` (its own working `PassengerStepper`)
+  straight off the shared `bookingForm` i18n namespace, NOT through `booking-form/fields.ts`'s types —
+  so those three keys must survive even though `BOOKING_FORMS.flight` and its `BookingFormTitleKey`/
+  `BookingFieldLabelKey` union members are gone. Only the nested `flight: { from, to, departureDate,
+  time, baggageIncluded, passengers, seat, ticketNumber }` object (the stub's OWN 8 field captions,
+  unused by segment-form) is dead. Grep every consumer of a locale namespace being trimmed for
+  `useTranslation("<ns>")` across the WHOLE mobile/src tree before deleting any key in it, not just
+  inside the feature that "owns" the stub.
 ## Open Questions
 - 2026-09-22: PLAN-04 step 5 contrast recheck of `warnBg`/`warnBorder`/`danger` (`design/tokens.md`)
   found the LIGHT theme's `danger` (`#C0503C`) at only ≈4.2:1 on `bg` — below the 4.5:1 rule for
