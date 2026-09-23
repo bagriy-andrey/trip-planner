@@ -62,6 +62,7 @@ function AppShell() {
           <Stack.Screen name="trips/[tripId]/flights/new" options={{ presentation: "modal" }} />
           <Stack.Screen name="trips/[tripId]/flights/[flightId]" options={{ presentation: "modal" }} />
           <Stack.Screen name="trips/[tripId]/hotels/new" options={{ presentation: "modal" }} />
+          <Stack.Screen name="trips/[tripId]/hotels/[hotelId]" options={{ presentation: "modal" }} />
           <Stack.Screen name="trips/[tripId]/cars/new" options={{ presentation: "modal" }} />
         </Stack.Protected>
         <Stack.Protected guard={!isRoutedAsSignedIn}>
