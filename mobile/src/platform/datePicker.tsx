@@ -11,7 +11,8 @@ import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/d
 import type { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { toCalendarDate } from "@tripplanner/shared";
 import type { CalendarDate } from "@tripplanner/shared";
-import { Platform, Pressable, StyleSheet, Text } from "react-native";
+import type { ReactNode } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { formatCalendarDate, resolveLocale, useTranslation } from "@/lib/i18n";
 import { useToday } from "@/lib/clock";
@@ -41,8 +42,19 @@ export interface DatePickerProps {
    * "nothing chosen yet" renders its own placeholder and mounts the picker once a date exists.
    */
   placeholder?: string;
+  /**
+   * Visual for the "nothing chosen" state (e.g. an icon). While `value` is `null` it is drawn on a
+   * field-styled button with the native control laid invisibly over it, so ONE tap opens the
+   * system calendar (nothing is chosen until the user actually picks).
+   */
+  emptyContent?: ReactNode;
+  /** Day the calendar opens on while `value` is `null` (default: today). */
+  startDate?: CalendarDate;
   testID?: string;
 }
+
+/** UIKit stops hit-testing views below alpha 0.01, so the invisible native control must stay just above it. */
+const INVISIBLE_BUT_TAPPABLE = 0.02;
 
 /** Hour the picker's `Date` is pinned to, far from any midnight DST jump. */
 const NOON = 12;
@@ -66,6 +78,8 @@ export function DatePicker({
   maximumDate,
   accessibilityLabel,
   placeholder,
+  emptyContent,
+  startDate,
   testID,
 }: DatePickerProps) {
   const { tokens, scheme } = useTheme();
@@ -75,7 +89,7 @@ export function DatePicker({
 
   const minimum = minimumDate === undefined ? undefined : toLocalNoon(minimumDate);
   const maximum = maximumDate === undefined ? undefined : toLocalNoon(maximumDate);
-  const shown = toLocalNoon(value ?? today);
+  const shown = toLocalNoon(value ?? startDate ?? today);
 
   const handleChange = (event: DateTimePickerEvent, picked?: Date) => {
     // "dismissed" (Android cancel) and "neutralButtonPressed" carry no new date.
@@ -109,13 +123,13 @@ export function DatePicker({
             { color: value === null ? tokens.textSecondary : tokens.text },
           ]}
         >
-          {value === null ? (placeholder ?? "") : formatCalendarDate(locale, value)}
+          {value === null ? (emptyContent ?? placeholder ?? "") : formatCalendarDate(locale, value)}
         </Text>
       </Pressable>
     );
   }
 
-  return (
+  const native = (
     <DateTimePicker
       mode="date"
       display="compact"
@@ -128,7 +142,15 @@ export function DatePicker({
       accentColor={tokens.accent}
       accessibilityLabel={accessibilityLabel}
       testID={testID}
+      style={value === null && emptyContent !== undefined ? styles.overlay : undefined}
     />
+  );
+  if (value !== null || emptyContent === undefined) return native;
+  return (
+    <View style={[styles.emptyField, { borderColor: tokens.surfaceBorder, backgroundColor: tokens.surface }]}>
+      {emptyContent}
+      {native}
+    </View>
   );
 }
 
@@ -141,6 +163,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.field,
     borderWidth: layout.borderWidth,
   },
+  emptyField: {
+    minHeight: layout.minTouch,
+    minWidth: layout.minTouch,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.field,
+    borderWidth: layout.borderWidth,
+  },
+  overlay: { ...StyleSheet.absoluteFill, opacity: INVISIBLE_BUT_TAPPABLE },
 });
 
 export interface TimePickerProps {
@@ -156,12 +188,15 @@ export interface TimePickerProps {
    * chosen yet" renders its own placeholder and mounts the picker once a time exists.
    */
   placeholder?: string;
+  /** Same "empty state with the native control laid invisibly over it" as `DatePicker`. */
+  emptyContent?: ReactNode;
   testID?: string;
 }
 
-/** Shown while `value` is `null`. Midnight, not the current time: a picker default must stay
- * deterministic and clock-free (only `src/lib/clock/**` is allowed to read the clock). */
-const MIDNIGHT: TimeOfDay = "00:00";
+/** Where the picker opens while `value` is `null`. Noon, not the current time: a picker default
+ * must stay deterministic and clock-free (only `src/lib/clock/**` is allowed to read the clock),
+ * and midnight would read as an already-passed time on today's date. */
+const EMPTY_START: TimeOfDay = "12:00";
 
 /** "HH:MM" -> a `Date` with those local hour/minute fields, day fixed far from any DST jump. */
 function toLocalTime(time: TimeOfDay): Date {
@@ -180,12 +215,12 @@ function toTimeOfDay(date: Date): TimeOfDay {
  * `mode="time"`; SPEC-04 AC-96 — no new native dependency, so no dev-client rebuild). Screens
  * see `"HH:MM"` strings, never `Date` objects or a zone.
  */
-export function TimePicker({ value, onChange, accessibilityLabel, placeholder, testID }: TimePickerProps) {
+export function TimePicker({ value, onChange, accessibilityLabel, placeholder, emptyContent, testID }: TimePickerProps) {
   const { tokens, scheme } = useTheme();
   const { i18n } = useTranslation();
   const locale = resolveLocale([i18n.language]);
 
-  const shown = toLocalTime(value ?? MIDNIGHT);
+  const shown = toLocalTime(value ?? EMPTY_START);
   const label = new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(shown);
 
   const handleChange = (event: DateTimePickerEvent, picked?: Date) => {
@@ -218,13 +253,13 @@ export function TimePicker({ value, onChange, accessibilityLabel, placeholder, t
             { color: value === null ? tokens.textSecondary : tokens.text },
           ]}
         >
-          {value === null ? (placeholder ?? "") : label}
+          {value === null ? (emptyContent ?? placeholder ?? "") : label}
         </Text>
       </Pressable>
     );
   }
 
-  return (
+  const native = (
     <DateTimePicker
       mode="time"
       display="compact"
@@ -235,6 +270,14 @@ export function TimePicker({ value, onChange, accessibilityLabel, placeholder, t
       accentColor={tokens.accent}
       accessibilityLabel={accessibilityLabel}
       testID={testID}
+      style={value === null && emptyContent !== undefined ? styles.overlay : undefined}
     />
+  );
+  if (value !== null || emptyContent === undefined) return native;
+  return (
+    <View style={[styles.emptyField, { borderColor: tokens.surfaceBorder, backgroundColor: tokens.surface }]}>
+      {emptyContent}
+      {native}
+    </View>
   );
 }

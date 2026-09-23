@@ -23,7 +23,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { TripApiError, useTripQuery } from "@/features/trips";
 import { useSegmentMutations, useSegmentsQuery } from "@/features/transport";
-import { useNow } from "@/lib/clock";
+import { useNow, useToday } from "@/lib/clock";
 import { resolveLocale, useTranslation } from "@/lib/i18n";
 
 import {
@@ -200,6 +200,8 @@ export function useSegmentForm(target: SegmentFormTarget, initial: SegmentFormSt
   // --- Dates / time / baggage / passengers / seat / ticket ---------------------------------------
   const changeDepartureDate = (date: CalendarDate) => patch({ departureDate: date }, ["departureDate"]);
   const changeDepartureTime = (time: ClockTime) => patch({ departureTime: time }, ["departureTime"]);
+  const clearDepartureDate = () => patch({ departureDate: null }, ["departureDate"]);
+  const clearDepartureTime = () => patch({ departureTime: null }, ["departureTime"]);
   const changeArrivalDate = (date: CalendarDate | null) => patch({ arrivalDate: date }, ["arrival"]);
   const changeArrivalTime = (time: ClockTime | null) => patch({ arrivalTime: time }, ["arrival"]);
   const changeBaggage = (value: boolean) => patch({ baggageIncluded: value });
@@ -228,6 +230,14 @@ export function useSegmentForm(target: SegmentFormTarget, initial: SegmentFormSt
     liveDepartureId === SEGMENT_FIELD_ERROR.departureInPast ||
     liveDepartureId === SEGMENT_FIELD_ERROR.departureBeforeTripStart
       ? liveDepartureId
+      : undefined;
+
+  // Calendar floor for a NEW departure: not before today and not before the trip starts. Edit mode
+  // has none (an existing past date must stay displayable; the schema still checks any change).
+  const today = useToday();
+  const departureMinDate: CalendarDate | undefined =
+    active.mode === "create"
+      ? [today, tripQuery.trip?.startDate ?? today].reduce((later, day) => (day > later ? day : later))
       : undefined;
 
   // --- Submit --------------------------------------------------------------------------------------
@@ -373,6 +383,9 @@ export function useSegmentForm(target: SegmentFormTarget, initial: SegmentFormSt
     selectToAirport,
     changeDepartureDate,
     changeDepartureTime,
+    clearDepartureDate,
+    clearDepartureTime,
+    departureMinDate,
     changeArrivalDate,
     changeArrivalTime,
     changeBaggage,

@@ -37,7 +37,7 @@ describe("TimePicker (platform boundary)", () => {
       expect(seen).toEqual(["00:00", "23:59", "09:00"]);
     });
 
-    it("passes the label and mode=time to the underlying picker; shows midnight when null", async () => {
+    it("passes the label and mode=time to the underlying picker; opens at noon when null", async () => {
       await renderWithProviders(
         <TimePicker value={null} onChange={jest.fn()} accessibilityLabel="Arrival time" testID="picker" />,
       );
@@ -48,7 +48,7 @@ describe("TimePicker (platform boundary)", () => {
       };
       expect(props.mode).toBe("time");
       expect(props.accessibilityLabel).toBe("Arrival time");
-      expect([props.value.getHours(), props.value.getMinutes()]).toEqual([0, 0]);
+      expect([props.value.getHours(), props.value.getMinutes()]).toEqual([12, 0]);
     });
 
     it("ignores a dismissed event", async () => {
@@ -88,8 +88,8 @@ describe("TimePicker (platform boundary)", () => {
       await userEvent.press(screen.getByRole("button", { name: "Departure time" }));
       expect(openDialog).toHaveBeenCalledTimes(1);
       expect(openDialog.mock.calls[0]?.[0]).toMatchObject({ mode: "time" });
-      // The mock "sets" its initial value, which is midnight when nothing was chosen.
-      expect(onChange).toHaveBeenCalledWith("00:00");
+      // The mock "sets" its initial value, which is noon when nothing was chosen.
+      expect(onChange).toHaveBeenCalledWith("12:00");
     });
 
     it("shows the formatted chosen time", async () => {

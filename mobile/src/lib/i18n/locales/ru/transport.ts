@@ -94,6 +94,7 @@ export const transport = {
   // the form needs (labels, captions, carrier line, delete label, not-found title) already exists
   // above or in `common`/`bookingForm`/`trips` and is reused as-is.
   form: {
+    clear: "Очистить",
     save: "Сохранить",
     saveAndNext: "Сохранить и добавить следующий",
     deleteConfirmMessage: "Рейс будет удалён без возможности восстановления.",

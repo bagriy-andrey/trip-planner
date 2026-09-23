@@ -216,13 +216,27 @@ describe("SegmentFormScreen — header and buttons", () => {
 });
 
 describe("SegmentFormScreen — departure rules", () => {
-  it("blocks a departure before the trip starts and says so under the departure fields", async () => {
-    // With an existing segment nothing is prefilled, so the picker starts at (test) today, 2026-09-21.
+  it("opens the departure calendar on the trip start when it is later than today (no earlier day is offered)", async () => {
+    // With an existing segment nothing is prefilled, so the picker's start day is the calendar floor.
     await renderCreate({ startDate: "2026-12-01", endDate: "2026-12-10" }, [makeSegment()]);
     await fillMinimalSegment();
-    expect(screen.getByText("Departure is before the trip starts")).toBeOnTheScreen();
+    expect(screen.getByTestId("segment-form-departure-date").props.accessibilityLabel).toContain("Dec 1, 2026");
+    expect(saveButton()).toBeEnabled();
+  });
+
+  it("clears a chosen departure time and disables Save again", async () => {
+    await renderCreate();
+    await fillMinimalSegment();
+    expect(saveButton()).toBeEnabled();
+    await userEvent.press(screen.getByTestId("segment-form-departure-time-clear"));
     expect(saveButton()).toBeDisabled();
-    expect(saveNextButton()).toBeDisabled();
+  });
+
+  it("clears an arrival time again", async () => {
+    await renderCreate();
+    await userEvent.press(screen.getByTestId("segment-form-arrival-time"));
+    await userEvent.press(screen.getByTestId("segment-form-arrival-time-clear"));
+    expect(screen.queryByTestId("segment-form-arrival-time-clear")).toBeNull();
   });
 
   it("accepts a departure on or after the trip start", async () => {

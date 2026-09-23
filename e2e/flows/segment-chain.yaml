@@ -154,7 +154,7 @@ tags:
 # (from = OPO, to = LIS — the route's own start airport, nudging the loop closed); only the
 # departure TIME is still empty. Waiting for a SECOND match of DEPARTURE_TIME_LABEL doubles as the
 # sync barrier for the mutation round-trip: while the outbound segment's own time control is still
-# showing (label "Departure: 00:00", not the bare caption text), only the caption itself matches —
+# showing (label "Departure: 12:00", not the bare caption text), only the caption itself matches —
 # once the form has actually reset, the empty-state button reappears and there are two matches again.
 - extendedWaitUntil:
     visible:

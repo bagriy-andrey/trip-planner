@@ -142,6 +142,7 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
   };
 
   return (
+    <View style={styles.root}>
     <Screen testID="segment-form-screen" contentStyle={styles.content}>
       <ModalHeader
         title={tBookingForm("titles.flight")}
@@ -216,7 +217,11 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
           time={form.state.departureTime}
           onChangeDate={form.changeDepartureDate}
           onChangeTime={form.changeDepartureTime}
-          dateFallback={today}
+          onClearDate={form.clearDepartureDate}
+          onClearTime={form.clearDepartureTime}
+          minimumDate={form.departureMinDate}
+          clearLabel={t("form.clear")}
+          dateFallback={form.departureMinDate ?? today}
           errorText={
             (form.departureRuleError === undefined ? undefined : t(`form.validation.${form.departureRuleError}`)) ??
             fieldError("departureDate") ??
@@ -232,6 +237,10 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
           time={form.state.arrivalTime}
           onChangeDate={form.changeArrivalDate}
           onChangeTime={form.changeArrivalTime}
+          onClearDate={() => form.changeArrivalDate(null)}
+          onClearTime={() => form.changeArrivalTime(null)}
+          minimumDate={form.state.departureDate ?? undefined}
+          clearLabel={t("form.clear")}
           dateFallback={form.state.departureDate ?? today}
           errorText={fieldError("arrival")}
           testID="segment-form-arrival"
@@ -302,6 +311,8 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
         </Pressable>
       ) : null}
 
+    </Screen>
+
       {form.closeConfirmOpen ? (
         <ConfirmOverlay closeLabel={tCommon("actions.cancel")} onClose={form.cancelCloseConfirm} testID="segment-form-unsaved">
           <AppText variant="h2" accessibilityRole="header">
@@ -355,7 +366,7 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
           />
         </ConfirmOverlay>
       ) : null}
-    </Screen>
+    </View>
   );
 }
 
@@ -531,6 +542,7 @@ function SegmentNotFound({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   content: { gap: spacing.xl, paddingBottom: spacing.xl },
   fields: { gap: spacing.block },
   airport: { gap: spacing.sm },
