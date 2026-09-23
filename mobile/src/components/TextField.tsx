@@ -9,10 +9,11 @@ import { AppText } from "./AppText";
 import { MIN_HIT_SIZE } from "./a11y";
 
 /** Content presets: keyboard, autofill hint, capitalisation and masking for the field's purpose. */
-export type TextFieldVariant = "text" | "email" | "password" | "newPassword" | "code";
+export type TextFieldVariant = "text" | "email" | "password" | "newPassword" | "code" | "url" | "decimal" | "currency";
 
 type InputTraits = Pick<
   TextInputProps,
+  | "maxLength"
   | "keyboardType"
   | "textContentType"
   | "autoComplete"
@@ -52,7 +53,18 @@ const PRESETS: Record<TextFieldVariant, InputTraits> = {
     autoCapitalize: "none",
     autoCorrect: false,
   },
+  url: {
+    keyboardType: "url",
+    textContentType: "URL",
+    autoCapitalize: "none",
+    autoCorrect: false,
+  },
+  decimal: { keyboardType: "decimal-pad" },
+  currency: { autoCapitalize: "characters", autoCorrect: false, maxLength: 3 },
 };
+
+/** Multiline fields are at least two touch targets tall. */
+const MULTILINE_MIN_HEIGHT = layout.minTouch * 2;
 
 export interface TextFieldProps
   extends InputTraits,
@@ -62,7 +74,6 @@ export interface TextFieldProps
       | "onSubmitEditing"
       | "onFocus"
       | "onBlur"
-      | "maxLength"
       | "placeholder"
       | "editable"
     > {
@@ -75,6 +86,10 @@ export interface TextFieldProps
   errorText?: string;
   /** Preset for keyboard/autofill/masking; explicit props override it. */
   variant?: TextFieldVariant;
+  /** Several lines, top-aligned, taller minimum height. */
+  multiline?: boolean;
+  /** Ticket-data face (booking number, amount, currency code). Never for plain prose. */
+  mono?: boolean;
   /** Forwarded to the underlying input, e.g. to move focus to the next field. */
   ref?: Ref<TextInput>;
   style?: StyleProp<ViewStyle>;
@@ -92,6 +107,8 @@ export function TextField({
   onChangeText,
   errorText,
   variant = "text",
+  multiline = false,
+  mono = false,
   ref,
   style,
   testID,
@@ -140,7 +157,8 @@ export function TextField({
         secureTextEntry={secureTextEntry ?? preset.secureTextEntry}
         returnKeyType={returnKeyType}
         onSubmitEditing={onSubmitEditing}
-        maxLength={maxLength}
+        maxLength={maxLength ?? preset.maxLength}
+        multiline={multiline}
         placeholder={placeholder}
         placeholderTextColor={tokens.textSecondary}
         onFocus={(event) => {
@@ -156,7 +174,8 @@ export function TextField({
         testID={testID}
         style={[
           styles.input,
-          typography.body,
+          mono ? typography.mono : typography.body,
+          multiline && styles.multiline,
           { color: tokens.text, backgroundColor: tokens.surface, borderColor },
         ]}
       />
@@ -178,4 +197,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
+  multiline: { minHeight: MULTILINE_MIN_HEIGHT, textAlignVertical: "top" },
 });
