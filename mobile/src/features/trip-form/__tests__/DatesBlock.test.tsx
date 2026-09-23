@@ -4,88 +4,74 @@ import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
 import { DatesBlock } from "../components/DatesBlock";
 
-// Records what the block hands to the platform picker (the real one is covered in `platform/`).
-const mockPickerProps: {
-  value: string | null;
-  minimumDate?: string;
-  accessibilityLabel: string;
-  testID?: string;
-}[] = [];
-jest.mock("@/platform/datePicker", () => {
-  const { Pressable } = require("react-native");
-  return {
-    DatePicker: (props: {
-      value: string | null;
-      onChange: (date: string) => void;
-      minimumDate?: string;
-      accessibilityLabel: string;
-      testID?: string;
-    }) => {
-      mockPickerProps.push(props);
-      return (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={props.accessibilityLabel}
-          testID={props.testID}
-          onPress={() => props.onChange("2030-01-02")}
-        />
-      );
-    },
-  };
-});
-
 const noop = () => undefined;
 const base = {
   startDate: null,
   endDate: null,
   noDates: false,
-  onChangeStart: noop,
-  onChangeEnd: noop,
+  onChangeRange: noop,
   onChangeNoDates: noop,
   startFallback: "2026-09-21",
-  endFallback: "2026-09-21",
 } as const;
 
-beforeEach(() => {
-  mockPickerProps.length = 0;
-});
+const field = () => screen.getByTestId("trip-form-dates-field");
 
 describe("DatesBlock", () => {
-  it("shows an empty button (no picker) until a date exists, and applies the fallback on tap", async () => {
-    const onChangeStart = jest.fn();
-    const onChangeEnd = jest.fn();
-    await renderWithProviders(
-      <DatesBlock {...base} onChangeStart={onChangeStart} onChangeEnd={onChangeEnd} endFallback="2026-10-01" />,
-    );
-    expect(mockPickerProps).toHaveLength(0);
-    await userEvent.press(screen.getByRole("button", { name: "Start" }));
-    await userEvent.press(screen.getByRole("button", { name: "End" }));
-    expect(onChangeStart).toHaveBeenCalledWith("2026-09-21");
-    expect(onChangeEnd).toHaveBeenCalledWith("2026-10-01");
+  it("shows one field with no default date; the first tap opens the calendar, nothing is chosen yet", async () => {
+    const onChangeRange = jest.fn();
+    await renderWithProviders(<DatesBlock {...base} onChangeRange={onChangeRange} />);
+    expect(screen.getByText("Choose dates")).toBeOnTheScreen();
+    expect(screen.queryByTestId("trip-form-calendar")).not.toBeOnTheScreen();
+    await userEvent.press(field());
+    expect(screen.getByTestId("trip-form-calendar")).toBeOnTheScreen();
+    expect(screen.getByText("September 2026")).toBeOnTheScreen();
+    expect(onChangeRange).not.toHaveBeenCalled();
   });
 
-  it("limits the end picker to the start date and names both buttons with their dates", async () => {
+  it("reports the range only after the second day, then closes the calendar", async () => {
+    const onChangeRange = jest.fn();
+    await renderWithProviders(<DatesBlock {...base} onChangeRange={onChangeRange} />);
+    await userEvent.press(field());
+    await userEvent.press(screen.getByTestId("trip-form-calendar-day-2026-09-25"));
+    expect(onChangeRange).not.toHaveBeenCalled();
+    expect(screen.getByText("Now tap the last day")).toBeOnTheScreen();
+    await userEvent.press(screen.getByTestId("trip-form-calendar-day-2026-09-30"));
+    expect(onChangeRange).toHaveBeenCalledWith("2026-09-25", "2026-09-30");
+    expect(screen.queryByTestId("trip-form-calendar")).not.toBeOnTheScreen();
+  });
+
+  it("an earlier second tap moves the start instead of ending the range", async () => {
+    const onChangeRange = jest.fn();
+    await renderWithProviders(<DatesBlock {...base} onChangeRange={onChangeRange} />);
+    await userEvent.press(field());
+    await userEvent.press(screen.getByTestId("trip-form-calendar-day-2026-09-25"));
+    await userEvent.press(screen.getByTestId("trip-form-calendar-day-2026-09-10"));
+    expect(onChangeRange).not.toHaveBeenCalled();
+    await userEvent.press(screen.getByTestId("trip-form-calendar-day-2026-09-12"));
+    expect(onChangeRange).toHaveBeenCalledWith("2026-09-10", "2026-09-12");
+  });
+
+  it("shows the chosen range in the field and opens the calendar on its month", async () => {
     await renderWithProviders(<DatesBlock {...base} startDate="2026-10-05" endDate="2026-10-09" />);
-    const start = mockPickerProps.find((props) => props.testID === "trip-form-start-date");
-    const end = mockPickerProps.find((props) => props.testID === "trip-form-end-date");
-    expect(start?.minimumDate).toBeUndefined();
-    expect(end?.minimumDate).toBe("2026-10-05");
-    expect(start?.accessibilityLabel).toMatch(/^Start date: .*5/);
-    expect(end?.accessibilityLabel).toMatch(/^End date: .*9/);
+    expect(field().props.accessibilityLabel).toMatch(/^Dates: .*5.*9/);
+    await userEvent.press(field());
+    expect(screen.getByText("October 2026")).toBeOnTheScreen();
+    await userEvent.press(screen.getByTestId("trip-form-calendar-next"));
+    expect(screen.getByText("November 2026")).toBeOnTheScreen();
   });
 
-  it("renders the error once, at the block, not on each button", async () => {
+  it("renders the error once, at the block", async () => {
     await renderWithProviders(<DatesBlock {...base} errorText="Dates are wrong" />);
     expect(screen.getAllByText("Dates are wrong")).toHaveLength(1);
     expect(screen.getByRole("alert")).toHaveTextContent("Dates are wrong");
   });
 
-  it("hides the pickers when the checkbox is set and reports the toggle", async () => {
+  it("hides the field when the checkbox is set and reports the toggle", async () => {
     const onChangeNoDates = jest.fn();
     await renderWithProviders(
       <DatesBlock {...base} startDate="2026-10-05" endDate="2026-10-09" noDates onChangeNoDates={onChangeNoDates} />,
     );
-    expect(screen.queryByTestId("trip-form-start-date")).not.toBeOnTheScreen();
+    expect(screen.queryByTestId("trip-form-dates-field")).not.toBeOnTheScreen();
     expect(screen.getByRole("checkbox", { name: "No dates yet" })).toBeChecked();
     await userEvent.press(screen.getByRole("checkbox", { name: "No dates yet" }));
     expect(onChangeNoDates).toHaveBeenCalledWith(false);

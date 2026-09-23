@@ -120,6 +120,12 @@ describe.each(HARNESSES)("trip form — shared rules ($name mode, AC-49)", (harn
     if (checkbox.props.accessibilityState?.checked === true) await userEvent.press(checkbox);
   };
 
+  const pickRange = async (start: string, end: string) => {
+    await userEvent.press(screen.getByTestId("trip-form-dates-field"));
+    await userEvent.press(screen.getByTestId(`trip-form-calendar-day-${start}`));
+    await userEvent.press(screen.getByTestId(`trip-form-calendar-day-${end}`));
+  };
+
   it("has the mode's title and button, Cancel and no Done (AC-33)", async () => {
     await harness.render();
     expect(screen.getByRole("header", { name: harness.name === "create" ? "New trip" : "Edit trip" })).toBeOnTheScreen();
@@ -249,15 +255,13 @@ describe.each(HARNESSES)("trip form — shared rules ($name mode, AC-49)", (harn
     expect(submitButton(harness.submitName)).toBeDisabled();
   });
 
-  it("hides both date buttons with the checkbox and sends no dates (AC-21)", async () => {
+  it("hides the dates field with the checkbox and sends no dates (AC-21)", async () => {
     await harness.render();
     await type("Rome");
     await showDates();
-    await userEvent.press(screen.getByRole("button", { name: "Start" }));
-    await userEvent.press(screen.getByRole("button", { name: "End" }));
+    await pickRange("2026-09-21", "2026-09-25");
     await userEvent.press(screen.getByRole("checkbox", { name: "No dates yet" }));
-    expect(screen.queryByTestId("trip-form-start-date")).not.toBeOnTheScreen();
-    expect(screen.queryByTestId("trip-form-end-date")).not.toBeOnTheScreen();
+    expect(screen.queryByTestId("trip-form-dates-field")).not.toBeOnTheScreen();
     await userEvent.press(submitButton(harness.submitName));
     expect(harness.sentForm()).toMatchObject({ startDate: null, endDate: null });
   });
@@ -266,22 +270,18 @@ describe.each(HARNESSES)("trip form — shared rules ($name mode, AC-49)", (harn
     await harness.render();
     await type("Rome");
     await showDates();
-    await userEvent.press(screen.getByRole("button", { name: "Start" }));
-    await userEvent.press(screen.getByRole("button", { name: "End" }));
+    await pickRange("2026-09-21", "2026-09-25");
     await userEvent.press(submitButton(harness.submitName));
-    // Today is the render helper's default, 2026-09-21; both fallbacks are that day.
-    expect(harness.sentForm()).toMatchObject({ startDate: "2026-09-21", endDate: "2026-09-21" });
+    expect(harness.sentForm()).toMatchObject({ startDate: "2026-09-21", endDate: "2026-09-25" });
   });
 
-  it("a single chosen date is reported at the dates block and nothing is sent (AC-17)", async () => {
+  it("tapping only the first day sets nothing: no default date appears in the field", async () => {
     await harness.render();
     await type("Rome");
     await showDates();
-    await userEvent.press(screen.getByRole("button", { name: "Start" }));
-    await userEvent.press(submitButton(harness.submitName));
-    expect(within(screen.getByTestId("trip-form-dates")).getByText('Set both dates or choose "No dates yet"')).toBeOnTheScreen();
-    expect(screen.getAllByText('Set both dates or choose "No dates yet"')).toHaveLength(1);
-    expect(harness.write).not.toHaveBeenCalled();
+    await userEvent.press(screen.getByTestId("trip-form-dates-field"));
+    await userEvent.press(screen.getByTestId("trip-form-calendar-day-2026-09-21"));
+    expect(screen.getByText("Choose dates")).toBeOnTheScreen();
   });
 
   it("a name longer than 80 characters is reported at the title field and nothing is sent (AC-26)", async () => {
@@ -322,8 +322,7 @@ describe.each(HARNESSES)("trip form — shared rules ($name mode, AC-49)", (harn
       await type("Rome");
       await userEvent.type(screen.getByLabelText("Trip name"), "Summer");
       await showDates();
-      await userEvent.press(screen.getByRole("button", { name: "Start" }));
-      await userEvent.press(screen.getByRole("button", { name: "End" }));
+      await pickRange("2026-09-21", "2026-09-25");
       await userEvent.press(submitButton(harness.submitName));
 
       const messages = {
@@ -340,8 +339,7 @@ describe.each(HARNESSES)("trip form — shared rules ($name mode, AC-49)", (harn
       expect(mockRouter.back).not.toHaveBeenCalled();
       expect(destinationInput().props.value).toBe("Rome");
       expect(screen.getByLabelText("Trip name").props.value).toBe("Summer");
-      expect(screen.getByLabelText(/^Start date: /)).toBeOnTheScreen();
-      expect(screen.getByLabelText(/^End date: /)).toBeOnTheScreen();
+      expect(screen.getByLabelText(/^Dates: /)).toBeOnTheScreen();
       expect(submitButton(harness.submitName)).toBeEnabled();
 
       // One tap retries.
@@ -370,8 +368,7 @@ describe.each(HARNESSES)("trip form — shared rules ($name mode, AC-49)", (harn
       screen.getByRole("button", { name: "Cancel" }),
       screen.getByRole("button", { name: /^Lisbon, city, City · Portugal$/ }),
       screen.getByRole("button", { name: "Clear place" }),
-      screen.getByRole("button", { name: "Start" }),
-      screen.getByRole("button", { name: "End" }),
+      screen.getByTestId("trip-form-dates-field"),
       screen.getByRole("checkbox", { name: "No dates yet" }),
       submitButton(harness.submitName),
     ];
@@ -404,11 +401,11 @@ describe("create mode", () => {
     expect(mockRouter.back).not.toHaveBeenCalled();
   });
 
-  it("starts empty with the button inactive and both date buttons shown", async () => {
+  it("starts empty with the button inactive and the dates field shown", async () => {
     await CREATE.render();
     expect(destinationInput().props.value).toBe("");
     expect(submitButton("Create trip")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Start" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Choose dates" })).toBeOnTheScreen();
     expect(screen.getByRole("checkbox", { name: "No dates yet" })).not.toBeChecked();
   });
 
@@ -474,8 +471,7 @@ describe("edit mode", () => {
     expect(destinationInput().props.value).toBe("Somewhere");
     expect(screen.getByLabelText("Trip name").props.value).toBe("Trip");
     expect(screen.getByRole("checkbox", { name: "No dates yet" })).not.toBeChecked();
-    expect(screen.getByLabelText(/^Start date: /)).toBeOnTheScreen();
-    expect(screen.getByLabelText(/^End date: /)).toBeOnTheScreen();
+    expect(screen.getByLabelText(/^Dates: /)).toBeOnTheScreen();
     expect(StyleSheet.flatten(screen.getByTestId("trip-form-destination-frame").props.style).borderColor).toBe(
       darkTokens.surfaceBorder,
     );
@@ -488,13 +484,13 @@ describe("edit mode", () => {
       darkTokens.accent,
     );
     expect(screen.getByRole("checkbox", { name: "No dates yet" })).toBeChecked();
-    expect(screen.queryByTestId("trip-form-start-date")).not.toBeOnTheScreen();
+    expect(screen.queryByTestId("trip-form-dates-field")).not.toBeOnTheScreen();
   });
 
   it("prefills a directory place with dates", async () => {
     await edit.render(makeTrip({ ...LISBON, startDate: "2026-10-05", endDate: "2026-10-09" }));
     expect(screen.getByRole("checkbox", { name: "No dates yet" })).not.toBeChecked();
-    expect(screen.getByLabelText(/^Start date: /)).toBeOnTheScreen();
+    expect(screen.getByLabelText(/^Dates: /)).toBeOnTheScreen();
   });
 
   it("prefills a free-text place with the checkbox set", async () => {
