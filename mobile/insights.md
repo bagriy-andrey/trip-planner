@@ -90,6 +90,41 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
   card as the route chain's compact two-line design (codes + ONE time + flight number). Do not try
   to unify them into one `SegmentCard` variant; `TransportBlock` builds its own private
   `NearestSegmentCard` instead.
+- 2026-09-23 (PLAN-04 step 9, segment-form): step 4's `transport` locale namespace covers every
+  string its OWN task list named (field labels/captions/carrier line/warnings/`segment.notFound`/
+  `segment.delete`) but not the form-screen chrome step 9 actually needed: the "save and add next"
+  button, the unsaved-changes confirmation, or a text per `SEGMENT_FIELD_ERROR` id — none of those
+  are in step 9's declared file list either (only `segment-form/**` + the two route files). Treated
+  this the same as the step 6/7 hook-ownership gap already on record: added the missing keys where
+  the plan itself implies they belong (`transport.form.*` in both locale files), keeping additions
+  purely additive and mirroring `SEGMENT_FIELD_ERROR`'s own `"group.key"` shape 1:1
+  (`transport:form.validation.${id}` needs no separate id-to-key mapping table). Reused everything
+  else that already existed instead of minting near-duplicates: `common:actions.cancel/done` (via
+  `ModalHeader`, which already draws exactly the Cancel/Title/accent-Done bar
+  `design/screens/add-flight.md` asks for — unlike `trip-form`'s bespoke `FormHeader`, which
+  deliberately has no Done), `bookingForm:titles.flight` for the header title, `bookingForm:a11y.
+  decrease/increasePassengers` for the stepper, and `trips:errors.*` for the save/delete failure
+  text (the segment api reuses the trips error classifier, so the same five kinds apply verbatim).
+- 2026-09-23 (PLAN-04 step 9): `features/trip-detail/components/SheetOverlay.tsx` (the "not a
+  system Alert" precedent the plan points to) is NOT exported from that feature's public
+  `index.ts` — only `TripDetailScreen` is. Cross-feature imports are only legal through a feature's
+  own `index.ts` (`backend-only-behind-the-boundary`/architecture convention, not a guardrail that
+  fires here), so a new feature needing "the SheetOverlay pattern" reimplements the same three
+  pieces locally (absolute view + `scrim` backdrop Pressable + bottom panel) rather than reaching
+  into `trip-detail/components/`; it is the PATTERN that is reusable, not the file.
+- 2026-09-23 (PLAN-04 step 9): RNTL `userEvent.type(input, text)` on a `TextInput` that already has
+  a non-empty `value` (e.g. `AirportField` after `firstSegmentPrefill`) APPENDS at the end — it does
+  not select-all-and-replace. A test that types into a field expecting a prefilled value to be gone
+  must `userEvent.clear()` first (`trip-form`'s own tests already do this for its destination
+  field); simplest fix for a new suite is to keep the DEFAULT test fixture unprefilled (free-text/
+  no-dates trip) and opt specific tests into a city/dated trip instead of clearing everywhere.
+- 2026-09-23 (PLAN-04 step 9): `platform/datePicker`'s `TimePicker.onChange` is typed
+  `(time: TimeOfDay) => void` where `TimeOfDay = string` (deliberately untyped — it is the neutral
+  cross-platform contract, `mobile/insights.md` 2026-09-22), so wiring it straight to a handler
+  typed `(time: ClockTime) => void` (`` `${number}:${number}` ``) fails `tsc` by contravariance even
+  though every value the picker actually emits already matches `ClockTime`. Bridge at the call site
+  with `isClockTime` (`@tripplanner/shared`) rather than an `as ClockTime` cast: `onChange={(picked)
+  => { if (isClockTime(picked)) onChangeTime(picked); }}`.
 ## Open Questions
 - 2026-09-22: PLAN-04 step 5 contrast recheck of `warnBg`/`warnBorder`/`danger` (`design/tokens.md`)
   found the LIGHT theme's `danger` (`#C0503C`) at only ≈4.2:1 on `bg` — below the 4.5:1 rule for
