@@ -11,6 +11,9 @@ import type { RenderWithProvidersOptions } from "@/test-utils/renderWithProvider
 import { tripKeys } from "@/features/trips";
 import { archiveTrip, deleteTrip, getTrip, unarchiveTrip } from "@/features/trips/api";
 import { listSegments } from "@/features/transport/api";
+import { hotelKeys } from "@/features/hotels";
+import { listHotels } from "@/features/hotels/api";
+import { makeHotel } from "@/features/hotels/hooks/__tests__/testKit";
 import { TripDetailScreen } from "../TripDetailScreen";
 
 jest.mock("@/lib/supabase", () => ({ supabase: { from: jest.fn() } }));
@@ -24,6 +27,11 @@ jest.mock("@/features/trips/api", () => ({
 jest.mock("@/features/transport/api", () => ({
   ...jest.requireActual("@/features/transport/api"),
   listSegments: jest.fn(),
+}));
+
+jest.mock("@/features/hotels/api", () => ({
+  ...jest.requireActual("@/features/hotels/api"),
+  listHotels: jest.fn(),
 }));
 
 const mockRouter = {
@@ -41,6 +49,7 @@ const archiveMock = archiveTrip as jest.Mock;
 const unarchiveMock = unarchiveTrip as jest.Mock;
 const deleteMock = deleteTrip as jest.Mock;
 const listSegmentsMock = listSegments as jest.Mock;
+const listHotelsMock = listHotels as jest.Mock;
 
 const SIGNED_IN: RenderWithProvidersOptions = { session: { user: {} } };
 
@@ -99,7 +108,8 @@ let alertSpy: jest.SpyInstance;
 
 beforeEach(() => {
   jest.clearAllMocks();
-  for (const mock of [getTripMock, archiveMock, unarchiveMock, deleteMock, listSegmentsMock]) mock.mockReset();
+  for (const mock of [getTripMock, archiveMock, unarchiveMock, deleteMock, listSegmentsMock, listHotelsMock]) mock.mockReset();
+  listHotelsMock.mockResolvedValue({ ok: true, data: [] });
   // Default: no segments, so every test not about the transport block keeps seeing the old
   // dashed empty state (AC-74) without opting in explicitly.
   listSegmentsMock.mockResolvedValue({ ok: true, data: [] });
@@ -291,6 +301,60 @@ describe("TripDetailScreen (S7) — booking blocks", () => {
     for (const button of screen.getAllByRole("button")) {
       expect(String(button.props.accessibilityLabel ?? "").length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("TripDetailScreen (S7) — Hotel block (SPEC-05 AC-35..38)", () => {
+  const late = makeHotel({ id: "h-late", name: "Late Inn", checkInAt: new Date("2026-06-20T14:00:00Z"), breakfast: "all" });
+  const early = makeHotel({ id: "h-early", name: "Early Inn", checkInAt: new Date("2026-06-10T14:00:00Z") });
+
+  it("zero hotels: dashed empty state, no header plus (AC-36)", async () => {
+    await renderDetail(makeTrip());
+    expect(screen.getByTestId("empty-hotel")).toBeOnTheScreen();
+    expect(screen.queryByTestId("add-hotel")).toBeNull();
+    expect(screen.queryByTestId("hotel-block")).toBeNull();
+  });
+
+  it("a failing hotel list keeps the empty state and the screen alive", async () => {
+    listHotelsMock.mockResolvedValue({ ok: false, kind: "network" });
+    await renderDetail(makeTrip());
+    expect(screen.getByTestId("empty-hotel")).toBeOnTheScreen();
+    expect(screen.getByTestId("trip-detail-screen")).toBeOnTheScreen();
+  });
+
+  it("two hotels: cards by check-in, breakfast chip, header plus visible, no empty state (AC-35, AC-36)", async () => {
+    listHotelsMock.mockResolvedValue({ ok: true, data: [late, early] });
+    const user = userEvent.setup();
+    await renderDetail(makeTrip());
+    await screen.findByTestId("hotel-block");
+    const names = screen.getAllByText(/^(Early|Late) Inn$/).map((node) => node.props.children);
+    expect(names).toEqual(["Early Inn", "Late Inn"]);
+    expect(screen.queryByTestId("empty-hotel")).toBeNull();
+    expect(screen.getByText(/breakfast/i)).toBeOnTheScreen();
+    await user.press(screen.getByTestId("add-hotel"));
+    expect(mockRouter.push).toHaveBeenLastCalledWith({ pathname: "/trips/[tripId]/hotels/new", params: { tripId: "trip-1" } });
+  });
+
+  it("a tap on a card opens the edit route with the raw id in params (AC-37)", async () => {
+    listHotelsMock.mockResolvedValue({ ok: true, data: [early] });
+    const user = userEvent.setup();
+    await renderDetail(makeTrip());
+    await user.press(await screen.findByTestId("hotel-block-hotel-h-early"));
+    expect(mockRouter.push).toHaveBeenLastCalledWith({
+      pathname: "/trips/[tripId]/hotels/[hotelId]",
+      params: { tripId: "trip-1", hotelId: "h-early" },
+    });
+  });
+
+  it("refreshes after the list is invalidated by a mutation (AC-38)", async () => {
+    const result = await renderDetail(makeTrip());
+    expect(screen.getByTestId("empty-hotel")).toBeOnTheScreen();
+    listHotelsMock.mockResolvedValue({ ok: true, data: [early] });
+    await act(async () => {
+      await result.queryClient.invalidateQueries({ queryKey: hotelKeys.ofTrip("trip-1") });
+    });
+    await screen.findByTestId("hotel-block");
+    expect(screen.queryByTestId("empty-hotel")).toBeNull();
   });
 });
 
