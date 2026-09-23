@@ -23,3 +23,4 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 ## Session Notes
 ## Open Questions
 - 2026-09-23: the RLS pgTAP files (`trips_rls`, `trip_segments_rls`) count rows table-wide, so they only pass on an EMPTY local database; once the mobile app / e2e has created real trips locally, four assertions fail although the policies are fine. Constraint tests are unaffected. Run the RLS files against a fresh `supabase db reset` (only with the user's consent, it wipes local accounts) or make them count only their own fixtures.
+- 2026-09-23 (PLAN-05 hotels): the plan counted 19 check constraints on `trip_hotels` but the DDL has 18; `trip_hotels_constraints.test.sql` asserts the count via `pg_constraint`, so a constraint added or dropped later must update that assertion, not just the plan number.
