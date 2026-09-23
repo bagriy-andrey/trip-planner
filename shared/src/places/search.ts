@@ -1,6 +1,6 @@
 import { PLACE_DIRECTORY } from "./directory";
 import { foldForSearch } from "./fold";
-import type { PlaceRecord } from "./schema";
+import type { CityRecord, PlaceRecord } from "./schema";
 
 /** Default number of suggestions (AC-12). */
 export const PLACE_SUGGESTION_LIMIT = 4;
@@ -54,4 +54,30 @@ export function searchPlaces(query: string, limit: number = PLACE_SUGGESTION_LIM
     (a, b) => a.length - b.length || (a.place.id < b.place.id ? -1 : a.place.id > b.place.id ? 1 : 0),
   );
   return hits.slice(0, Math.floor(limit)).map((hit) => hit.place);
+}
+
+/**
+ * Like `searchPlaces` (same pass, same order) but only CITIES: the kind filter runs BEFORE the limit,
+ * so countries can't push cities out of the suggestions. Cities carry the time zone a hotel needs.
+ */
+export function searchCities(query: string, limit: number = PLACE_SUGGESTION_LIMIT): CityRecord[] {
+  const folded = normalizeQuery(query);
+  if (folded === "" || !(limit >= 1)) return [];
+
+  const hits: { place: CityRecord; length: number }[] = [];
+  for (const place of PLACES) {
+    if (place.kind !== "city") continue;
+    const length = matchedNameLength(place, folded);
+    if (length !== undefined) hits.push({ place, length });
+  }
+  hits.sort(
+    (a, b) => a.length - b.length || (a.place.id < b.place.id ? -1 : a.place.id > b.place.id ? 1 : 0),
+  );
+  return hits.slice(0, Math.floor(limit)).map((hit) => hit.place);
+}
+
+/** The city record with this id; `undefined` for an unknown id or a non-city id. */
+export function findCityById(id: string): CityRecord | undefined {
+  const place = findPlaceById(id);
+  return place !== undefined && place.kind === "city" ? place : undefined;
 }
