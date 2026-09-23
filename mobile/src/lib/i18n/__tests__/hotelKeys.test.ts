@@ -1,4 +1,4 @@
-import { HOTEL_FIELD_ERROR } from "../../../../../shared/src/hotels/errorCodes";
+import { HOTEL_FIELD_ERROR } from "@tripplanner/shared";
 
 import { en } from "../locales/en";
 import { ru } from "../locales/ru";
