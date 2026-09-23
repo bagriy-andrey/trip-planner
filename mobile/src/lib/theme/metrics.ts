@@ -28,6 +28,8 @@ export const spacing = {
 
 export const layout = {
   minTouch: 44,
+  /** Minimum height of a multiline text field. */
+  textAreaMinHeight: 88,
   /** 1, not `hairlineWidth`. */
   borderWidth: 1,
   tabBarHeight: 64,

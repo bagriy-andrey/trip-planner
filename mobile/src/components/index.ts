@@ -31,6 +31,8 @@ export { Screen } from "./Screen";
 export type { ScreenProps } from "./Screen";
 export { SecondaryButton } from "./SecondaryButton";
 export type { SecondaryButtonProps } from "./SecondaryButton";
+export { SegmentedControl } from "./SegmentedControl";
+export type { SegmentedControlProps, SegmentedOption } from "./SegmentedControl";
 export { TextField } from "./TextField";
 export type { TextFieldProps, TextFieldVariant } from "./TextField";
 export { SoonBadge } from "./SoonBadge";
