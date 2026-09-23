@@ -18,13 +18,6 @@ export const tripDetail = {
     passengers_one: "{{count}} passenger",
     passengers_other: "{{count}} passengers",
   },
-  hotel: {
-    checkIn: "Check-in",
-    checkOut: "Check-out",
-    // {{count}} = total days, {{included}} = days with breakfast.
-    breakfast_one: "Breakfast: {{included}} of {{count}} day",
-    breakfast_other: "Breakfast: {{included}} of {{count}} days",
-  },
   car: {
     emptyTitle: "No car added",
     emptyText: "Add a car rental to keep the booking next to your trip.",

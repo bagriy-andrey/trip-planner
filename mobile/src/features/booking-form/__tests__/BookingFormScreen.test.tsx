@@ -21,18 +21,14 @@ beforeEach(() => {
 });
 
 const EN_FIELDS: Record<BookingVariant, { title: string; texts: string[] }> = {
-  hotel: {
-    title: "Hotel",
-    texts: ["Name", "City", "Check-in", "Check-out", "Breakfasts"],
-  },
   car: {
     title: "Car",
     texts: ["Company", "Pick-up", "Drop-off", "Dates"],
   },
 };
 
-describe("BookingFormScreen (S9, hotel/car stub — flight moved to segment-form)", () => {
-  it.each(["hotel", "car"] as const)("renders the %s field set from fields.ts", async (variant) => {
+describe("BookingFormScreen (S9, car stub — flight moved to segment-form)", () => {
+  it.each(["car"] as const)("renders the %s field set from fields.ts", async (variant) => {
     await renderWithProviders(<BookingFormScreen variant={variant} />);
     const { title, texts } = EN_FIELDS[variant];
     expect(screen.getByRole("header", { name: title })).toBeOnTheScreen();
@@ -46,16 +42,6 @@ describe("BookingFormScreen (S9, hotel/car stub — flight moved to segment-form
     expect(screen.getByRole("button", { name: "Save" })).toBeOnTheScreen();
   });
 
-  it("draws mono ticket-style data (check-in/out dates) in the mono face (AC-38)", async () => {
-    await renderWithProviders(<BookingFormScreen variant="hotel" />);
-    for (const label of ["Check-in", "Check-out"]) {
-      expect(screen.getByLabelText(label)).toHaveStyle({ fontFamily: family.mono });
-    }
-    for (const label of ["Name", "City", "Breakfasts"]) {
-      expect(screen.getByLabelText(label)).not.toHaveStyle({ fontFamily: family.mono });
-    }
-  });
-
   it("draws the car dates field in the mono face and the rest not (AC-38)", async () => {
     await renderWithProviders(<BookingFormScreen variant="car" />);
     expect(screen.getByLabelText("Dates")).toHaveStyle({ fontFamily: family.mono });
@@ -64,7 +50,7 @@ describe("BookingFormScreen (S9, hotel/car stub — flight moved to segment-form
     }
   });
 
-  it.each(["hotel", "car"] as const)("closes with back() on every header button and Save (%s, AC-12)", async (variant) => {
+  it.each(["car"] as const)("closes with back() on every header button and Save (%s, AC-12)", async (variant) => {
     const user = userEvent.setup();
     await renderWithProviders(<BookingFormScreen variant={variant} />);
     for (const name of ["Cancel", "Done", "Save"]) {
@@ -76,14 +62,14 @@ describe("BookingFormScreen (S9, hotel/car stub — flight moved to segment-form
   });
 
   it("uses Russian copy in the ru locale", async () => {
-    await renderWithProviders(<BookingFormScreen variant="hotel" />, { locale: "ru" });
-    expect(screen.getByRole("header", { name: "Отель" })).toBeOnTheScreen();
-    expect(screen.getByLabelText("Завтраки")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Название")).toBeOnTheScreen();
+    await renderWithProviders(<BookingFormScreen variant="car" />, { locale: "ru" });
+    expect(screen.getByRole("header", { name: "Авто" })).toBeOnTheScreen();
+    expect(screen.getByLabelText("Компания")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Даты")).toBeOnTheScreen();
   });
 
   it("gives every button a non-empty accessibility label (AC-19)", async () => {
-    await renderWithProviders(<BookingFormScreen variant="hotel" />);
+    await renderWithProviders(<BookingFormScreen variant="car" />);
     const buttons = screen.getAllByRole("button");
     // Cancel, Done, Save.
     expect(buttons).toHaveLength(3);
