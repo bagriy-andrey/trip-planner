@@ -1,18 +1,14 @@
 // Field sets per booking form variant: data, not markup. The screen renders
 // whatever is described here, so adding a field is a one-line change.
+//
+// The `flight` variant, `STATIC_PASSENGERS` and the toggle/stepper field kinds it alone used were
+// removed in PLAN-04 step 11: real flight data now goes through `@/features/segment-form` (S9/S9b),
+// which has its own working `BaggageToggle`/`PassengerStepper` components (AC-62, N-5).
 
-export type BookingVariant = "flight" | "hotel" | "car";
+export type BookingVariant = "hotel" | "car";
 
 /** Keys of the `bookingForm` namespace used as field captions. */
 export type BookingFieldLabelKey =
-  | "flight.from"
-  | "flight.to"
-  | "flight.departureDate"
-  | "flight.time"
-  | "flight.baggageIncluded"
-  | "flight.passengers"
-  | "flight.seat"
-  | "flight.ticketNumber"
   | "hotel.name"
   | "hotel.city"
   | "hotel.checkIn"
@@ -23,37 +19,18 @@ export type BookingFieldLabelKey =
   | "car.dropoff"
   | "car.dates";
 
-export type BookingFormTitleKey = "titles.flight" | "titles.hotel" | "titles.car";
+export type BookingFormTitleKey = "titles.hotel" | "titles.car";
 
 export type BookingField =
   /** Inert text field. `mono` marks ticket data (codes, dates, numbers) for the mono face (AC-38). */
-  | { kind: "text"; id: string; labelKey: BookingFieldLabelKey; mono: boolean }
-  | { kind: "toggle"; id: string; labelKey: BookingFieldLabelKey }
-  /** Passenger stepper. The skeleton shows a fixed value and never changes it (Q15). */
-  | { kind: "stepper"; id: string; labelKey: BookingFieldLabelKey; value: number };
+  { kind: "text"; id: string; labelKey: BookingFieldLabelKey; mono: boolean };
 
 export interface BookingFormSpec {
   titleKey: BookingFormTitleKey;
   fields: readonly BookingField[];
 }
 
-/** Static passenger count shown in the flight form's stepper (decision Q15). */
-export const STATIC_PASSENGERS = 2;
-
 export const BOOKING_FORMS: Record<BookingVariant, BookingFormSpec> = {
-  flight: {
-    titleKey: "titles.flight",
-    fields: [
-      { kind: "text", id: "from", labelKey: "flight.from", mono: true },
-      { kind: "text", id: "to", labelKey: "flight.to", mono: true },
-      { kind: "text", id: "departureDate", labelKey: "flight.departureDate", mono: true },
-      { kind: "text", id: "time", labelKey: "flight.time", mono: true },
-      { kind: "toggle", id: "baggageIncluded", labelKey: "flight.baggageIncluded" },
-      { kind: "stepper", id: "passengers", labelKey: "flight.passengers", value: STATIC_PASSENGERS },
-      { kind: "text", id: "seat", labelKey: "flight.seat", mono: true },
-      { kind: "text", id: "ticketNumber", labelKey: "flight.ticketNumber", mono: true },
-    ],
-  },
   hotel: {
     titleKey: "titles.hotel",
     fields: [

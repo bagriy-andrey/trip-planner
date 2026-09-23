@@ -363,16 +363,16 @@ describe("navigation topology", () => {
 
   it("opens the booking forms of the trip from the S7 buttons (typed object hrefs)", async () => {
     await renderDetails("trip-lisbon");
-    fireEvent.press(screen.getByTestId("add-flight"));
+    fireEvent.press(screen.getByTestId("empty-flight"));
     await expectPath("/trips/trip-lisbon/flights/new");
     act(() => router.back());
     await expectPath("/trips/trip-lisbon");
 
-    fireEvent.press(screen.getByTestId("add-hotel"));
+    fireEvent.press(screen.getByTestId("empty-hotel"));
     await expectPath("/trips/trip-lisbon/hotels/new");
     act(() => router.back());
 
-    fireEvent.press(screen.getByTestId("add-car"));
+    fireEvent.press(screen.getByTestId("empty-car"));
     await expectPath("/trips/trip-lisbon/cars/new");
   });
 
@@ -385,6 +385,7 @@ describe("navigation topology", () => {
     ["/trips/[tripId]/flights/new", "trips/[tripId]/flights/new"],
     ["/trips/[tripId]/hotels/new", "trips/[tripId]/hotels/new"],
     ["/trips/[tripId]/cars/new", "trips/[tripId]/cars/new"],
+    ["/trips/[tripId]/route", "trips/[tripId]/route"],
   ] as const)(
     "keeps a hostile trip id inside its own path segment: %s (AC-76)",
     async (pathname, routeName) => {
@@ -559,6 +560,7 @@ describe("gating of the tabs and trips/* without a session (SPEC-02 AC-20)", () 
     "/trips/x/flights/abc",
     "/trips/x/hotels/new",
     "/trips/x/cars/new",
+    "/trips/x/route",
   ])(
     "opening %s (a tripplanner:// link, i.e. the initial URL) leads to /onboarding",
     async (url) => {

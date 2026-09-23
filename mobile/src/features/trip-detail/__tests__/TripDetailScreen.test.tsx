@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, userEvent, waitFor, within } from "@testing-library/react-native";
-import type { Trip } from "@tripplanner/shared";
+import { findAirportByCode } from "@tripplanner/shared";
+import type { Segment, Trip } from "@tripplanner/shared";
 import { AccessibilityInfo, ActivityIndicator, Alert } from "react-native";
 
 import { Icon } from "@/components";
@@ -9,6 +10,7 @@ import type { RenderWithProvidersOptions } from "@/test-utils/renderWithProvider
 
 import { tripKeys } from "@/features/trips";
 import { archiveTrip, deleteTrip, getTrip, unarchiveTrip } from "@/features/trips/api";
+import { listSegments } from "@/features/transport/api";
 import { TripDetailScreen } from "../TripDetailScreen";
 
 jest.mock("@/lib/supabase", () => ({ supabase: { from: jest.fn() } }));
@@ -18,6 +20,10 @@ jest.mock("@/features/trips/api", () => ({
   archiveTrip: jest.fn(),
   unarchiveTrip: jest.fn(),
   deleteTrip: jest.fn(),
+}));
+jest.mock("@/features/transport/api", () => ({
+  ...jest.requireActual("@/features/transport/api"),
+  listSegments: jest.fn(),
 }));
 
 const mockRouter = {
@@ -34,6 +40,7 @@ const getTripMock = getTrip as jest.Mock;
 const archiveMock = archiveTrip as jest.Mock;
 const unarchiveMock = unarchiveTrip as jest.Mock;
 const deleteMock = deleteTrip as jest.Mock;
+const listSegmentsMock = listSegments as jest.Mock;
 
 const SIGNED_IN: RenderWithProvidersOptions = { session: { user: {} } };
 
@@ -48,6 +55,31 @@ function makeTrip(overrides: Partial<Trip> = {}): Trip {
     archivedAt: null,
     createdAt: "2026-09-01T10:00:00.000Z",
     updatedAt: "2026-09-01T10:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function knownAirport(code: string) {
+  const airport = findAirportByCode(code);
+  if (airport === undefined) throw new Error(`fixture airport "${code}" missing from directory`);
+  return airport;
+}
+
+/** A domain segment for the "Транспорт" block tests; every field can be overridden. */
+function makeSegment(overrides: Partial<Segment> = {}): Segment {
+  return {
+    id: "segment-1",
+    tripId: "trip-1",
+    from: knownAirport("KRK"),
+    to: knownAirport("OPO"),
+    departureAt: new Date("2026-09-27T08:00:00.000Z"),
+    arrivalAt: new Date("2026-09-27T12:00:00.000Z"),
+    flightNumber: "LO1234",
+    carrierCode: "LO",
+    baggageIncluded: true,
+    passengers: 2,
+    seat: "12A",
+    ticketNumber: "1234567890",
     ...overrides,
   };
 }
@@ -67,7 +99,10 @@ let alertSpy: jest.SpyInstance;
 
 beforeEach(() => {
   jest.clearAllMocks();
-  for (const mock of [getTripMock, archiveMock, unarchiveMock, deleteMock]) mock.mockReset();
+  for (const mock of [getTripMock, archiveMock, unarchiveMock, deleteMock, listSegmentsMock]) mock.mockReset();
+  // Default: no segments, so every test not about the transport block keeps seeing the old
+  // dashed empty state (AC-74) without opting in explicitly.
+  listSegmentsMock.mockResolvedValue({ ok: true, data: [] });
   mockRouter.canGoBack.mockReturnValue(true);
   announce = jest.spyOn(AccessibilityInfo, "announceForAccessibility").mockImplementation(() => undefined);
   alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
@@ -207,7 +242,7 @@ describe("TripDetailScreen (S7) — loading, errors, not found", () => {
 describe("TripDetailScreen (S7) — booking blocks", () => {
   it("renders three empty blocks with a dashed frame, plus icon and caption, and no cards", async () => {
     await renderDetail(makeTrip());
-    expect(screen.getByRole("header", { name: "Flights" })).toBeOnTheScreen();
+    expect(screen.getByRole("header", { name: "Transport" })).toBeOnTheScreen();
     expect(screen.getByRole("header", { name: "Hotel" })).toBeOnTheScreen();
     expect(screen.getByRole("header", { name: "Car rental" })).toBeOnTheScreen();
 
@@ -228,10 +263,13 @@ describe("TripDetailScreen (S7) — booking blocks", () => {
     expect(screen.queryByText(/insurance|documents/i)).toBeNull();
   });
 
-  it("opens the module forms from the plus button and from the empty block, with the id as a param", async () => {
+  it("shows ONE add button per empty block (no header plus) and opens the forms with the id as a param", async () => {
     const user = userEvent.setup();
     await renderDetail(makeTrip({ id: "../../etc" }));
-    await user.press(within(screen.getByTestId("section-flights")).getByTestId("add-flight"));
+    expect(screen.queryByTestId("add-flight")).toBeNull();
+    expect(screen.queryByTestId("add-hotel")).toBeNull();
+    expect(screen.queryByTestId("add-car")).toBeNull();
+    await user.press(within(screen.getByTestId("section-flights")).getByTestId("empty-flight"));
     expect(mockRouter.push).toHaveBeenLastCalledWith({
       pathname: "/trips/[tripId]/flights/new",
       params: { tripId: "../../etc" },
@@ -241,7 +279,7 @@ describe("TripDetailScreen (S7) — booking blocks", () => {
       pathname: "/trips/[tripId]/hotels/new",
       params: { tripId: "../../etc" },
     });
-    await user.press(screen.getByTestId("add-car"));
+    await user.press(screen.getByTestId("empty-car"));
     expect(mockRouter.push).toHaveBeenLastCalledWith({
       pathname: "/trips/[tripId]/cars/new",
       params: { tripId: "../../etc" },
@@ -253,6 +291,84 @@ describe("TripDetailScreen (S7) — booking blocks", () => {
     for (const button of screen.getAllByRole("button")) {
       expect(String(button.props.accessibilityLabel ?? "").length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("TripDetailScreen (S7) — Транспорт block (PLAN-04 step 10)", () => {
+  it("keeps the dashed empty state for zero segments (AC-74)", async () => {
+    listSegmentsMock.mockResolvedValue({ ok: true, data: [] });
+    await renderDetail(makeTrip());
+    expect(screen.getByTestId("empty-flight")).toBeOnTheScreen();
+    expect(screen.queryByTestId("transport-block")).toBeNull();
+  });
+
+  it("shows one card for a single-segment trip, and the header plus is back (AC-71)", async () => {
+    listSegmentsMock.mockResolvedValue({ ok: true, data: [makeSegment()] });
+    await renderDetail(makeTrip());
+    expect(await screen.findByTestId("transport-block")).toBeOnTheScreen();
+    expect(screen.getByTestId("transport-block-segment-segment-1")).toBeOnTheScreen();
+    expect(screen.getByTestId("add-flight")).toBeOnTheScreen();
+    expect(screen.queryByTestId("empty-flight")).toBeNull();
+    expect(screen.getAllByText("KRK")).toHaveLength(1);
+  });
+
+  it("shows a card for EACH of four segments on an open route (AC-71, AC-72)", async () => {
+    listSegmentsMock.mockResolvedValue({
+      ok: true,
+      data: [
+        makeSegment({ id: "s1", from: knownAirport("KRK"), to: knownAirport("OPO"), departureAt: new Date("2026-09-27T08:00:00.000Z"), arrivalAt: new Date("2026-09-27T10:00:00.000Z") }),
+        makeSegment({ id: "s2", from: knownAirport("OPO"), to: knownAirport("BCN"), departureAt: new Date("2026-09-27T13:00:00.000Z"), arrivalAt: new Date("2026-09-27T15:00:00.000Z") }),
+        makeSegment({ id: "s3", from: knownAirport("BCN"), to: knownAirport("VIE"), departureAt: new Date("2026-09-27T18:00:00.000Z"), arrivalAt: new Date("2026-09-27T20:00:00.000Z") }),
+        makeSegment({ id: "s4", from: knownAirport("VIE"), to: knownAirport("GRO"), departureAt: new Date("2026-09-28T08:00:00.000Z"), arrivalAt: new Date("2026-09-28T10:00:00.000Z") }),
+      ],
+    });
+    await renderDetail(makeTrip());
+    expect(await screen.findByTestId("transport-block")).toBeOnTheScreen();
+    for (const id of ["s1", "s2", "s3", "s4"]) {
+      expect(screen.getByTestId(`transport-block-segment-${id}`)).toBeOnTheScreen();
+    }
+    expect(screen.getByText("KRK · OPO · BCN · VIE · GRO")).toBeOnTheScreen();
+  });
+
+  it("shows the 'not closed' banner and navigates to the route screen on tap (AC-73)", async () => {
+    const user = userEvent.setup();
+    listSegmentsMock.mockResolvedValue({ ok: true, data: [makeSegment()] }); // KRK -> OPO, never returns: open route.
+    await renderDetail(makeTrip());
+    const banner = await screen.findByTestId("transport-block-not-closed");
+    await user.press(banner);
+    expect(mockRouter.push).toHaveBeenCalledWith({ pathname: "/trips/[tripId]/route", params: { tripId: "trip-1" } });
+  });
+
+  it("the summary row also navigates to the route screen on tap", async () => {
+    const user = userEvent.setup();
+    listSegmentsMock.mockResolvedValue({ ok: true, data: [makeSegment()] });
+    await renderDetail(makeTrip());
+    await user.press(await screen.findByTestId("transport-block-summary"));
+    expect(mockRouter.push).toHaveBeenCalledWith({ pathname: "/trips/[tripId]/route", params: { tripId: "trip-1" } });
+  });
+
+  it("tapping a segment card opens its edit form with the segment id as a param", async () => {
+    const user = userEvent.setup();
+    listSegmentsMock.mockResolvedValue({ ok: true, data: [makeSegment({ id: "segment-42" })] });
+    await renderDetail(makeTrip());
+    await user.press(await screen.findByTestId("transport-block-segment-segment-42"));
+    expect(mockRouter.push).toHaveBeenCalledWith({
+      pathname: "/trips/[tripId]/flights/[flightId]",
+      params: { tripId: "trip-1", flightId: "segment-42" },
+    });
+  });
+
+  it("renders no 'not closed' banner for a closed route", async () => {
+    listSegmentsMock.mockResolvedValue({
+      ok: true,
+      data: [
+        makeSegment({ id: "s1", from: knownAirport("KRK"), to: knownAirport("OPO"), departureAt: new Date("2026-09-27T08:00:00.000Z"), arrivalAt: new Date("2026-09-27T10:00:00.000Z") }),
+        makeSegment({ id: "s2", from: knownAirport("OPO"), to: knownAirport("KRK"), departureAt: new Date("2026-09-27T13:00:00.000Z"), arrivalAt: new Date("2026-09-27T15:00:00.000Z") }),
+      ],
+    });
+    await renderDetail(makeTrip());
+    expect(await screen.findByTestId("transport-block")).toBeOnTheScreen();
+    expect(screen.queryByTestId("transport-block-not-closed")).toBeNull();
   });
 });
 
@@ -311,9 +427,9 @@ describe("TripDetailScreen (S7) — the \"…\" menu", () => {
     const user = userEvent.setup();
     await renderDetail(makeTrip());
     await openMenu(user);
-    expect(screen.queryByRole("header", { name: "Flights" })).toBeNull();
+    expect(screen.queryByRole("header", { name: "Transport" })).toBeNull();
     await user.press(screen.getByTestId("trip-sheet-backdrop"));
-    expect(screen.getByRole("header", { name: "Flights" })).toBeOnTheScreen();
+    expect(screen.getByRole("header", { name: "Transport" })).toBeOnTheScreen();
   });
 });
 

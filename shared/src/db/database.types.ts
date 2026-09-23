@@ -34,6 +34,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      trip_segments: {
+        Row: {
+          arrival_at: string | null
+          baggage_included: boolean
+          carrier_code: string | null
+          created_at: string
+          departure_at: string
+          flight_number: string | null
+          from_airport_code: string
+          from_time_zone: string
+          id: string
+          mode: string
+          passengers: number
+          seat: string | null
+          source: string
+          ticket_number: string | null
+          to_airport_code: string
+          to_time_zone: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          arrival_at?: string | null
+          baggage_included?: boolean
+          carrier_code?: string | null
+          created_at?: string
+          departure_at: string
+          flight_number?: string | null
+          from_airport_code: string
+          from_time_zone: string
+          id?: string
+          mode: string
+          passengers?: number
+          seat?: string | null
+          source?: string
+          ticket_number?: string | null
+          to_airport_code: string
+          to_time_zone: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          arrival_at?: string | null
+          baggage_included?: boolean
+          carrier_code?: string | null
+          created_at?: string
+          departure_at?: string
+          flight_number?: string | null
+          from_airport_code?: string
+          from_time_zone?: string
+          id?: string
+          mode?: string
+          passengers?: number
+          seat?: string | null
+          source?: string
+          ticket_number?: string | null
+          to_airport_code?: string
+          to_time_zone?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_segments_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trips: {
         Row: {
           airport_code: string | null

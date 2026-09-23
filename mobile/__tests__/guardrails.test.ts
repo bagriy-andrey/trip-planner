@@ -126,6 +126,35 @@ const SECRET_TERMS = [
 // Arguments a `console.*` call may receive in credential code: literals and these two names.
 const LOGGABLE_IDENTIFIERS: ReadonlySet<string> = new Set(["operation", "errorCode"]);
 
+// The layover / risky-layover thresholds and the "same airport code" comparisons they gate live
+// ONLY in `shared/src/segments/route.ts` (PLAN-04 AC-62); `mobile/` must always go through
+// `buildRoute`/`RouteView` instead of re-deriving them. Computed (not typed as digit literals) so
+// this very file's needles below don't read as the forbidden constant even by accident, mirroring
+// the SECRET_TERMS/FROZEN_NOW_NAMES "assembled from parts" precedent above.
+const LAYOVER_THRESHOLD_MS = [8 * 60 * 60 * 1000, 90 * 60 * 1000].map(String);
+const LAYOVER_THRESHOLD_MIN = [8 * 60, 90].map(String);
+const LAYOVER_THRESHOLD_MS_PATTERN = new RegExp(`\\b(?:${LAYOVER_THRESHOLD_MS.join("|")})\\b`);
+// Only counted next to a "min" unit — bare `90` / `480` are common, harmless numbers elsewhere.
+const LAYOVER_THRESHOLD_MIN_PATTERN = new RegExp(
+  `\\b(?:${LAYOVER_THRESHOLD_MIN.join("|")})\\s*[Mm][Ii][Nn]\\b`,
+);
+// The multiplication idiom `shared` itself uses (`8 * 60 * 60 * 1000`, `90 * 60 * 1000`), flexible
+// whitespace: catches a re-derivation that never collapses to the plain millisecond literal.
+const LAYOVER_MULTIPLICATION_PATTERNS = [
+  [8, 60, 60, 1000],
+  [90, 60, 1000],
+].map((parts) => new RegExp(parts.map(String).join("\\s*\\*\\s*")));
+
+// Two airport-code-ish field reads compared for equality on one line: the "same airport" checks
+// `buildRoute` owns (adjacency, route closing). A NEGATIVE LOOKBEHIND excludes optional chaining
+// (`?.iata`) so a plain field-by-field form dirty-check (e.g. `segment-form`'s `segmentFormEquals`,
+// which nullish-coalesces before comparing) is not a false positive — only a direct, non-optional
+// `.iata`/`.code`/`.airportCode` access on BOTH sides trips this.
+const AIRPORT_CODE_FIELD = "(?:iata|code|airportCode)";
+const AIRPORT_EQUALITY_PATTERN = new RegExp(
+  `(?<!\\?)\\.\\s*${AIRPORT_CODE_FIELD}\\b[^\\n]*?(?:===|!==)[^\\n]*?(?<!\\?)\\.\\s*${AIRPORT_CODE_FIELD}\\b`,
+);
+
 interface Violation {
   file: string;
   line: number;
@@ -424,6 +453,20 @@ const RULES: Rule[] = [
     scope: "mobile-all",
     pattern: FROZEN_NOW_NAME,
   },
+  // --- PLAN-04 AC-62: layover thresholds and airport-code equality stay inside shared/ --------
+  {
+    id: "no-route-threshold-or-airport-equality-duplication",
+    ac: "AC-62: 8h/90min layover thresholds (ms, min or the shared/ multiplication idiom) only in shared/src/segments/route.ts",
+    test: (line) =>
+      LAYOVER_THRESHOLD_MS_PATTERN.test(line) ||
+      LAYOVER_THRESHOLD_MIN_PATTERN.test(line) ||
+      LAYOVER_MULTIPLICATION_PATTERNS.some((pattern) => pattern.test(line)),
+  },
+  {
+    id: "no-route-threshold-or-airport-equality-duplication",
+    ac: "AC-62: airport-code equality (adjacency / route-closing checks) only in shared/src/segments/route.ts",
+    pattern: AIRPORT_EQUALITY_PATTERN,
+  },
 ];
 
 /** Every violation of `rules` in one file's text. */
@@ -720,6 +763,69 @@ describe("guardrail scanner (self-test)", () => {
     });
   });
 
+  describe("no-route-threshold-or-airport-equality-duplication (PLAN-04 AC-62)", () => {
+    const feature = "src/features/transport/x.ts";
+
+    it("flags the exact millisecond literal of either threshold", () => {
+      expect(scan(feature, `const LAYOVER_MAX_MS = 28800000;`)).toContain(
+        "no-route-threshold-or-airport-equality-duplication",
+      );
+      expect(scan(feature, `if (durationMs <= 28800000) return "layover";`)).toContain(
+        "no-route-threshold-or-airport-equality-duplication",
+      );
+      expect(scan(feature, `const RISKY_LAYOVER_MS = 5400000;`)).toContain(
+        "no-route-threshold-or-airport-equality-duplication",
+      );
+    });
+
+    it("flags a minute literal next to a 'min' unit, but not a bare number", () => {
+      expect(scan(feature, `const maxMin = 480; // min`)).toEqual([]); // no unit on the same line
+      expect(scan(feature, `const maxMin = "480min";`)).toContain(
+        "no-route-threshold-or-airport-equality-duplication",
+      );
+      expect(scan(feature, `const risky = 90 min;`)).toContain(
+        "no-route-threshold-or-airport-equality-duplication",
+      );
+      expect(scan(feature, `const seats = 90;`)).toEqual([]);
+      expect(scan(feature, `const gap = spacing.xl * 480;`)).toEqual([]);
+    });
+
+    it("flags the shared/ multiplication idiom re-derived in mobile/", () => {
+      expect(scan(feature, `const layoverMaxMs = 8 * 60 * 60 * 1000;`)).toContain(
+        "no-route-threshold-or-airport-equality-duplication",
+      );
+      expect(scan(feature, `const riskyMs = 90*60*1000;`)).toContain(
+        "no-route-threshold-or-airport-equality-duplication",
+      );
+    });
+
+    it("flags a direct comparison of two airport-code fields", () => {
+      expect(scan(feature, `if (before.to.iata !== after.from.iata) { warn(); }`)).toContain(
+        "no-route-threshold-or-airport-equality-duplication",
+      );
+      expect(scan(feature, `const closed = first.from.iata === last.to.iata;`)).toContain(
+        "no-route-threshold-or-airport-equality-duplication",
+      );
+      expect(scan(feature, `if (a.airportCode === b.code) return true;`)).toContain(
+        "no-route-threshold-or-airport-equality-duplication",
+      );
+    });
+
+    it("does not flag optional-chained field-by-field form equality (segment-form's dirty-check)", () => {
+      expect(
+        scan(feature, `(a.fromAirport?.iata ?? null) === (b.fromAirport?.iata ?? null);`),
+      ).toEqual([]);
+      expect(
+        scan(feature, `(a.toAirport?.iata ?? null) === (b.toAirport?.iata ?? null);`),
+      ).toEqual([]);
+    });
+
+    it("does not flag a single-sided airport-code read (lookup, display, filter)", () => {
+      expect(scan(feature, `const label = \`\${airport.iata}\`;`)).toEqual([]);
+      expect(scan(feature, `const match = airport.iata === "LIS";`)).toEqual([]);
+    });
+  });
+
   it("ignores comments for code rules but not for suppression directives", () => {
     const file = "src/features/x/X.tsx";
     expect(scan(file, `// Привет, Platform.OS, #F2A93B, fetch(\nconst a = 1;`)).toEqual([]);
@@ -933,6 +1039,10 @@ describe("source guardrails", () => {
     expect(fs.existsSync(path.join(MOBILE_ROOT, "src", MOCKS_DIR_NAME))).toBe(false);
     expect(mobileFiles.filter((file) => file.split("/").includes(MOCKS_DIR_NAME))).toEqual([]);
     expect(violationsOf("no-mocks-directory")).toEqual([]);
+  });
+
+  it("AC-62: no layover-threshold literal or airport-code equality outside shared/ (PLAN-04)", () => {
+    expect(violationsOf("no-route-threshold-or-airport-equality-duplication")).toEqual([]);
   });
 
   it("SPEC-03 AC-64: the system time is read only in src/lib/clock; no fixed-`now` constant exists", () => {

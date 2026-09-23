@@ -39,6 +39,15 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 - 2026-09-22: `QueryClient.clear()` does not stop the 5-minute gc timer of finished MUTATIONS, so a jest file that runs mutations hangs unless each test unmounts, destroys the mutations (`getMutationCache().getAll()` -> `destroy()`) and only then clears the client (`useTripMutations.test.tsx`). The full mobile run still prints one "worker failed to exit gracefully" line.
 - 2026-09-22: macOS has no `timeout` command (use the tool's timeout or a background run). A full jest run of `navigation.test.tsx` without a `QueryClient` took ~19 minutes before `QueryProvider` was in the layout; with it the whole mobile suite (919 tests) runs in ~30 s.
 ## Recurring Errors & Fixes
+- 2026-09-22: Jest modern fake timers (`jest.useFakeTimers()`) tie `Date`/`Date.now()` to the
+  virtual clock, so calling `jest.setSystemTime(t)` AND THEN `jest.advanceTimersByTime(ms)`
+  double-moves time (the advance is added on top of the manually set instant, not from where the
+  timers last stood) — a test asserting an exact elapsed-time boundary (e.g. "the minute-interval
+  timer fires at exactly 60s, not 59s") must pick ONE mechanism: either drive time purely with
+  `advanceTimersByTime` from mount (timers and `new Date()` stay in lockstep), or use
+  `setSystemTime` alone with no timer advance (for "an event fires and reads the clock instantly,
+  no timer involved" cases). Mixing both in the same assertion produces a silently-wrong expected
+  value (`mobile/src/lib/clock/__tests__/useNow.test.tsx`).
 - 2026-09-22: An ALREADY-INSTALLED dev-client does not reconnect to a freshly started `npx expo start` — it keeps rendering whatever JS it last successfully loaded (from before `src/mocks/` was deleted, in this case), and never makes a bundle request to the new Metro at all (nothing in the Metro log). `mobile/.env` pointing at the right Supabase URL/key is irrelevant here — the app is not even running current JS. Symptom: a brand-new signed-up account shows old mock trips/history. Starting Metro is NOT enough to pick up code changes on a device/simulator whose dev-client was built before those changes; a second `npx expo start` on the same port just refuses (asks to use another port) instead of "waking up" the stale one. Fix: `npx expo run:ios --device "<name>"` to rebuild and reinstall the dev-client, which relaunches it pointed at the current Metro (confirmed by an "iOS Bundled … (N modules)" line appearing in the Metro log right after).
 
 - 2026-09-21: The session codec must not use aes-js `utils.utf8`: it corrupts 4-byte characters (an emoji in `display_name` broke the stored session on the next read). `sessionSecureStorage.ts` goes through `encodeURIComponent`/`decodeURIComponent` instead; the test pins an emoji round trip.
@@ -59,4 +68,105 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 - 2026-09-22: The generated `.expo/types/router.d.ts` goes STALE the moment a route file is added: in a checkout where Metro ever ran, `pnpm typecheck` then fails on every href to the new route (4 errors for `/trips/[tripId]/edit`) although the code is correct, while a fresh clone or a git worktree (no generated file) typechecks clean — so implementers in worktrees report green and the red only shows up in the main checkout. Fix: run `npx expo start` once to regenerate (or delete the gitignored file), then `git checkout --` the `.gitignore`/`expo-env.d.ts` Metro rewrites. Do this after any step that adds a route, before trusting `pnpm -r typecheck` there.
 ## Session Notes
 - 2026-09-21: Before any auth/Supabase work in `mobile/`: `__tests__/guardrails.test.ts` (SPEC-01 AC-25/AC-33) statically fails on the literal `supabase` (incl. `@supabase/supabase-js`), `fetch(`, `XMLHttpRequest`, `axios` anywhere in `app/` + `src/` (rule `no-backend-or-network`; comments are exempt), and pins `ALLOWED_SETTING_KEYS` to exactly one key with one `setItem` call site. Adding `lib/supabase` or an encrypted-session key in AsyncStorage turns `pnpm test` red until those rules are deliberately rewritten (SPEC-02 lists this under "что заменяется в SPEC-01"); likewise `e2e/flows/skeleton-smoke.yaml` taps `SIGNUP_SUBMIT` and expects tabs, which stops holding once sign-up is real.
+- 2026-09-22: `no-credentials-in-logs` (any `src/features/*/api/**`, plus `lib/supabase|storage|session`) does not allow every "safe-looking" identifier — its `LOGGABLE_IDENTIFIERS` allow-list is exactly `operation` and `errorCode` (string/template literals also pass); a new feature api's `console.warn("[x]", operation, "failed", kind)` fails the guardrail even though `kind` is a closed union with no request data, purely because the variable isn't named `errorCode` — rename the local binding, don't add a new allowed name (`features/transport/api/segmentsApi.ts`). Also confirmed: importing a sibling feature's top-level public `index.ts` (not its `api/` submodule) from inside another feature's OWN `api/` file is the sanctioned way to reuse an error classifier/type across features (PLAN-04 R-5) — `isFeatureApi`/`mayMentionSupabase` in the guardrail already scope `src/features/*/api/` as legal ground for cross-feature imports, and no test anywhere needs `@/features/trips` mocked (it's pure re-exports at that boundary).
+- 2026-09-22 (PLAN-04 step 7, transport route chain): step 6's declared file list included
+  `hooks/**` but never created `hooks/useRouteView.ts`, and step 4's `lib/i18n/index.ts` barrel
+  never re-exported `formatDuration`/`formatStopoverDays`/`formatSegmentDateTime` even though
+  `format.ts` (step 4's own file) defines them — both are step-ownership gaps only visible once a
+  later step actually needs the missing piece. Fix used: add the missing hook where the plan
+  itself said it belonged (`hooks/useRouteView.ts`, useMemo over `buildRoute` + `useNow()`) rather
+  than reinvent route math in a component; import the three formatters directly from
+  `@/lib/i18n/format` (not the barrel) rather than edit a file outside the step's own list. Also:
+  the transport locale namespace (step 4) covers every FORM/warning/gap string but not the S13
+  screen title ("Маршрут") or the S7 "Транспорт" block's own summary line ("Весь маршрут · N
+  рейсов, M пересадок") / "not closed" banner sentence — those three keys had to be added to
+  `locales/{ru,en}/transport.ts` in step 7 (kept minimal/additive, both locales in the same edit so
+  `parity.test.ts` stays green); everything else in the new UI reuses existing `tripDetail`/`common`
+  strings (`flight.route`, `flight.baggageIncluded`, `notFound.*`, `actions.retry`) instead of
+  minting near-duplicates.
+- 2026-09-22 (PLAN-04 step 7): `TransportBlock` (the S7 "Транспорт" block content) and `SegmentCard`
+  (the S13 chain link) are deliberately different components with different field sets — the trip
+  detail spec's "Карточка записи" (codes + BOTH times + baggage/passenger chips) is not the same
+  card as the route chain's compact two-line design (codes + ONE time + flight number). Do not try
+  to unify them into one `SegmentCard` variant; `TransportBlock` builds its own private
+  `NearestSegmentCard` instead.
+- 2026-09-23 (PLAN-04 step 9, segment-form): step 4's `transport` locale namespace covers every
+  string its OWN task list named (field labels/captions/carrier line/warnings/`segment.notFound`/
+  `segment.delete`) but not the form-screen chrome step 9 actually needed: the "save and add next"
+  button, the unsaved-changes confirmation, or a text per `SEGMENT_FIELD_ERROR` id — none of those
+  are in step 9's declared file list either (only `segment-form/**` + the two route files). Treated
+  this the same as the step 6/7 hook-ownership gap already on record: added the missing keys where
+  the plan itself implies they belong (`transport.form.*` in both locale files), keeping additions
+  purely additive and mirroring `SEGMENT_FIELD_ERROR`'s own `"group.key"` shape 1:1
+  (`transport:form.validation.${id}` needs no separate id-to-key mapping table). Reused everything
+  else that already existed instead of minting near-duplicates: `common:actions.cancel/done` (via
+  `ModalHeader`, which already draws exactly the Cancel/Title/accent-Done bar
+  `design/screens/add-flight.md` asks for — unlike `trip-form`'s bespoke `FormHeader`, which
+  deliberately has no Done), `bookingForm:titles.flight` for the header title, `bookingForm:a11y.
+  decrease/increasePassengers` for the stepper, and `trips:errors.*` for the save/delete failure
+  text (the segment api reuses the trips error classifier, so the same five kinds apply verbatim).
+- 2026-09-23 (PLAN-04 step 9): `features/trip-detail/components/SheetOverlay.tsx` (the "not a
+  system Alert" precedent the plan points to) is NOT exported from that feature's public
+  `index.ts` — only `TripDetailScreen` is. Cross-feature imports are only legal through a feature's
+  own `index.ts` (`backend-only-behind-the-boundary`/architecture convention, not a guardrail that
+  fires here), so a new feature needing "the SheetOverlay pattern" reimplements the same three
+  pieces locally (absolute view + `scrim` backdrop Pressable + bottom panel) rather than reaching
+  into `trip-detail/components/`; it is the PATTERN that is reusable, not the file.
+- 2026-09-23 (PLAN-04 step 9): RNTL `userEvent.type(input, text)` on a `TextInput` that already has
+  a non-empty `value` (e.g. `AirportField` after `firstSegmentPrefill`) APPENDS at the end — it does
+  not select-all-and-replace. A test that types into a field expecting a prefilled value to be gone
+  must `userEvent.clear()` first (`trip-form`'s own tests already do this for its destination
+  field); simplest fix for a new suite is to keep the DEFAULT test fixture unprefilled (free-text/
+  no-dates trip) and opt specific tests into a city/dated trip instead of clearing everywhere.
+- 2026-09-23 (PLAN-04 step 9): `platform/datePicker`'s `TimePicker.onChange` is typed
+  `(time: TimeOfDay) => void` where `TimeOfDay = string` (deliberately untyped — it is the neutral
+  cross-platform contract, `mobile/insights.md` 2026-09-22), so wiring it straight to a handler
+  typed `(time: ClockTime) => void` (`` `${number}:${number}` ``) fails `tsc` by contravariance even
+  though every value the picker actually emits already matches `ClockTime`. Bridge at the call site
+  with `isClockTime` (`@tripplanner/shared`) rather than an `as ClockTime` cast: `onChange={(picked)
+  => { if (isClockTime(picked)) onChangeTime(picked); }}`.
+- 2026-09-23 (PLAN-04 step 10, S7 "Транспорт" block): wiring `TransportBlock` into
+  `TripDetailContent` only needs `useSegmentsQuery(trip.id)` + `useRouteView(segments, trip)` (both
+  from `@/features/transport`'s public index) — the screen makes exactly ONE decision of its own
+  (`segments.length > 0` picks `TransportBlock` vs. the existing `EmptyBookingSection`, mirroring
+  the hotel/car blocks' own empty-state pattern) and passes the `RouteView` straight through
+  untouched; no threshold/summary/closed math is re-derived (AC-62 stays satisfied by construction).
+  The two new navigation callbacks are equally thin: `onOpenRoute` pushes `/trips/[tripId]/route`,
+  `onSegmentPress` pushes the EXISTING `/trips/[tripId]/flights/[flightId]` edit route (built step 9)
+  with the tapped segment id as `flightId` — no new route file needed, since the segment-form edit
+  screen was already declared as a route in step 8/9.
+- 2026-09-23 (PLAN-04 step 10, scope gap): the block's header title still reads `tripDetail:
+  sections.flights` = "Рейс"/"Flight" — `design/screens/trip-detail.md` renamed it to "Транспорт"/
+  "Transport", but that string lives in `mobile/src/lib/i18n/locales/{ru,en}/tripDetail.ts`, OUTSIDE
+  step 10's declared file list (`mobile/src/features/trip-detail/**`). Left unchanged rather than
+  silently expanding scope; a follow-up owning that locale file should rename the key (e.g. add
+  `sections.transport` and switch `TripDetailContent`'s title lookup for the flights block, or just
+  change the existing value) to close this known design/code mismatch.
+- 2026-09-23 (PLAN-04 step 13, follow-up not delivered): the header-rename gap above was self-flagged
+  in step 10's own commit message AND step 13 even updated `design/screens/trip-detail.md` to state
+  the new "Транспорт" title (AC-71) — yet step 13 never touched `tripDetail.ts` itself, so the doc and
+  the code disagreed until `plan-verifier`'s final pass caught it (no test asserted the visible header
+  string, only its `testID`). Lesson: a step's own commit message disclosing "deferred to step N" is
+  not a tracked TODO — it is only as reliable as step N happening to re-read every prior step's
+  commit messages. A plan with an explicit deferred-items list (or a final AC-by-AC pass with visible-
+  text assertions, not just testID checks) would have caught this without needing the verifier.
+- 2026-09-23 (PLAN-04 step 11, demolition of the booking-form flight stub): "remove `bookingForm.
+  flight.*` keys" is NOT "delete the top-level `flight` branch" — `segment-form/SegmentFormScreen.tsx`
+  (step 9) reads `tBookingForm("titles.flight")` (header/submitting-button title) and
+  `tBookingForm("a11y.decreasePassengers"/"increasePassengers")` (its own working `PassengerStepper`)
+  straight off the shared `bookingForm` i18n namespace, NOT through `booking-form/fields.ts`'s types —
+  so those three keys must survive even though `BOOKING_FORMS.flight` and its `BookingFormTitleKey`/
+  `BookingFieldLabelKey` union members are gone. Only the nested `flight: { from, to, departureDate,
+  time, baggageIncluded, passengers, seat, ticketNumber }` object (the stub's OWN 8 field captions,
+  unused by segment-form) is dead. Grep every consumer of a locale namespace being trimmed for
+  `useTranslation("<ns>")` across the WHOLE mobile/src tree before deleting any key in it, not just
+  inside the feature that "owns" the stub.
 ## Open Questions
+- 2026-09-22: PLAN-04 step 5 contrast recheck of `warnBg`/`warnBorder`/`danger` (`design/tokens.md`)
+  found the LIGHT theme's `danger` (`#C0503C`) at only ≈4.2:1 on `bg` — below the 4.5:1 rule for
+  its existing `small`-text usages (`trip-detail`, `auth`, `trip-form`, `account`). Pre-existing,
+  not introduced by this step; `mobile/src/lib/theme/tokens.ts` is outside step 5's file list, so
+  the value was documented but not changed. Needs a theme-owner follow-up (darken the light
+  `danger` value, then update `tokens.test.ts`'s snapshot).
+  - RESOLVED 2026-09-23: light `danger` darkened to `#B3452F` (found on a manual click-through: the required-field errors read grey-ish); `tokens.test.ts` and `design/tokens.md` updated.
+- 2026-09-23: "now" rules (a departure in the past) need a clock the tests can pin, but `useNow()` used to read the system time directly, so a fixed-date test fixture silently drifted into the past as real time passed. `useNow()` now goes through `ClockContext` (`ClockSource.now()`), and `fixedClock(date)` answers 14h before that day begins in UTC (before the day has started in every zone), so "any time on the pinned day" is always in the future. When adding time-dependent form rules, drive them from `useNow()`, never `new Date()`.

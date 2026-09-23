@@ -40,3 +40,6 @@ export {
 export type { TripLifecycle, TripStatus } from "./status";
 export { coverIndexOf } from "./cover";
 export { resolveDestinationName } from "./destination";
+
+export { monthGrid, pickRangeDate, shiftMonth } from "./dateRange";
+export type { PickedRange, YearMonth } from "./dateRange";

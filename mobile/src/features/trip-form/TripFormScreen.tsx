@@ -185,11 +185,9 @@ function TripFormBody({ target, initial }: TripFormBodyProps) {
           startDate={form.state.startDate}
           endDate={form.state.endDate}
           noDates={form.state.noDates}
-          onChangeStart={form.changeStart}
-          onChangeEnd={form.changeEnd}
+          onChangeRange={form.changeRange}
           onChangeNoDates={form.changeNoDates}
           startFallback={form.startFallback}
-          endFallback={form.endFallback}
           errorText={errorText(form.errors.dates)}
           testID="trip-form-dates"
         />

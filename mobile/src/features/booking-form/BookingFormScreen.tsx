@@ -5,8 +5,6 @@ import { ModalHeader, PlaceholderField, PrimaryButton, Screen } from "@/componen
 import { useTranslation } from "@/lib/i18n";
 import { spacing } from "@/lib/theme";
 
-import { BaggageToggle } from "./components/BaggageToggle";
-import { PassengerStepper } from "./components/PassengerStepper";
 import { BOOKING_FORMS } from "./fields";
 import type { BookingVariant } from "./fields";
 
@@ -15,9 +13,10 @@ export interface BookingFormScreenProps {
 }
 
 /**
- * S9 — booking form (modal stub) for a flight, hotel or car. One shell; the
- * field set comes from `fields.ts`. Nothing is validated or saved and every
- * button just closes the modal (AC-12).
+ * S9 — booking form (modal stub) for a hotel or car. One shell; the field set
+ * comes from `fields.ts`. Nothing is validated or saved and every button just
+ * closes the modal (AC-12). The flight variant was removed in PLAN-04 step 11:
+ * real flight data goes through `@/features/segment-form`.
  */
 export function BookingFormScreen({ variant }: BookingFormScreenProps) {
   const { t } = useTranslation("bookingForm");
@@ -30,17 +29,9 @@ export function BookingFormScreen({ variant }: BookingFormScreenProps) {
     <Screen testID={`booking-form-${variant}`} contentStyle={styles.content}>
       <ModalHeader title={t(spec.titleKey)} onCancel={close} onDone={close} />
       <View style={styles.fields}>
-        {spec.fields.map((field) => {
-          const label = t(field.labelKey);
-          switch (field.kind) {
-            case "text":
-              return <PlaceholderField key={field.id} label={label} mono={field.mono} />;
-            case "toggle":
-              return <BaggageToggle key={field.id} label={label} />;
-            case "stepper":
-              return <PassengerStepper key={field.id} label={label} value={field.value} testID="passenger-stepper" />;
-          }
-        })}
+        {spec.fields.map((field) => (
+          <PlaceholderField key={field.id} label={t(field.labelKey)} mono={field.mono} />
+        ))}
       </View>
       <PrimaryButton
         label={tCommon("actions.save")}

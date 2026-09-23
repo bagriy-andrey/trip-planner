@@ -6,6 +6,7 @@
 #   ./scripts/e2e.sh skeleton-smoke --locale en
 #   ./scripts/e2e.sh auth-email
 #   ./scripts/e2e.sh trip-crud --locale en
+#   ./scripts/e2e.sh segment-chain --locale en
 #   ./scripts/e2e.sh theme-persistence --metro-url http://localhost:8081
 #
 # The flows contain NO literal UI text: every selector is an env var (LOCALE plus one variable per
@@ -23,7 +24,7 @@ usage() {
   cat <<'EOF'
 Usage: scripts/e2e.sh <flow> [--locale ru|en] [--metro-url <url>]
 
-  <flow>              flow name in e2e/flows/ without .yaml (skeleton-smoke | auth-email | theme-persistence | trip-crud)
+  <flow>              flow name in e2e/flows/ without .yaml (skeleton-smoke | auth-email | theme-persistence | trip-crud | segment-chain)
   --locale ru|en      UI language of the run (default: ru). Sent to the app as the launch argument
                       -AppleLanguages "(<locale>)" and used to pick the selector strings.
   --metro-url <url>   dev-client builds only: Metro URL to open after launch, e.g.
@@ -34,9 +35,10 @@ Preconditions (not installed by this script):
   - Maestro:            curl -Ls "https://get.maestro.mobile.dev" | bash
   - Xcode + a booted iOS simulator: open -a Simulator
   - the app installed on it:        cd mobile && npx expo run:ios   (dev client)
-  - auth-email / skeleton-smoke / theme-persistence / trip-crud sign up on the LOCAL Supabase stack:
-    supabase start -x vector (see supabase/README.md; migrations applied, trip-crud and
-    skeleton-smoke create trips) with mobile/.env pointing at it. Each run uses a fresh e-mail.
+  - auth-email / skeleton-smoke / theme-persistence / trip-crud / segment-chain sign up on the LOCAL
+    Supabase stack: supabase start -x vector (see supabase/README.md; migrations applied, including
+    trip_segments — trip-crud, skeleton-smoke and segment-chain all create trips, segment-chain also
+    creates flight segments) with mobile/.env pointing at it. Each run uses a fresh e-mail.
 EOF
 }
 
@@ -173,7 +175,29 @@ fi
 #   DELETE_CONFIRM_TITLE       tripDetail:deleteConfirm.title (regex-escaped "?")
 #   DELETE_CONFIRM             tripDetail:deleteConfirm.confirm
 #   ADD_FLIGHT                 tripDetail:a11y.addFlight
-#   FLIGHT_FORM_FROM           bookingForm:flight.from
+#   FLIGHT_FORM_FROM/TO        transport:field.from|to (segment-form S9/S9b; the caption AppText and
+#                              the field itself share this exact text — segment-chain.yaml taps them
+#                              with `index: 1`, see its own header comment)
+#   DEPARTURE_DATE_LABEL       transport:field.departureDate (segment-form; caption + empty-state
+#                              button share this text too, same `index: 1` treatment)
+#   DEPARTURE_TIME_LABEL       transport:field.departureTime (NOTE: the i18n VALUE is "Departure"/
+#                              "Вылет", not "Departure time" — see the source key name vs. its value)
+#   SEGMENT_SAVE_NEXT          transport:form.saveAndNext
+#   SEGMENT_SAVE               transport:form.save
+#   DELETE_FLIGHT               transport:segment.delete
+#   DELETE_CONFIRM_MESSAGE     transport:form.deleteConfirmMessage
+#   NOT_CLOSED_TITLE           transport:route.notClosedTitle
+#   SUMMARY_TITLE              transport:summary.title (constant part of the S7 "Транспорт" block's
+#                              route-summary row label; the rest of that label — codes + counts — is
+#                              data-dependent, so segment-chain.yaml only ever matches this substring)
+#   SEGMENT_OUTBOUND_ROUTE /
+#   SEGMENT_RETURN_ROUTE       tripDetail:flight.route ("{{from}} to {{to}}" / ru "{{from}} — {{to}}")
+#                              filled in with AIRPORT_FROM_CODE/AIRPORT_TO_CODE below
+#   AIRPORT_FROM_SUGGESTION /
+#   AIRPORT_TO_SUGGESTION      "<airport name in LOCALE>, <IATA>" — the accessible label of an
+#                              AirportSuggestions row (shared/src/places/airports.ts data, not a
+#                              locales/ string, but still routed through this table per the "no
+#                              literal in the yaml" rule)
 #   LOGOUT                     profile:logout
 #   THEME_LIGHT/THEME_DARK     profile:themeOptions.light|dark
 #   FIELD_NAME_PLACEHOLDER     auth:fields.name.placeholder      (fields are typed by placeholder:
@@ -218,6 +242,19 @@ DELETE_CONFIRM_TITLE=Удалить поездку навсегда\?
 DELETE_CONFIRM=Удалить навсегда
 ADD_FLIGHT=Добавить рейс
 FLIGHT_FORM_FROM=Откуда
+FLIGHT_FORM_TO=Куда
+DEPARTURE_DATE_LABEL=Дата вылета
+DEPARTURE_TIME_LABEL=Вылет
+SEGMENT_SAVE_NEXT=Сохранить и добавить следующий
+SEGMENT_SAVE=Сохранить
+DELETE_FLIGHT=Удалить рейс
+DELETE_CONFIRM_MESSAGE=Рейс будет удалён без возможности восстановления.
+NOT_CLOSED_TITLE=Маршрут не замкнут
+SUMMARY_TITLE=Весь маршрут
+SEGMENT_OUTBOUND_ROUTE=LIS — OPO
+SEGMENT_RETURN_ROUTE=OPO — LIS
+AIRPORT_FROM_SUGGESTION=Аэропорт «Лиссабон», LIS
+AIRPORT_TO_SUGGESTION=Аэропорт «Порту», OPO
 LOGOUT=Выйти
 THEME_LIGHT=Светлая
 THEME_DARK=Тёмная
@@ -263,6 +300,19 @@ DELETE_CONFIRM_TITLE=Delete this trip permanently\?
 DELETE_CONFIRM=Delete permanently
 ADD_FLIGHT=Add flight
 FLIGHT_FORM_FROM=From
+FLIGHT_FORM_TO=To
+DEPARTURE_DATE_LABEL=Departure date
+DEPARTURE_TIME_LABEL=Departure
+SEGMENT_SAVE_NEXT=Save and add next
+SEGMENT_SAVE=Save
+DELETE_FLIGHT=Delete flight
+DELETE_CONFIRM_MESSAGE=The flight will be deleted and cannot be restored.
+NOT_CLOSED_TITLE=Route not closed
+SUMMARY_TITLE=Whole route
+SEGMENT_OUTBOUND_ROUTE=LIS to OPO
+SEGMENT_RETURN_ROUTE=OPO to LIS
+AIRPORT_FROM_SUGGESTION=Lisbon Airport, LIS
+AIRPORT_TO_SUGGESTION=Porto Airport, OPO
 LOGOUT=Sign out
 THEME_LIGHT=Light
 THEME_DARK=Dark
@@ -289,6 +339,13 @@ E2E_NAME="E2E Tester"
 E2E_EMAIL="e2e-${RUN_ID}@example.com"
 E2E_PASSWORD="e2e-local-password-1"
 E2E_PLACE="E2E Place ${RUN_ID}"
+# segment-chain.yaml: two IATA codes from shared/src/places/airports.ts (both cities' primary
+# airport, both in Europe/Lisbon so the segments' "same-day" arithmetic never crosses a DST/offset
+# boundary). Directory DATA, not a locale/UI string, and the same in both locales — kept out of the
+# `locale_strings` table on purpose, unlike AIRPORT_FROM_SUGGESTION/AIRPORT_TO_SUGGESTION below
+# (those repeat the airport's ru/en NAME, which does vary by locale).
+AIRPORT_FROM_CODE="LIS"
+AIRPORT_TO_CODE="OPO"
 
 MAESTRO_ARGS=(
   -e "LOCALE=$LOCALE_ARG"
@@ -298,6 +355,8 @@ MAESTRO_ARGS=(
   -e "E2E_EMAIL=$E2E_EMAIL"
   -e "E2E_PASSWORD=$E2E_PASSWORD"
   -e "E2E_PLACE=$E2E_PLACE"
+  -e "AIRPORT_FROM_CODE=$AIRPORT_FROM_CODE"
+  -e "AIRPORT_TO_CODE=$AIRPORT_TO_CODE"
 )
 while IFS= read -r line; do
   [ -n "$line" ] || continue

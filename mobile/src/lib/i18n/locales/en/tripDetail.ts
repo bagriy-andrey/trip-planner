@@ -6,7 +6,7 @@ export const tripDetail = {
     addCar: "Add car",
   },
   sections: {
-    flights: "Flights",
+    flights: "Transport",
     hotel: "Hotel",
     car: "Car rental",
   },

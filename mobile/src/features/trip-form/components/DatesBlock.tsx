@@ -1,111 +1,74 @@
-import type { CalendarDate } from "@tripplanner/shared";
-import { useEffect } from "react";
+import { pickRangeDate } from "@tripplanner/shared";
+import type { CalendarDate, PickedRange } from "@tripplanner/shared";
+import { useEffect, useState } from "react";
 import { AccessibilityInfo, Pressable, StyleSheet, View } from "react-native";
 
 import { AppText, Checkbox, Icon } from "@/components";
-import { formatCalendarDate, resolveLocale, useTranslation } from "@/lib/i18n";
+import { formatCalendarRange, resolveLocale, useTranslation } from "@/lib/i18n";
 import { layout, radius, spacing, useTheme } from "@/lib/theme";
-import { DatePicker } from "@/platform/datePicker";
+
+import { RangeCalendar } from "./RangeCalendar";
 
 export interface DatesBlockProps {
   startDate: CalendarDate | null;
   endDate: CalendarDate | null;
   noDates: boolean;
-  onChangeStart: (date: CalendarDate) => void;
-  onChangeEnd: (date: CalendarDate) => void;
+  /** Both ends at once: the range is only reported once the second day is tapped. */
+  onChangeRange: (start: CalendarDate, end: CalendarDate) => void;
   onChangeNoDates: (noDates: boolean) => void;
-  /** Where the start picker begins when the empty button is tapped. */
+  /** Month the calendar opens on when no range is chosen yet (usually today). */
   startFallback: CalendarDate;
-  /** Where the end picker begins when the empty button is tapped. */
-  endFallback: CalendarDate;
-  /** Block-level problem (already translated): one message for both buttons, not one each. */
+  /** Block-level problem (already translated). */
   errorText?: string;
   testID?: string;
 }
 
-interface DateButtonProps {
-  caption: string;
-  value: CalendarDate | null;
-  /** Spoken name with the chosen date, e.g. "Start date: Oct 5". */
-  valueLabel: (formatted: string) => string;
-  onChange: (date: CalendarDate) => void;
-  /** Applied when an empty button is tapped, so a picker with a real value takes its place. */
-  fallback: CalendarDate;
-  minimumDate?: CalendarDate;
-  testID: string;
-}
-
 /**
- * One date control. The native compact picker has no "empty" look (iOS shows today), so while
- * nothing is chosen a plain button stands in and the picker is mounted once a date exists:
- * the user never sees a date that is not actually part of the form.
- */
-function DateButton({
-  caption,
-  value,
-  valueLabel,
-  onChange,
-  fallback,
-  minimumDate,
-  testID,
-}: DateButtonProps) {
-  const { tokens } = useTheme();
-  const { i18n } = useTranslation();
-  const locale = resolveLocale([i18n.language]);
-
-  return (
-    <View style={styles.column}>
-      <AppText variant="small" color="textSecondary">
-        {caption}
-      </AppText>
-      {value === null ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={caption}
-          onPress={() => onChange(fallback)}
-          testID={testID}
-          style={[
-            styles.empty,
-            { backgroundColor: tokens.surface, borderColor: tokens.surfaceBorder },
-          ]}
-        >
-          <Icon name="calendar" color="textSecondary" />
-        </Pressable>
-      ) : (
-        <DatePicker
-          value={value}
-          onChange={onChange}
-          minimumDate={minimumDate}
-          accessibilityLabel={valueLabel(formatCalendarDate(locale, value))}
-          testID={testID}
-        />
-      )}
-    </View>
-  );
-}
-
-/**
- * The "Dates" block: Start and End buttons in a row and the "No dates yet" checkbox, which hides
- * both buttons (AC-21). Problems are shown once, under the block (AC-17..AC-19).
+ * The "Dates" block: ONE field showing the range, which opens a calendar right below it where
+ * the user taps the first and the last day (no intermediate default date), and the "No dates yet"
+ * checkbox, which hides the field (AC-21). Problems are shown once, under the block.
  */
 export function DatesBlock({
   startDate,
   endDate,
   noDates,
-  onChangeStart,
-  onChangeEnd,
+  onChangeRange,
   onChangeNoDates,
   startFallback,
-  endFallback,
   errorText,
   testID,
 }: DatesBlockProps) {
-  const { t } = useTranslation("trips");
+  const { t, i18n } = useTranslation("trips");
+  const { tokens } = useTheme();
+  const locale = resolveLocale([i18n.language]);
   const hasError = errorText !== undefined && errorText !== "";
+  const [open, setOpen] = useState(false);
+  // The first tap of a new range lives here until the second one completes it.
+  const [pending, setPending] = useState<PickedRange | null>(null);
 
   useEffect(() => {
     if (errorText) AccessibilityInfo.announceForAccessibility(errorText);
   }, [errorText]);
+
+  const shown: PickedRange = pending ?? { start: startDate, end: endDate };
+  const hasRange = startDate !== null && endDate !== null;
+  const fieldText = hasRange ? formatCalendarRange(locale, startDate, endDate) : t("form.dates.choose");
+
+  const toggle = () => {
+    setPending(null);
+    setOpen((current) => !current);
+  };
+
+  const pick = (day: CalendarDate) => {
+    const next = pickRangeDate(shown, day);
+    if (next.start !== null && next.end !== null) {
+      setPending(null);
+      setOpen(false);
+      onChangeRange(next.start, next.end);
+    } else {
+      setPending(next);
+    }
+  };
 
   return (
     <View testID={testID} style={styles.block}>
@@ -113,25 +76,33 @@ export function DatesBlock({
         {t("form.dates.label")}
       </AppText>
       {noDates ? null : (
-        <View style={styles.row}>
-          <DateButton
-            caption={t("form.dates.start")}
-            value={startDate}
-            valueLabel={(value) => t("form.a11y.startDate", { value })}
-            onChange={onChangeStart}
-            fallback={startFallback}
-            testID="trip-form-start-date"
-          />
-          <DateButton
-            caption={t("form.dates.end")}
-            value={endDate}
-            valueLabel={(value) => t("form.a11y.endDate", { value })}
-            onChange={onChangeEnd}
-            fallback={endFallback}
-            minimumDate={startDate ?? undefined}
-            testID="trip-form-end-date"
-          />
-        </View>
+        <>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={hasRange ? t("form.a11y.datesField", { value: fieldText }) : fieldText}
+            accessibilityState={{ expanded: open }}
+            onPress={toggle}
+            testID="trip-form-dates-field"
+            style={[styles.field, { backgroundColor: tokens.surface, borderColor: open ? tokens.accent : tokens.surfaceBorder }]}
+          >
+            <Icon name="calendar" color="textSecondary" />
+            <AppText color={hasRange ? "text" : "textSecondary"}>{fieldText}</AppText>
+          </Pressable>
+          {open ? (
+            <View style={styles.calendar}>
+              <AppText variant="small" color="textSecondary">
+                {shown.start !== null && shown.end === null ? t("form.dates.pickEnd") : t("form.dates.pickStart")}
+              </AppText>
+              <RangeCalendar
+                start={shown.start}
+                end={shown.end}
+                initialMonthOf={startFallback}
+                onPick={pick}
+                testID="trip-form-calendar"
+              />
+            </View>
+          ) : null}
+        </>
       )}
       {hasError ? (
         <AppText
@@ -171,17 +142,17 @@ export function DatesBlock({
 
 const styles = StyleSheet.create({
   block: { gap: spacing.sm },
-  row: { flexDirection: "row", gap: spacing.gap },
-  column: { flex: 1, gap: spacing.xs, alignItems: "flex-start" },
-  empty: {
+  field: {
     minHeight: layout.minTouch,
     minWidth: layout.minTouch,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.field,
     borderWidth: layout.borderWidth,
   },
+  calendar: { gap: spacing.sm },
   checkRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   checkCaption: { flex: 1, minHeight: layout.minTouch, justifyContent: "center" },
 });
