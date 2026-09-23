@@ -5,6 +5,7 @@ import { StyleSheet, View } from "react-native";
 import type { Edge } from "react-native-safe-area-context";
 
 import { Screen } from "@/components";
+import { HotelBlock, useHotelsQuery } from "@/features/hotels";
 import { TransportBlock, useRouteView, useSegmentsQuery } from "@/features/transport";
 import { toTripCardData } from "@/features/trips";
 import { useToday } from "@/lib/clock";
@@ -61,6 +62,13 @@ export function TripDetailContent({ trip, refetch }: TripDetailContentProps) {
   const openSegment = (segmentId: string) =>
     router.push({ pathname: "/trips/[tripId]/flights/[flightId]", params: { tripId: trip.id, flightId: segmentId } });
 
+  // Hotels: the list query only decides EMPTY vs. NOT; a loading or failed list keeps the empty
+  // state (a failed trip load has its own screen). Ordering is the block's job.
+  const hotelsQuery = useHotelsQuery(trip.id);
+  const hasHotels = hotelsQuery.hotels !== undefined && hotelsQuery.hotels.length > 0;
+  const openHotel = (hotelId: string) =>
+    router.push({ pathname: "/trips/[tripId]/hotels/[hotelId]", params: { tripId: trip.id, hotelId } });
+
   return (
     <View style={styles.root}>
       {/* Behind an open sheet the screen is out of the accessibility tree, like behind a modal. */}
@@ -112,15 +120,24 @@ export function TripDetailContent({ trip, refetch }: TripDetailContentProps) {
               title={t("sections.hotel")}
               addLabel={t("a11y.addHotel")}
               onAdd={() => router.push({ pathname: "/trips/[tripId]/hotels/new", params })}
-              hideAdd
+              hideAdd={!hasHotels}
               testID="section-hotel"
               addTestID="add-hotel"
             >
-              <EmptyBookingSection
-                caption={t("empty.hotel")}
-                onAdd={() => router.push({ pathname: "/trips/[tripId]/hotels/new", params })}
-                testID="empty-hotel"
-              />
+              {hasHotels ? (
+                <HotelBlock
+                  hotels={hotelsQuery.hotels ?? []}
+                  locale={locale}
+                  onHotelPress={openHotel}
+                  testID="hotel-block"
+                />
+              ) : (
+                <EmptyBookingSection
+                  caption={t("empty.hotel")}
+                  onAdd={() => router.push({ pathname: "/trips/[tripId]/hotels/new", params })}
+                  testID="empty-hotel"
+                />
+              )}
             </BookingSection>
             <BookingSection
               title={t("sections.car")}
