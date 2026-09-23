@@ -125,6 +125,23 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
   though every value the picker actually emits already matches `ClockTime`. Bridge at the call site
   with `isClockTime` (`@tripplanner/shared`) rather than an `as ClockTime` cast: `onChange={(picked)
   => { if (isClockTime(picked)) onChangeTime(picked); }}`.
+- 2026-09-23 (PLAN-04 step 10, S7 "Транспорт" block): wiring `TransportBlock` into
+  `TripDetailContent` only needs `useSegmentsQuery(trip.id)` + `useRouteView(segments, trip)` (both
+  from `@/features/transport`'s public index) — the screen makes exactly ONE decision of its own
+  (`segments.length > 0` picks `TransportBlock` vs. the existing `EmptyBookingSection`, mirroring
+  the hotel/car blocks' own empty-state pattern) and passes the `RouteView` straight through
+  untouched; no threshold/summary/closed math is re-derived (AC-62 stays satisfied by construction).
+  The two new navigation callbacks are equally thin: `onOpenRoute` pushes `/trips/[tripId]/route`,
+  `onSegmentPress` pushes the EXISTING `/trips/[tripId]/flights/[flightId]` edit route (built step 9)
+  with the tapped segment id as `flightId` — no new route file needed, since the segment-form edit
+  screen was already declared as a route in step 8/9.
+- 2026-09-23 (PLAN-04 step 10, scope gap): the block's header title still reads `tripDetail:
+  sections.flights` = "Рейс"/"Flight" — `design/screens/trip-detail.md` renamed it to "Транспорт"/
+  "Transport", but that string lives in `mobile/src/lib/i18n/locales/{ru,en}/tripDetail.ts`, OUTSIDE
+  step 10's declared file list (`mobile/src/features/trip-detail/**`). Left unchanged rather than
+  silently expanding scope; a follow-up owning that locale file should rename the key (e.g. add
+  `sections.transport` and switch `TripDetailContent`'s title lookup for the flights block, or just
+  change the existing value) to close this known design/code mismatch.
 ## Open Questions
 - 2026-09-22: PLAN-04 step 5 contrast recheck of `warnBg`/`warnBorder`/`danger` (`design/tokens.md`)
   found the LIGHT theme's `danger` (`#C0503C`) at only ≈4.2:1 on `bg` — below the 4.5:1 rule for

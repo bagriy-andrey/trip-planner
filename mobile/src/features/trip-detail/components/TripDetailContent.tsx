@@ -5,6 +5,7 @@ import { StyleSheet, View } from "react-native";
 import type { Edge } from "react-native-safe-area-context";
 
 import { Screen } from "@/components";
+import { TransportBlock, useRouteView, useSegmentsQuery } from "@/features/transport";
 import { toTripCardData } from "@/features/trips";
 import { useToday } from "@/lib/clock";
 import { resolveLocale, useTranslation } from "@/lib/i18n";
@@ -47,6 +48,19 @@ export function TripDetailContent({ trip, refetch }: TripDetailContentProps) {
   const title = trip.title?.trim() ?? "";
   const deleteName = title === "" ? resolveDestinationName(trip, locale) : title;
 
+  // The "Транспорт" block (Step 7's `TransportBlock`) replaces the old "Рейс" block. It computes
+  // nothing on its own (summary, nearest segment, "not closed" all come from `buildRoute` via
+  // `useRouteView`, AC-62); this screen only decides EMPTY vs. NOT — `segments.length` is a
+  // presence check, not route math — and wires the two navigation targets it owns: the segment
+  // (edit form, Step 9) and the whole route (S13, Step 8).
+  const segmentsQuery = useSegmentsQuery(trip.id);
+  const route = useRouteView(segmentsQuery.segments, trip);
+  const hasSegments = segmentsQuery.segments !== undefined && segmentsQuery.segments.length > 0;
+
+  const openRoute = () => router.push({ pathname: "/trips/[tripId]/route", params });
+  const openSegment = (segmentId: string) =>
+    router.push({ pathname: "/trips/[tripId]/flights/[flightId]", params: { tripId: trip.id, flightId: segmentId } });
+
   return (
     <View style={styles.root}>
       {/* Behind an open sheet the screen is out of the accessibility tree, like behind a modal. */}
@@ -77,11 +91,21 @@ export function TripDetailContent({ trip, refetch }: TripDetailContentProps) {
               testID="section-flights"
               addTestID="add-flight"
             >
-              <EmptyBookingSection
-                caption={t("empty.flight")}
-                onAdd={() => router.push({ pathname: "/trips/[tripId]/flights/new", params })}
-                testID="empty-flight"
-              />
+              {hasSegments && route !== undefined ? (
+                <TransportBlock
+                  route={route}
+                  locale={locale}
+                  onSegmentPress={openSegment}
+                  onOpenRoute={openRoute}
+                  testID="transport-block"
+                />
+              ) : (
+                <EmptyBookingSection
+                  caption={t("empty.flight")}
+                  onAdd={() => router.push({ pathname: "/trips/[tripId]/flights/new", params })}
+                  testID="empty-flight"
+                />
+              )}
             </BookingSection>
             <BookingSection
               title={t("sections.hotel")}
