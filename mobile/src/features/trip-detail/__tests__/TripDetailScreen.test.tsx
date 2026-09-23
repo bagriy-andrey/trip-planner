@@ -242,7 +242,7 @@ describe("TripDetailScreen (S7) — loading, errors, not found", () => {
 describe("TripDetailScreen (S7) — booking blocks", () => {
   it("renders three empty blocks with a dashed frame, plus icon and caption, and no cards", async () => {
     await renderDetail(makeTrip());
-    expect(screen.getByRole("header", { name: "Flights" })).toBeOnTheScreen();
+    expect(screen.getByRole("header", { name: "Transport" })).toBeOnTheScreen();
     expect(screen.getByRole("header", { name: "Hotel" })).toBeOnTheScreen();
     expect(screen.getByRole("header", { name: "Car rental" })).toBeOnTheScreen();
 
@@ -422,9 +422,9 @@ describe("TripDetailScreen (S7) — the \"…\" menu", () => {
     const user = userEvent.setup();
     await renderDetail(makeTrip());
     await openMenu(user);
-    expect(screen.queryByRole("header", { name: "Flights" })).toBeNull();
+    expect(screen.queryByRole("header", { name: "Transport" })).toBeNull();
     await user.press(screen.getByTestId("trip-sheet-backdrop"));
-    expect(screen.getByRole("header", { name: "Flights" })).toBeOnTheScreen();
+    expect(screen.getByRole("header", { name: "Transport" })).toBeOnTheScreen();
   });
 });
 
