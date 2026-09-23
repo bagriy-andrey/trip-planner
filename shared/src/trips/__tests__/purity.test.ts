@@ -15,7 +15,11 @@ describe("runtime neutrality of the places / trips / forms modules", () => {
   const files = Object.entries(sources).filter(
     ([path]) =>
       !path.includes("/__tests__/") &&
-      (path.startsWith("/src/places/") || path.startsWith("/src/trips/") || path.startsWith("/src/forms/")),
+      (path.startsWith("/src/places/") ||
+        path.startsWith("/src/trips/") ||
+        path.startsWith("/src/forms/") ||
+        path.startsWith("/src/hotels/") ||
+        path.startsWith("/src/money/")),
   );
   const specifierPattern = /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)["']([^"']+)["']/g;
 
