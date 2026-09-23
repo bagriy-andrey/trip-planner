@@ -20,4 +20,15 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 - 2026-09-19: A background subagent can die with an API error (here `implementation-planner`, HTTP 429 session limit) AFTER it already wrote its deliverable — the failure notice only showed "Now I have everything I need. Writing the plan." but `specs/plans/PLAN-01-app-skeleton.md` was complete on disk. Before re-running a failed agent, check the target file (size, section headers, e.g. all AC ids referenced); resuming via `SendMessage` is only needed if the file is missing or truncated.
 - 2026-09-19: `/sdd-build` gotchas (PLAN-01, 12 steps): (1) `implementer` worktrees start from `main`, NOT the integration branch, so a later step silently lacks earlier tiers — tell each implementer to `git reset --hard <integration-branch>` (fresh worktree, nothing to lose) + `pnpm install` first. (2) An implementer can finish with everything uncommitted (Step 11) and the merge then has nothing to take: check `git status` in its worktree, commit only the declared files, then `git merge --no-ff`. (3) Implementers need explicit permission to append to their module's `insights.md`, else they skip it or edit it outside the declared file list. (4) The Stop hook re-fires every time the orchestrator ends a turn while a background agent runs, producing a loop of "still waiting" messages; there is no way to poll the agent, so wait for its completion notification.
 - 2026-09-21: Same worktree issue seen again in PLAN-02 (`isolation: "worktree"` cuts from the default branch, so each implementer starts with `git merge <integration-branch>`), plus a side effect: worktrees live under `.claude/worktrees/`, which shows as untracked (`?? .claude/worktrees/`) in the main checkout's `git status` — never `git add -A` there (the repo is public); stage declared files by path.
+- 2026-09-23: Across PLAN-04's 13 steps, at least three unrelated steps (6/7, 9, 10 — see
+  `mobile/insights.md`) each independently hit the same shape of gap: an EARLIER step's declared
+  file list covered the module it added (a hook directory, an i18n namespace) but not every leaf
+  file a LATER step would need from it (a specific hook, specific screen-chrome locale keys), so the
+  later step had to add the missing piece itself, outside its own step's original file list, by
+  reasoning about "where the plan implies it belongs" rather than expanding scope silently. One
+  occurrence is implementer error; three independent ones in one plan is a planning-granularity
+  pattern: a step that "adds a hooks/ dir" or "adds an i18n namespace" for a feature spanning many
+  steps should be read as owning that file for the WHOLE feature's later additions too, not just its
+  own step's immediate needs — a future plan can make this explicit rather than relying on each
+  later step to notice and fill the gap without permission to touch a file outside its own list.
 ## Open Questions
