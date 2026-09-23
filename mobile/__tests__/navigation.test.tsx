@@ -353,6 +353,7 @@ describe("navigation topology", () => {
       "/trips/x/flights/new",
       "/trips/x/flights/abc",
       "/trips/x/hotels/new",
+      "/trips/x/hotels/abc",
       "/trips/x/cars/new",
     ] as const) {
       act(() => router.push(path));
@@ -384,6 +385,7 @@ describe("navigation topology", () => {
     ["/trips/[tripId]/edit", "trips/[tripId]/edit"],
     ["/trips/[tripId]/flights/new", "trips/[tripId]/flights/new"],
     ["/trips/[tripId]/hotels/new", "trips/[tripId]/hotels/new"],
+    ["/trips/[tripId]/hotels/[hotelId]", "trips/[tripId]/hotels/[hotelId]"],
     ["/trips/[tripId]/cars/new", "trips/[tripId]/cars/new"],
     ["/trips/[tripId]/route", "trips/[tripId]/route"],
   ] as const)(
@@ -559,6 +561,7 @@ describe("gating of the tabs and trips/* without a session (SPEC-02 AC-20)", () 
     "/trips/x/flights/new",
     "/trips/x/flights/abc",
     "/trips/x/hotels/new",
+    "/trips/x/hotels/abc",
     "/trips/x/cars/new",
     "/trips/x/route",
   ])(
