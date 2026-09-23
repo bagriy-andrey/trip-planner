@@ -1,0 +1,213 @@
+appId: com.anonymous.tripplanner
+name: Segment chain - round trip closes the route, deleting a leg reopens it (SPEC-04 AC-99)
+tags:
+  - trips
+  - transport
+# Run through the runner, which supplies LOCALE, every UI string of that locale and the per-run
+# account/place/airport codes as env vars:
+#   ./scripts/e2e.sh segment-chain [--locale ru|en] [--metro-url http://localhost:8081]
+#
+# Needs the LOCAL Supabase stack up (`supabase start -x vector`) with BOTH migrations applied
+# (trips AND trip_segments — `supabase db reset`) and mobile/.env pointing at it: this flow creates
+# a trip and two real flight segments. The runner mints a fresh account (E2E_EMAIL from RUN_ID) on
+# every run, same as trip-crud/skeleton-smoke.
+#
+# The journey (AC-99): sign up -> "+" -> free-text place, "no dates yet" -> create (lands on S7)
+# -> "Add flight" (S9) -> outbound LIS -> OPO -> "Save and add next" -> the form resets in place,
+# prefilled OPO -> LIS (nextSegmentPrefill nudges the loop closed, shared/src/segments/prefill.ts)
+# -> pick a departure time for the return leg -> "Done" -> back on S7 -> open "Маршрут"/"Route"
+# (S13): two segments, route CLOSED (no "not closed" card) -> back to S7 (see the note on
+# route.tsx below) -> open the nearest segment from the "Транспорт"/"Transport" block -> delete it
+# -> back on S7 -> "Маршрут" again: the route is open again ("not closed" card is back).
+#
+# AIRPORT_FROM_CODE/AIRPORT_TO_CODE (LIS/OPO, shared/src/places/airports.ts) are both Portugal,
+# both `Europe/Lisbon`: picked so the two segments' "same calendar day" arithmetic never crosses a
+# DST/offset boundary, which is irrelevant to what this flow proves (AC-99 is about the CHAIN/
+# closed state, not the time-zone math already covered by shared's own test suite, PLAN-04 §1.3).
+#
+# --- Selectors (AC-19: text/accessibility-label only, no `id:`/testID anywhere) -------------------
+# Everything reused from skeleton-smoke.yaml/trip-crud.yaml follows their existing conventions
+# unchanged. What's NEW here, and why, because it does NOT follow the auth/trip-form precedent:
+#
+#   1. `segment-form` (S9/S9b) pairs every field's static caption `AppText` with a control whose
+#      OWN accessibility text starts out identical to that caption — not just "shares a label with
+#      its placeholder" (auth fields, trip-crud's place field), but the literal same string twice in
+#      the same screen (`AirportField`'s `placeholder` prop IS `t("field.from")`, the same value as
+#      its `label`; `DepartureBlock`'s empty-state button's `accessibilityLabel` is the bare field
+#      label too, e.g. "Departure"). Tapping by that text alone therefore has TWO matches. This flow
+#      disambiguates with Maestro's `index: 1` (the caption renders first in the JSX, the field
+#      second) — still a text selector, not `id:`/testID, so AC-19 holds, but the ORDER assumption
+#      is NOT YET VERIFIED (Maestro/simulator unavailable while authoring, see e2e/insights.md).
+#   2. Airport suggestions are picked by their row's accessible label, "<name>, <IATA>" (directory
+#      DATA from shared/src/places/airports.ts, not a locales/ string — still routed through
+#      scripts/e2e.sh per the "no literal in the yaml" rule, AIRPORT_FROM_SUGGESTION/_TO_SUGGESTION).
+#   3. The S7 "Транспорт"/"Transport" block's route-summary row is tapped by a REGEX substring match
+#      on just its constant part (SUMMARY_TITLE, "Весь маршрут"/"Whole route") wrapped in `.*….*`:
+#      the row's full label also embeds the route's airport codes and a pluralized segment/layover
+#      count that depend on how many segments exist at that point in the flow (2, then 1) — matching
+#      only the constant substring works for both without computing the plural forms by hand.
+#
+# --- R-6 / AC-100 (native TIME picker): NOT the blocker the plan worried about --------------------
+# `DepartureBlock`/`ArrivalBlock` (mobile/src/platform/datePicker.tsx) render a plain placeholder
+# `Pressable` while a date/time is `null`; TAPPING that placeholder calls `onChange` DIRECTLY with a
+# deterministic fallback (today's date / midnight) — the real `@react-native-community/datetimepicker`
+# control (iOS compact inline / Android imperative dialog) only mounts AFTER a value exists, and this
+# flow never touches it. So getting *a* valid departure time needs no native-picker interaction at
+# all. Getting a SPECIFIC time (e.g. the 55-minute risky-layover case) still needs the real control
+# and stays out of Maestro's reach here — that was already manual checklist M2/M4 and still is; AC-100's
+# "move the time steps to the manual checklist" fallback was NOT needed for this flow.
+#
+# --- Known gap this flow works around (not fixed here — outside this step's file list) ------------
+# `mobile/app/trips/[tripId]/route.tsx` (S13, PLAN-04 step 8) still passes no-op callbacks for
+# `onAddSegment`/`onSegmentPress`/`onAddFromNotClosed`: neither step 9 (segment-form) nor step 10
+# (trip-detail) owns that file, so nothing ever wired the Route screen's OWN chain-tap/"+"/
+# not-closed-card navigation. This flow therefore never taps a segment or "+" FROM the Route screen
+# itself — every add/edit/delete goes through S7's "Add flight" button and the "Транспорт" block's
+# nearest-segment card (both correctly wired in trip-detail); the Route screen is only used to ASSERT
+# the chain/closed state. See e2e/insights.md for the full note.
+---
+- launchApp:
+    clearState: true
+    arguments:
+      "-AppleLanguages": "(${LOCALE})"
+
+- runFlow:
+    when:
+      true: ${DEV_CLIENT_LINK != 'none'}
+    commands:
+      - openLink: ${DEV_CLIENT_LINK}
+      - tapOn:
+          text: "Open|Открыть"
+          optional: true
+      - tapOn:
+          text: "Continue|Продолжить"
+          optional: true
+
+# --- Sign up with a fresh account (real server) ---------------------------------------------------
+- extendedWaitUntil:
+    visible: "${ONBOARDING_TITLE}"
+    timeout: 60000
+- tapOn: "${ONBOARDING_START}"
+- assertVisible: "${SIGNUP_TITLE}"
+- tapOn: "${FIELD_NAME_PLACEHOLDER}"
+- inputText: "${E2E_NAME}"
+- tapOn: "${FIELD_EMAIL_PLACEHOLDER}"
+- inputText: "${E2E_EMAIL}"
+- tapOn: "${FIELD_PASSWORD_PLACEHOLDER}"
+- inputText: "${E2E_PASSWORD}"
+- hideKeyboard
+- tapOn: "${SIGNUP_SUBMIT}"
+- tapOn:
+    text: "${SYSTEM_NOT_NOW}"
+    optional: true
+- extendedWaitUntil:
+    visible: "${TAB_TRIPS}"
+    timeout: 30000
+
+# --- Create a trip: "+" -> free-text place, "no dates yet" -> "Create trip" -> lands on S7 --------
+- tapOn: "${NEW_TRIP_A11Y}"
+- extendedWaitUntil:
+    visible: "${FORM_DESTINATION_PLACEHOLDER}"
+    timeout: 10000
+- tapOn: "${FORM_DESTINATION_PLACEHOLDER}"
+- inputText: "${E2E_PLACE}"
+- hideKeyboard
+- tapOn: "${FORM_NO_DATES}"
+- assertVisible: "${FORM_NO_DATES_HINT}"
+- tapOn: "${FORM_CREATE}"
+- extendedWaitUntil:
+    visible: "${ADD_FLIGHT}"
+    timeout: 30000
+
+# --- S9: outbound segment LIS -> OPO ----------------------------------------------------------------
+- tapOn: "${ADD_FLIGHT}"
+- extendedWaitUntil:
+    visible:
+      text: "${FLIGHT_FORM_FROM}"
+      index: 1
+    timeout: 15000
+- tapOn:
+    text: "${FLIGHT_FORM_FROM}"
+    index: 1
+- inputText: "${AIRPORT_FROM_CODE}"
+- extendedWaitUntil:
+    visible: "${AIRPORT_FROM_SUGGESTION}"
+    timeout: 10000
+- hideKeyboard
+- tapOn: "${AIRPORT_FROM_SUGGESTION}"
+- tapOn:
+    text: "${FLIGHT_FORM_TO}"
+    index: 1
+- inputText: "${AIRPORT_TO_CODE}"
+- extendedWaitUntil:
+    visible: "${AIRPORT_TO_SUGGESTION}"
+    timeout: 10000
+- hideKeyboard
+- tapOn: "${AIRPORT_TO_SUGGESTION}"
+# Departure date/time are both still null: tapping either empty-state control sets a deterministic
+# fallback directly (today's date / midnight, see the R-6 note above) without opening a native picker.
+- tapOn:
+    text: "${DEPARTURE_DATE_LABEL}"
+    index: 1
+- tapOn:
+    text: "${DEPARTURE_TIME_LABEL}"
+    index: 1
+- tapOn: "${SEGMENT_SAVE_NEXT}"
+
+# --- S9b (same screen, reset in place): return segment OPO -> LIS ---------------------------------
+# `nextSegmentPrefill` (shared/src/segments/prefill.ts) fills "from"/"to"/departure date already
+# (from = OPO, to = LIS — the route's own start airport, nudging the loop closed); only the
+# departure TIME is still empty. Waiting for a SECOND match of DEPARTURE_TIME_LABEL doubles as the
+# sync barrier for the mutation round-trip: while the outbound segment's own time control is still
+# showing (label "Departure: 00:00", not the bare caption text), only the caption itself matches —
+# once the form has actually reset, the empty-state button reappears and there are two matches again.
+- extendedWaitUntil:
+    visible:
+      text: "${DEPARTURE_TIME_LABEL}"
+      index: 1
+    timeout: 15000
+- tapOn:
+    text: "${DEPARTURE_TIME_LABEL}"
+    index: 1
+- tapOn: "${DONE}"
+
+# --- Back on S7: open "Маршрут"/"Route" (S13) -> two segments, route CLOSED -----------------------
+- extendedWaitUntil:
+    visible: "${ADD_FLIGHT}"
+    timeout: 15000
+- tapOn: ".*${SUMMARY_TITLE}.*"
+- extendedWaitUntil:
+    visible: "${SEGMENT_OUTBOUND_ROUTE},.*"
+    timeout: 15000
+- assertVisible: "${SEGMENT_RETURN_ROUTE},.*"
+- assertNotVisible: "${NOT_CLOSED_TITLE}"
+
+# --- Back to S7 (Route screen's own chain-tap navigation is unwired, see the header note above) ---
+- tapOn: "${BACK}"
+- extendedWaitUntil:
+    visible: "${ADD_FLIGHT}"
+    timeout: 15000
+
+# --- Open the nearest segment from the "Транспорт"/"Transport" block, delete it --------------------
+# Either leg can be "nearest" (both share the same departureAt instant, see e2e/insights.md): match
+# whichever one is actually shown.
+- tapOn: "(${SEGMENT_OUTBOUND_ROUTE}|${SEGMENT_RETURN_ROUTE}),.*"
+- extendedWaitUntil:
+    visible:
+      text: "${FLIGHT_FORM_FROM}"
+      index: 1
+    timeout: 15000
+- tapOn: "${DELETE_FLIGHT}"
+- assertVisible: "${DELETE_CONFIRM_MESSAGE}"
+# The confirm sheet does NOT hide the inline delete link behind it (unlike trip-detail's own sheet
+# overlay), so this second tap has two matching elements while the sheet is open — see e2e/insights.md.
+- tapOn: "${DELETE_FLIGHT}"
+
+# --- Back on S7: the route is open again ("not closed" card is back) ------------------------------
+- extendedWaitUntil:
+    visible: "${ADD_FLIGHT}"
+    timeout: 15000
+- tapOn: ".*${SUMMARY_TITLE}.*"
+- extendedWaitUntil:
+    visible: "${NOT_CLOSED_TITLE}"
+    timeout: 15000
