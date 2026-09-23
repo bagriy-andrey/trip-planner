@@ -392,7 +392,7 @@ describe("navigation topology", () => {
     "keeps a hostile trip id inside its own path segment: %s (AC-76)",
     async (pathname, routeName) => {
       await renderDetails("trip-lisbon");
-      act(() => router.push({ pathname, params: { tripId: "../../etc" } }));
+      act(() => router.push({ pathname, params: { tripId: "../../etc", hotelId: "hotel-1" } }));
       await waitFor(() => {
         expect(topRoute().name).toBe(routeName);
         expect(topRoute().params.tripId).toBe("../../etc");
