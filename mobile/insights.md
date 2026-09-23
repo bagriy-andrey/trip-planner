@@ -142,6 +142,14 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
   silently expanding scope; a follow-up owning that locale file should rename the key (e.g. add
   `sections.transport` and switch `TripDetailContent`'s title lookup for the flights block, or just
   change the existing value) to close this known design/code mismatch.
+- 2026-09-23 (PLAN-04 step 13, follow-up not delivered): the header-rename gap above was self-flagged
+  in step 10's own commit message AND step 13 even updated `design/screens/trip-detail.md` to state
+  the new "Транспорт" title (AC-71) — yet step 13 never touched `tripDetail.ts` itself, so the doc and
+  the code disagreed until `plan-verifier`'s final pass caught it (no test asserted the visible header
+  string, only its `testID`). Lesson: a step's own commit message disclosing "deferred to step N" is
+  not a tracked TODO — it is only as reliable as step N happening to re-read every prior step's
+  commit messages. A plan with an explicit deferred-items list (or a final AC-by-AC pass with visible-
+  text assertions, not just testID checks) would have caught this without needing the verifier.
 - 2026-09-23 (PLAN-04 step 11, demolition of the booking-form flight stub): "remove `bookingForm.
   flight.*` keys" is NOT "delete the top-level `flight` branch" — `segment-form/SegmentFormScreen.tsx`
   (step 9) reads `tBookingForm("titles.flight")` (header/submitting-button title) and
