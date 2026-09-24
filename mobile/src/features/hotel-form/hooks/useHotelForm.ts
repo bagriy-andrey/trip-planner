@@ -4,10 +4,8 @@ import {
   HOTEL_FIELD_ERROR,
   breakfastDaysRange,
   clampBreakfastDays,
-  isCurrencyCode,
   parseHotelForm,
   searchCities,
-  searchCurrencies,
 } from "@tripplanner/shared";
 import type {
   CalendarDate,
@@ -37,7 +35,7 @@ export type HotelFormTarget =
   | { mode: "edit"; tripId: string; hotelId: string };
 
 /** Field groups whose error shows after the user leaves them (or after the first save attempt, AC-15). */
-type Group = "name" | "city" | "checkIn" | "checkOut" | "address" | "mapsUrl" | "cost" | "bookingRef" | "notes";
+type Group = "name" | "city" | "dates" | "times" | "address" | "mapsUrl" | "cost" | "bookingRef" | "notes";
 
 /**
  * All logic of S14/S14b: field state, the directory-only city rule, nights and breakfast range (from
@@ -89,11 +87,19 @@ export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
       : state.city === null && state.cityText.trim() !== ""
         ? HOTEL_FIELD_ERROR.cityNotInDirectory
         : raw.city;
+  // The range field owns the missing-date and stay-too-long errors; the cross-field "not after
+  // check-in" (same day, both times) belongs under the check-out TIME field.
+  const datesErrors: HotelFieldErrorId[] = visible("dates")
+    ? [raw.checkInDate, raw.checkOutDate, raw.checkOut === HOTEL_FIELD_ERROR.checkOutStayTooLong ? raw.checkOut : undefined]
+        .filter((id): id is HotelFieldErrorId => id !== undefined)
+    : [];
+  const timesError =
+    visible("times") && raw.checkOut === HOTEL_FIELD_ERROR.checkOutNotAfterCheckIn ? raw.checkOut : undefined;
   const errors = {
     name: errorId("name", "name"),
     city: cityError,
-    checkIn: errorId("checkIn", "checkInDate", "checkInTime"),
-    checkOut: errorId("checkOut", "checkOutDate", "checkOutTime", "checkOut"),
+    dates: datesErrors,
+    checkOutTime: timesError,
     address: errorId("address", "address"),
     mapsUrl: errorId("mapsUrl", "mapsUrl"),
     costAmount: errorId("cost", "costAmount"),
@@ -123,19 +129,19 @@ export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
     citySuggestionsOpen && state.city === null && state.cityText.trim() !== "" ? searchCities(state.cityText) : [];
 
   // --- Dates and times --------------------------------------------------------------------------------
-  const setDates = (dates: Partial<Pick<HotelFormState, "checkInDate" | "checkOutDate">>, group: Group) => {
-    setState((current) => withDates(current, dates));
+  const changeRange = (checkInDate: CalendarDate, checkOutDate: CalendarDate) => {
+    setState((current) => withDates(current, { checkInDate, checkOutDate }));
     setSubmitError(null);
-    touch(group);
+    touch("dates");
   };
-  const setTime = (changes: Partial<Pick<HotelFormState, "checkInTime" | "checkOutTime">>, group: Group) => {
-    apply(changes);
-    touch(group);
+  const changeCheckInTime = (checkInTime: ClockTime | null) => {
+    apply({ checkInTime });
+    touch("times");
   };
-  const changeCheckInDate = (date: CalendarDate | null) => setDates({ checkInDate: date }, "checkIn");
-  const changeCheckOutDate = (date: CalendarDate | null) => setDates({ checkOutDate: date }, "checkOut");
-  const changeCheckInTime = (time: ClockTime | null) => setTime({ checkInTime: time }, "checkIn");
-  const changeCheckOutTime = (time: ClockTime | null) => setTime({ checkOutTime: time }, "checkOut");
+  const changeCheckOutTime = (checkOutTime: ClockTime | null) => {
+    apply({ checkOutTime });
+    touch("times");
+  };
 
   // --- Guests / parking / breakfast --------------------------------------------------------------------
   const stepGuests = (delta: number) =>
@@ -146,10 +152,13 @@ export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
   const stepBreakfastDays = (delta: number) =>
     apply({ breakfastDays: clampBreakfastDays(state.breakfastDays + delta, nights) });
 
-  // --- Cost ------------------------------------------------------------------------------------------------
-  const currencyText = state.costCurrency.trim().toUpperCase();
-  const currencySuggestions: CurrencyCode[] =
-    currencyText === "" || isCurrencyCode(currencyText) ? [] : searchCurrencies(currencyText);
+  // --- Cost (currency is picked in a bottom sheet, never typed or defaulted) -----------------------------
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const selectCurrency = (code: CurrencyCode | null) => {
+    apply({ costCurrency: code ?? "" });
+    touch("cost");
+    setCurrencyOpen(false);
+  };
 
   const maps = useMapsLink(state, apply);
 
@@ -190,18 +199,19 @@ export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
     city: { change: changeCity, select: selectCity, clear: clearCity, blur: () => touch("city"), suggestions: citySuggestions },
     address: { change: (address: string) => apply({ address }), blur: () => touch("address") },
     maps: { ...maps, blur: () => { touch("mapsUrl"); maps.commit(); } },
-    checkIn: { changeDate: changeCheckInDate, changeTime: changeCheckInTime },
-    checkOut: { changeDate: changeCheckOutDate, changeTime: changeCheckOutTime },
+    changeRange,
+    changeCheckInTime,
+    changeCheckOutTime,
     stepGuests,
     changeParking,
     changeBreakfast,
     stepBreakfastDays,
     cost: {
       changeAmount: (costAmount: string) => apply({ costAmount }),
-      changeCurrency: (costCurrency: string) => apply({ costCurrency: costCurrency.toUpperCase() }),
-      selectCurrency: (costCurrency: CurrencyCode) => apply({ costCurrency }),
-      blurCurrency: () => touch("cost"),
-      suggestions: currencySuggestions,
+      currencyOpen,
+      openCurrency: () => setCurrencyOpen(true),
+      closeCurrency: () => setCurrencyOpen(false),
+      selectCurrency,
     },
     bookingRef: { change: (bookingRef: string) => apply({ bookingRef }), blur: () => touch("bookingRef") },
     notes: { change: (notes: string) => apply({ notes }), blur: () => touch("notes") },

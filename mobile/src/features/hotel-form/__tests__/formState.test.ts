@@ -36,10 +36,14 @@ describe("hotelFormFromTrip", () => {
 });
 
 describe("hotelFormFromHotel", () => {
-  it("reads the moments in the hotel's zone, not the device's (AC-31)", () => {
-    const state = hotelFormFromHotel(makeHotel({ checkInAt: new Date("2026-06-15T23:30:00.000Z") }), "en");
-    // Lisbon is UTC+1 in June: 23:30Z is already the next local day.
-    expect(state).toMatchObject({ checkInDate: "2026-06-16", checkInTime: "00:30" });
+  it("copies calendar dates and optional times as stored, with no zone maths", () => {
+    const state = hotelFormFromHotel(makeHotel({ checkInDate: "2026-06-15", checkInTime: "23:30", checkOutTime: null }), "en");
+    expect(state).toMatchObject({
+      checkInDate: "2026-06-15",
+      checkInTime: "23:30",
+      checkOutDate: "2026-06-18",
+      checkOutTime: null,
+    });
   });
 
   it("maps null optional fields to empty strings and a null breakfast count to 1", () => {

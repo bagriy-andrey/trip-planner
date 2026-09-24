@@ -305,8 +305,8 @@ describe("TripDetailScreen (S7) — booking blocks", () => {
 });
 
 describe("TripDetailScreen (S7) — Hotel block (SPEC-05 AC-35..38)", () => {
-  const late = makeHotel({ id: "h-late", name: "Late Inn", checkInAt: new Date("2026-06-20T14:00:00Z"), breakfast: "all" });
-  const early = makeHotel({ id: "h-early", name: "Early Inn", checkInAt: new Date("2026-06-10T14:00:00Z") });
+  const late = makeHotel({ id: "h-late", name: "Late Inn", checkInDate: "2026-06-20", breakfast: "all" });
+  const early = makeHotel({ id: "h-early", name: "Early Inn", checkInDate: "2026-06-10" });
 
   it("zero hotels: dashed empty state, no header plus (AC-36)", async () => {
     await renderDetail(makeTrip());

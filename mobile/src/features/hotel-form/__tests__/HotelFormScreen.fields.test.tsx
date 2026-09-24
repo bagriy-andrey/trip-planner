@@ -64,12 +64,12 @@ describe("HotelFormScreen breakfast (AC-22, AC-23, AC-44)", () => {
     for (let i = 0; i < 5; i++) await userEvent.press(screen.getByRole("button", { name: "More breakfast days" }));
     expect(screen.getByLabelText("Days with breakfast, 6")).toBeOnTheScreen();
 
-    // Clear check-out, then pick it again: the mock picker answers with its start day (= check-in),
-    // i.e. 0 nights, so the range collapses to 1.
-    await userEvent.press(screen.getByTestId("hotel-form-check-out-date-clear"));
-    await userEvent.press(screen.getByTestId("hotel-form-check-out-date"));
+    // Re-pick a one-night range: the breakfast count is pulled back to 1.
+    await userEvent.press(screen.getByTestId("hotel-form-dates-field"));
+    await userEvent.press(screen.getByTestId("hotel-form-dates-calendar-day-2026-06-10"));
+    await userEvent.press(screen.getByTestId("hotel-form-dates-calendar-day-2026-06-11"));
     expect(screen.getByLabelText("Days with breakfast, 1")).toBeOnTheScreen();
-    expect(screen.queryByText(/calculated from dates/)).not.toBeOnTheScreen();
+    expect(screen.getByText("1 night — calculated from dates")).toBeOnTheScreen();
   });
 
   it("uses radiogroups for parking and breakfast", async () => {
@@ -80,17 +80,58 @@ describe("HotelFormScreen breakfast (AC-22, AC-23, AC-44)", () => {
   });
 });
 
-describe("HotelFormScreen cost (AC-19)", () => {
-  it("offers currency suggestions and reports a missing currency", async () => {
-    await renderCreate();
-    await userEvent.type(screen.getByTestId("hotel-form-cost-amount"), "120.50");
-    await userEvent.type(screen.getByTestId("hotel-form-cost-currency"), "E");
-    await userEvent.press(await screen.findByTestId("hotel-form-cost-suggestion-EUR"));
-    expect(screen.getByTestId("hotel-form-cost-currency").props.value).toBe("EUR");
+describe("HotelFormScreen cost (AC-19, currency dropdown)", () => {
+  const sheet = "hotel-form-currency-sheet";
 
-    await userEvent.clear(screen.getByTestId("hotel-form-cost-currency"));
+  it("never defaults the currency: the field shows the placeholder and a missing pair is reported", async () => {
+    await renderCreate();
+    expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: Choose a currency");
+    await userEvent.type(screen.getByTestId("hotel-form-cost-amount"), "120.50");
     await userEvent.press(screen.getByRole("button", { name: "Save" }));
-    expect(screen.getByText("Choose a currency")).toBeOnTheScreen();
+    // The placeholder and the error both read "Choose a currency".
+    expect(screen.getAllByText("Choose a currency")).toHaveLength(2);
+  });
+
+  it("opens a bottom sheet with the full list; tapping a row selects it and closes", async () => {
+    await renderCreate();
+    await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
+    expect(screen.getByTestId(sheet)).toBeOnTheScreen();
+    expect(screen.getByTestId(`${sheet}-option-EUR`)).toBeOnTheScreen();
+    expect(screen.getByTestId(`${sheet}-option-ARS`)).toBeOnTheScreen();
+    await userEvent.press(screen.getByTestId(`${sheet}-option-EUR`));
+    expect(screen.queryByTestId(sheet)).not.toBeOnTheScreen();
+    expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: EUR");
+  });
+
+  it("searches by code or by localized name, case-insensitively", async () => {
+    await renderCreate();
+    await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
+    await userEvent.type(screen.getByTestId(`${sheet}-search`), "zlo");
+    expect(screen.getByTestId(`${sheet}-option-PLN`)).toBeOnTheScreen();
+    expect(screen.queryByTestId(`${sheet}-option-EUR`)).not.toBeOnTheScreen();
+    await userEvent.clear(screen.getByTestId(`${sheet}-search`));
+    await userEvent.type(screen.getByTestId(`${sheet}-search`), "usd");
+    expect(screen.getByTestId(`${sheet}-option-USD`)).toBeOnTheScreen();
+    await userEvent.clear(screen.getByTestId(`${sheet}-search`));
+    await userEvent.type(screen.getByTestId(`${sheet}-search`), "qqq");
+    expect(screen.getByTestId(`${sheet}-empty`)).toBeOnTheScreen();
+  });
+
+  it("offers a 'None' row once a currency is chosen, which unsets it", async () => {
+    await renderCreate();
+    await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
+    expect(screen.queryByTestId(`${sheet}-none`)).not.toBeOnTheScreen();
+    await userEvent.press(screen.getByTestId(`${sheet}-option-GBP`));
+    await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
+    await userEvent.press(screen.getByTestId(`${sheet}-none`));
+    expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: Choose a currency");
+  });
+
+  it("closes from the scrim without changing the choice", async () => {
+    await renderCreate();
+    await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
+    await userEvent.press(screen.getByTestId(`${sheet}-backdrop`));
+    expect(screen.queryByTestId(sheet)).not.toBeOnTheScreen();
   });
 });
 
@@ -140,9 +181,10 @@ describe("HotelFormScreen check-out rule (AC-16)", () => {
   it("blocks saving when check-out is not after check-in and shows the error under Check-out", async () => {
     await renderCreate({ startDate: "2026-06-15", endDate: "2026-06-15" });
     await userEvent.type(screen.getByTestId("hotel-form-name"), "Casa");
-    await userEvent.press(screen.getByTestId("hotel-form-check-in-time"));
-    await userEvent.press(screen.getByTestId("hotel-form-check-out-time"));
+    await userEvent.press(screen.getByTestId("hotel-form-check-in-time-picker"));
+    await userEvent.press(screen.getByTestId("hotel-form-check-out-time-picker"));
     await userEvent.press(screen.getByRole("button", { name: "Save" }));
+    // Same day, both times set, out (11:00) not after in (15:00): the error sits under the check-out time.
     expect(screen.getByText("Check-out must be after check-in")).toBeOnTheScreen();
     await act(async () => undefined);
     await waitFor(() => expect(createHotelMock).not.toHaveBeenCalled());

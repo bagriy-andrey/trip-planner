@@ -14,9 +14,11 @@ export interface HotelBlockProps {
   testID?: string;
 }
 
-/** Cards by check-in ascending; equal check-ins fall back to id so the order is deterministic. */
+/** Cards by check-in date, then time (a missing time sorts first), then id so the order is deterministic. */
 function byCheckIn(a: Hotel, b: Hotel): number {
-  return a.checkInAt.getTime() - b.checkInAt.getTime() || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const key = (hotel: Hotel) => `${hotel.checkInDate}T${hotel.checkInTime ?? ""}`;
+  const [ka, kb] = [key(a), key(b)];
+  return ka < kb ? -1 : ka > kb ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
 /**

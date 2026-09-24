@@ -2,7 +2,9 @@ export { useTranslation } from "react-i18next";
 
 export {
   formatCalendarDate,
+  formatCalendarDay,
   formatCalendarRange,
+  formatClockTime,
   formatDateRange,
   formatNights,
   formatRelativeDays,

@@ -1,4 +1,4 @@
-import { clampBreakfastDays, findCityById, instantToZonedParts, nightsBetweenDates } from "@tripplanner/shared";
+import { clampBreakfastDays, findCityById, nightsBetweenDates } from "@tripplanner/shared";
 import type {
   CalendarDate,
   CityRecord,
@@ -74,10 +74,8 @@ export function hotelFormFromTrip(trip: Trip, lang: PlaceLanguage): HotelFormSta
   };
 }
 
-/** Edit-mode values, read in the HOTEL's zone, not the device's (AC-31). */
+/** Edit-mode values: calendar dates and optional wall-clock times, exactly as stored (no zone maths). */
 export function hotelFormFromHotel(hotel: Hotel, lang: PlaceLanguage): HotelFormState {
-  const checkIn = instantToZonedParts(hotel.checkInAt, hotel.timeZone);
-  const checkOut = instantToZonedParts(hotel.checkOutAt, hotel.timeZone);
   return {
     name: hotel.name,
     cityText: cityDisplayText(hotel.city, lang),
@@ -85,10 +83,10 @@ export function hotelFormFromHotel(hotel: Hotel, lang: PlaceLanguage): HotelForm
     address: hotel.address ?? "",
     mapsUrlText: hotel.mapsUrl ?? "",
     mapsUrl: hotel.mapsUrl,
-    checkInDate: checkIn.date,
-    checkInTime: checkIn.time,
-    checkOutDate: checkOut.date,
-    checkOutTime: checkOut.time,
+    checkInDate: hotel.checkInDate,
+    checkInTime: hotel.checkInTime,
+    checkOutDate: hotel.checkOutDate,
+    checkOutTime: hotel.checkOutTime,
     guests: hotel.guests,
     parking: hotel.parking,
     breakfast: hotel.breakfast,

@@ -16,6 +16,17 @@ function dateFormat(locale: Locale, options: Intl.DateTimeFormatOptions, timeZon
   return new Intl.DateTimeFormat(locale, { ...options, timeZone });
 }
 
+/** "12 сент." / "Sep 12" — a calendar date without the year (hotel cards). */
+export function formatCalendarDay(locale: Locale, date: string): string {
+  return formatShortDate(locale, calendarDateToUtc(date), "UTC");
+}
+
+/** "15:00" / "3:00 PM" — a wall-clock "HH:MM" of a place; no zone conversion (local to the hotel by definition). */
+export function formatClockTime(locale: Locale, time: string): string {
+  const [hour = 0, minute = 0] = time.split(":").map(Number);
+  return formatTime(locale, new Date(Date.UTC(2000, 0, 1, hour, minute)), "UTC");
+}
+
 /** "12–18 сент. 2026 г." / "Sep 12 – 18, 2026" — locale-owned range layout. */
 export function formatDateRange(locale: Locale, start: Date, end: Date, timeZone = "UTC"): string {
   const formatter = dateFormat(locale, { day: "numeric", month: "short", year: "numeric" }, timeZone);

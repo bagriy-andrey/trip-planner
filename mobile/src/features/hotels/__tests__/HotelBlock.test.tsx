@@ -7,13 +7,21 @@ import { HotelBlock } from "../components/HotelBlock";
 import { toHotelCardData } from "../types";
 
 describe("toHotelCardData", () => {
-  it("formats times in the hotel's zone, not the device's", () => {
-    // 14:00Z is 07:00 in Los Angeles, 23:00 in Tokyo: the text must follow hotel.timeZone.
+  it("shows the calendar day and the wall-clock time as stored, whatever the hotel's zone", () => {
     const tokyo = toHotelCardData(makeHotel({ timeZone: "Asia/Tokyo" }), "en");
     const la = toHotelCardData(makeHotel({ timeZone: "America/Los_Angeles" }), "en");
-    expect(tokyo.checkInText).toContain("11:00");
-    expect(la.checkInText).toContain("7:00");
-    expect(tokyo.checkInText).not.toBe(la.checkInText);
+    expect(tokyo.checkInText).toBe("Jun 15, 3:00 PM");
+    expect(tokyo.checkOutText).toBe("Jun 18, 11:00 AM");
+    expect(la.checkInText).toBe(tokyo.checkInText);
+  });
+
+  it("shows the time only when it is set, in the locale's format", () => {
+    const noTimes = makeHotel({ checkInTime: null, checkOutTime: "10:30" });
+    expect(toHotelCardData(noTimes, "en")).toMatchObject({ checkInText: "Jun 15", checkOutText: "Jun 18, 10:30 AM" });
+    const ru = toHotelCardData(makeHotel({ checkInTime: null, checkOutTime: null }), "ru");
+    expect(ru.checkInText).toBe("15 июн.");
+    expect(ru.checkOutText).toBe("18 июн.");
+    expect(toHotelCardData(makeHotel({ checkInTime: "15:00" }), "ru").checkInText).toBe("15 июн., 15:00");
   });
 
   it("breakfast chip: all, partial with days, none is null", () => {
@@ -24,7 +32,7 @@ describe("toHotelCardData", () => {
     expect(toHotelCardData(makeHotel({ breakfast: "none" }), "en").breakfastChip).toBeNull();
   });
 
-  it("a11y label carries name and both times", () => {
+  it("a11y label carries name and both dates (times when set)", () => {
     const data = toHotelCardData(makeHotel(), "en");
     expect(data.a11yLabel).toContain("Casa Alfama");
     expect(data.a11yLabel).toContain(data.checkInText);
@@ -34,8 +42,8 @@ describe("toHotelCardData", () => {
 
 describe("HotelBlock", () => {
   it("renders cards by check-in ascending and reports the id on tap", async () => {
-    const late = makeHotel({ id: "late", name: "Late", checkInAt: new Date("2026-07-01T14:00:00Z") });
-    const early = makeHotel({ id: "early", name: "Early", checkInAt: new Date("2026-06-01T14:00:00Z") });
+    const late = makeHotel({ id: "late", name: "Late", checkInDate: "2026-07-01" });
+    const early = makeHotel({ id: "early", name: "Early", checkInDate: "2026-06-01" });
     const onHotelPress = jest.fn();
     await renderWithProviders(
       <HotelBlock hotels={[late, early]} locale="en" onHotelPress={onHotelPress} testID="hb" />,
