@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, ModalHeader, PrimaryButton, Screen, SecondaryButton } from "@/components";
+import { AppText, DismissKeyboardView, ModalHeader, PrimaryButton, Screen, SecondaryButton } from "@/components";
 import { useTranslation } from "@/lib/i18n";
 import { layout, radius, spacing, useTheme } from "@/lib/theme";
 
@@ -44,7 +44,7 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
   const deleteError = del.error === null ? null : tTrips(`errors.${del.error}`);
 
   return (
-    <View style={styles.root}>
+    <DismissKeyboardView style={styles.root} testID="hotel-form-root">
       <View
         style={styles.root}
         accessibilityElementsHidden={overlayOpen}
@@ -154,7 +154,7 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
           />
         </ConfirmOverlay>
       ) : null}
-    </View>
+    </DismissKeyboardView>
   );
 }
 

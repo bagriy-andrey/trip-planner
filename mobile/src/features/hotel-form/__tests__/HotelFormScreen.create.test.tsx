@@ -104,9 +104,9 @@ describe("HotelFormScreen create — city only from the directory (AC-12)", () =
 describe("HotelFormScreen create — dates range and optional times", () => {
   it("keeps the times empty by default and clears a picked time with the cross", async () => {
     await renderCreate();
-    expect(screen.getByTestId("hotel-form-check-in-time-picker").props.accessibilityLabel).toBe("Check-in time");
-    await userEvent.press(screen.getByTestId("hotel-form-check-in-time-picker"));
-    await userEvent.press(screen.getByTestId("hotel-form-check-out-time-picker"));
+    expect(screen.getByTestId("hotel-form-check-in-time-empty").props.accessibilityLabel).toBe("Check-in time");
+    await userEvent.press(screen.getByTestId("hotel-form-check-in-time-empty"));
+    await userEvent.press(screen.getByTestId("hotel-form-check-out-time-empty"));
     expect(screen.getByTestId("hotel-form-check-in-time-picker").props.accessibilityLabel).toContain("15:00");
     expect(screen.getByTestId("hotel-form-check-out-time-picker").props.accessibilityLabel).toContain("11:00");
     await userEvent.press(screen.getByTestId("hotel-form-check-in-time-clear"));
@@ -140,8 +140,8 @@ describe("HotelFormScreen create — Save (AC-29, AC-34, AC-40)", () => {
   async function fillValid() {
     await renderCreate(CITY_TRIP);
     await userEvent.type(screen.getByTestId("hotel-form-name"), "Casa Alfama");
-    await userEvent.press(screen.getByTestId("hotel-form-check-in-time-picker"));
-    await userEvent.press(screen.getByTestId("hotel-form-check-out-time-picker"));
+    await userEvent.press(screen.getByTestId("hotel-form-check-in-time-empty"));
+    await userEvent.press(screen.getByTestId("hotel-form-check-out-time-empty"));
   }
 
   it("saves calendar dates and wall-clock times as typed (no instants), then closes the form", async () => {

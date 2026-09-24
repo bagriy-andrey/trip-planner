@@ -11,6 +11,6 @@ export {
 export type { ColorScheme, SystemColorScheme, ThemePreference } from "./preference";
 export { coverColors, darkTokens, lightTokens } from "./tokens";
 export type { ThemeTokens } from "./tokens";
-export { blurIntensity, coverMuteSaturation, iconSize, layout, radius, spacing } from "./metrics";
+export { blurIntensity, coverMuteSaturation, easing, iconSize, layout, motion, radius, spacing } from "./metrics";
 export { family, size, typography } from "./typography";
 export type { TypographyRole } from "./typography";

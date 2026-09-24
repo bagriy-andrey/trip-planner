@@ -8,6 +8,8 @@ export { AvatarButton } from "./AvatarButton";
 export type { AvatarButtonProps } from "./AvatarButton";
 export { Checkbox } from "./Checkbox";
 export type { CheckboxProps } from "./Checkbox";
+export { DismissKeyboardView, markInputTouch } from "./DismissKeyboardView";
+export type { DismissKeyboardViewProps } from "./DismissKeyboardView";
 export { EmptyState } from "./EmptyState";
 export type { EmptyStateProps } from "./EmptyState";
 export { GlassSurface } from "./GlassSurface";

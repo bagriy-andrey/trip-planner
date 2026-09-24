@@ -24,6 +24,7 @@ import { resolveLocale, useTranslation } from "@/lib/i18n";
 
 import { cityDisplayText, hotelFormEquals, nightsOf, toHotelFormInput, withDates } from "./formState";
 import type { HotelFormState } from "./formState";
+import { filterMoneyInput } from "./moneyInput";
 import { isNotFound, submitErrorKind } from "./submitError";
 import type { SubmitErrorKind } from "./submitError";
 import { useHotelDelete } from "./useHotelDelete";
@@ -207,7 +208,7 @@ export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
     changeBreakfast,
     stepBreakfastDays,
     cost: {
-      changeAmount: (costAmount: string) => apply({ costAmount }),
+      changeAmount: (text: string) => apply({ costAmount: filterMoneyInput(text) }),
       currencyOpen,
       openCurrency: () => setCurrencyOpen(true),
       closeCurrency: () => setCurrencyOpen(false),
