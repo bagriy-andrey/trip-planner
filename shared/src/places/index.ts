@@ -28,3 +28,10 @@ export {
   searchAirports,
 } from "./airportSearch";
 export { isValidTimeZone } from "./timeZone";
+export { flagEmojiOf } from "./flag";
+export {
+  countryHasCities,
+  searchAirportOptions,
+  searchCityOptions,
+  searchCountryOptions,
+} from "./pickerSearch";

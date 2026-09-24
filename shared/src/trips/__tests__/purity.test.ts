@@ -19,7 +19,8 @@ describe("runtime neutrality of the places / trips / forms modules", () => {
         path.startsWith("/src/trips/") ||
         path.startsWith("/src/forms/") ||
         path.startsWith("/src/hotels/") ||
-        path.startsWith("/src/money/")),
+        path.startsWith("/src/money/") ||
+        path.startsWith("/src/profile/")),
   );
   const specifierPattern = /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)["']([^"']+)["']/g;
 
@@ -71,6 +72,7 @@ describe("runtime neutrality of the places / trips / forms modules", () => {
       if (path.endsWith("/places/directory.ts")) continue; // place NAMES are data, not UI text
       if (path.endsWith("/places/airports.ts")) continue; // airport NAMES are data, not UI text (PLAN-04 step 2)
       const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+      if (path.endsWith("/money/currencyNames.ts")) continue; // currency NAMES are data, not UI text
       if (path.endsWith("/places/fold.ts")) continue; // Cyrillic letters of the fold table
       if (cyrillic.test(code)) offenders.push(path);
     }
