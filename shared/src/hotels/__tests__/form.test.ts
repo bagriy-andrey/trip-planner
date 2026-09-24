@@ -31,9 +31,7 @@ describe("error id contract", () => {
       "city.required",
       "city.notInDirectory",
       "checkIn.dateRequired",
-      "checkIn.timeRequired",
       "checkOut.dateRequired",
-      "checkOut.timeRequired",
       "checkOut.notAfterCheckIn",
       "checkOut.stayTooLong",
       "address.tooLong",
@@ -56,16 +54,14 @@ describe("error id contract", () => {
 });
 
 describe("parseHotelForm", () => {
-  it("empty input reports exactly the six required fields at once", () => {
+  it("empty input reports exactly the four required fields at once", () => {
     expect(errors({})).toEqual({
       name: "name.required",
       city: "city.required",
       checkInDate: "checkIn.dateRequired",
-      checkInTime: "checkIn.timeRequired",
       checkOutDate: "checkOut.dateRequired",
-      checkOutTime: "checkOut.timeRequired",
     });
-    expect(Object.keys(errors(null))).toHaveLength(6);
+    expect(Object.keys(errors(null))).toHaveLength(4);
   });
 
   it("builds a value with defaults and the zone from the city", () => {
@@ -77,13 +73,30 @@ describe("parseHotelForm", () => {
     expect(v.breakfastDays).toBeNull();
     expect(v.cost).toBeNull();
     expect(v.address).toBeNull();
-    expect(v.checkInAt.toISOString()).toBe("2026-09-12T14:00:00.000Z"); // Lisbon is UTC+1 in September
+    expect([v.checkInDate, v.checkInTime, v.checkOutDate, v.checkOutTime]).toEqual([
+      "2026-09-12",
+      "15:00",
+      "2026-09-16",
+      "11:00",
+    ]);
   });
 
-  it("changing the city changes the UTC instants for the same local fields", () => {
-    const a = value(valid).checkInAt.getTime();
-    const b = value({ ...valid, cityPlaceId: "city-warsaw" }).checkInAt.getTime();
-    expect(a).not.toBe(b);
+  it("times are optional: empty or missing becomes null, no defaults", () => {
+    const v = value({ ...valid, checkInTime: "", checkOutTime: undefined });
+    expect(v.checkInTime).toBeNull();
+    expect(v.checkOutTime).toBeNull();
+    expect(v.checkInDate).toBe("2026-09-12");
+  });
+
+  it("same-day stay is allowed (0 nights)", () => {
+    const v = value({ ...valid, checkOutDate: "2026-09-12", checkInTime: "", checkOutTime: "" });
+    expect(v.checkOutDate).toBe(v.checkInDate);
+    expect(value({ ...valid, checkOutDate: "2026-09-12", checkInTime: "10:00", checkOutTime: "18:00" })).toBeDefined();
+  });
+
+  it("same date with only one time is fine; earlier out time on a later date is fine", () => {
+    expect(value({ ...valid, checkOutDate: "2026-09-12", checkOutTime: "" })).toBeDefined();
+    expect(value({ ...valid, checkInTime: "15:00", checkOutTime: "11:00" })).toBeDefined();
   });
 
   it("unknown city and country ids", () => {
@@ -95,6 +108,10 @@ describe("parseHotelForm", () => {
     expect(errors({ ...valid, checkOutDate: "2026-09-12", checkOutTime: "15:00" }).checkOut).toBe(
       "checkOut.notAfterCheckIn",
     );
+    expect(errors({ ...valid, checkOutDate: "2026-09-12", checkOutTime: "09:00" }).checkOut).toBe(
+      "checkOut.notAfterCheckIn",
+    );
+    expect(errors({ ...valid, checkOutDate: "2026-09-11" }).checkOut).toBe("checkOut.notAfterCheckIn");
     expect(value({ ...valid, checkOutDate: "2027-09-12" })).toBeDefined();
     expect(errors({ ...valid, checkOutDate: "2027-09-13" }).checkOut).toBe("checkOut.stayTooLong");
   });

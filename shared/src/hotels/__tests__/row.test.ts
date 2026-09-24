@@ -12,8 +12,10 @@ const goodRow: Tables<"trip_hotels"> = {
   time_zone: "Europe/Lisbon",
   address: "Rua 1",
   maps_url: null,
-  check_in_at: "2026-09-12T14:00:00+00:00",
-  check_out_at: "2026-09-16T10:00:00+00:00",
+  check_in_date: "2026-09-12",
+  check_out_date: "2026-09-16",
+  check_in_time: "15:00:00",
+  check_out_time: null,
   guests: 2,
   parking: "free",
   breakfast: "partial",
@@ -31,13 +33,21 @@ function parse(row: unknown) {
 }
 
 describe("hotelFromRowSchema", () => {
+  it("rejects a malformed date or time column", () => {
+    expect(parse({ ...goodRow, check_in_date: "2026-13-40" }).success).toBe(false);
+    expect(parse({ ...goodRow, check_in_time: "25:00:00" }).success).toBe(false);
+    expect(parse({ ...goodRow, check_in_time: "3pm" }).success).toBe(false);
+  });
+
   it("accepts a valid row", () => {
     const result = parse(goodRow);
     expect(result.success).toBe(true);
     if (!result.success) return;
     expect(result.data.city.id).toBe("city-porto");
     expect(result.data.cost).toEqual({ amount: "120.50", currency: "EUR" });
-    expect(result.data.checkInAt.toISOString()).toBe("2026-09-12T14:00:00.000Z");
+    expect(result.data.checkInDate).toBe("2026-09-12");
+    expect(result.data.checkInTime).toBe("15:00");
+    expect(result.data.checkOutTime).toBeNull();
     expect(result.data.tripId).toBe(goodRow.trip_id);
   });
 
@@ -93,7 +103,9 @@ describe("toHotelWrite", () => {
     const hotel = toHotel(hotelRowSchema.parse(row));
     expect(hotel.name).toBe(form.value.name);
     expect(hotel.cost).toEqual({ amount: "120.50", currency: "EUR" });
-    expect(hotel.checkInAt.getTime()).toBe(form.value.checkInAt.getTime());
+    expect(hotel.checkInDate).toBe(form.value.checkInDate);
+    expect(hotel.checkInTime).toBe("15:00");
+    expect(write.check_out_time).toBe("11:00");
     expect(hotel.city.id).toBe("city-porto");
   });
 

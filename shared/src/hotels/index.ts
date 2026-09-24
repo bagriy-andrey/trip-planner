@@ -1,6 +1,6 @@
 export { HOTEL_FIELD_ERROR, isHotelFieldErrorId } from "./errorCodes";
 export type { HotelFieldErrorId } from "./errorCodes";
-export { HOTEL_MAX_NIGHTS, countNights, nightsBetweenDates } from "./nights";
+export { HOTEL_MAX_NIGHTS, nightsBetweenDates } from "./nights";
 export { BREAKFAST_DAYS_FALLBACK_MAX, breakfastDaysRange, clampBreakfastDays } from "./breakfast";
 export { MAPS_URL_MAX_LENGTH, parseMapsUrl } from "./mapsUrl";
 export type { MapsUrlError, MapsUrlResult } from "./mapsUrl";

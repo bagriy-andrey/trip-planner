@@ -64,10 +64,9 @@ export const hotel = {
     validation: {
       name: { required: "Укажите название", tooLong: "Слишком длинное название" },
       city: { required: "Выберите город", notInDirectory: "Выберите город из списка" },
-      checkIn: { dateRequired: "Укажите дату заезда", timeRequired: "Укажите время заезда" },
+      checkIn: { dateRequired: "Укажите дату заезда" },
       checkOut: {
         dateRequired: "Укажите дату выезда",
-        timeRequired: "Укажите время выезда",
         notAfterCheckIn: "Выезд должен быть позже заезда",
         stayTooLong: "Слишком долгое проживание",
       },

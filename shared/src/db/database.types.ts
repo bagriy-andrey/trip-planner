@@ -40,8 +40,10 @@ export type Database = {
           booking_ref: string | null
           breakfast: string
           breakfast_days: number | null
-          check_in_at: string
-          check_out_at: string
+          check_in_date: string
+          check_in_time: string | null
+          check_out_date: string
+          check_out_time: string | null
           city_place_id: string
           cost_amount: number | null
           cost_currency: string | null
@@ -62,8 +64,10 @@ export type Database = {
           booking_ref?: string | null
           breakfast?: string
           breakfast_days?: number | null
-          check_in_at: string
-          check_out_at: string
+          check_in_date: string
+          check_in_time?: string | null
+          check_out_date: string
+          check_out_time?: string | null
           city_place_id: string
           cost_amount?: number | null
           cost_currency?: string | null
@@ -84,8 +88,10 @@ export type Database = {
           booking_ref?: string | null
           breakfast?: string
           breakfast_days?: number | null
-          check_in_at?: string
-          check_out_at?: string
+          check_in_date?: string
+          check_in_time?: string | null
+          check_out_date?: string
+          check_out_time?: string | null
           city_place_id?: string
           cost_amount?: number | null
           cost_currency?: string | null
