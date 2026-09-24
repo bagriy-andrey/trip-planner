@@ -19,12 +19,13 @@ export interface PickerRowProps {
 export function PickerRow({ item, selected, last, onPress, testID }: PickerRowProps) {
   const { t } = useTranslation("picker");
   const { tokens } = useTheme();
+  const { code, name, a11yName } = item;
+  // The "Not specified" row has no code: it is spoken as its name alone.
+  const label = code === "" ? name : t("a11y.item", { name: a11yName ?? name, code });
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={
-        item.code.length === 0 ? item.name : t("a11y.item", { name: item.a11yName ?? item.name, code: item.code })
-      }
+      accessibilityLabel={label}
       accessibilityState={{ selected }}
       onPress={onPress}
       testID={testID}
