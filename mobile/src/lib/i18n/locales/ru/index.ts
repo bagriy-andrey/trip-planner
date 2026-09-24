@@ -5,6 +5,7 @@ import { history } from "./history";
 import { hotel } from "./hotel";
 import { legal } from "./legal";
 import { onboarding } from "./onboarding";
+import { picker } from "./picker";
 import { profile } from "./profile";
 import { transport } from "./transport";
 import { tripDetail } from "./tripDetail";
@@ -19,6 +20,7 @@ export const ru = {
   trips,
   history,
   profile,
+  picker,
   tripDetail,
   bookingForm,
   transport,

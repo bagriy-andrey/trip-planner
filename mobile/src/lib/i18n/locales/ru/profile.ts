@@ -11,5 +11,25 @@ export const profile = {
     dark: "Тёмная",
     system: "Системная",
   },
+  aboutMe: {
+    title: "О себе",
+    footnote: "Все поля необязательные.",
+  },
+  fields: {
+    citizenship: "Гражданство",
+    residence: "Страна проживания",
+    homeCity: "Город",
+    homeAirport: "Домашний аэропорт",
+  },
+  hints: {
+    homeAirport: "Подставим в «Откуда» при добавлении рейса",
+    currency: "Подставим в стоимость нового отеля",
+  },
+  values: {
+    notInDirectory: "Нет в справочнике",
+  },
+  a11y: {
+    row: "{{label}}, {{value}}",
+  },
   logout: "Выйти",
 };
