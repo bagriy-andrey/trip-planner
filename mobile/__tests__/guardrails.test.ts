@@ -95,6 +95,11 @@ const MOCKS_SPECIFIER = new RegExp(
 const MAPS_HOST_PATTERN = new RegExp(
   [["goo", "gl"].join("\\."), ["google", "com"].join("\\.")].join("|"),
 );
+// PLAN-06 step 6: the `profiles` table is read and written only by src/features/profile/api/**.
+const PROFILE_API_DIR = "src/features/profile/api/";
+const PROFILES_TABLE_CALL = new RegExp(
+  ["\\.from\\(\\s*[\"'`]", "prof", "iles[\"'`]"].join(""),
+);
 /** Hotel features never count nights themselves (AC-20). */
 const HOTEL_FEATURE_DIRS = ["src/features/hotels/", "src/features/hotel-form/"];
 const NIGHTS_ARITHMETIC_NEEDLES = [
@@ -494,6 +499,13 @@ const RULES: Rule[] = [
     test: (line) => NIGHTS_ARITHMETIC_NEEDLES.some((needle) => line.includes(needle)),
     allowed: (file) => !HOTEL_FEATURE_DIRS.some((dir) => file.startsWith(dir)),
   },
+  // --- PLAN-06: the profiles table stays behind its own api module ------------------------------
+  {
+    id: "profiles-table-only-in-profile-api",
+    ac: "PLAN-06: the profiles table is addressed only from src/features/profile/api/**",
+    pattern: PROFILES_TABLE_CALL,
+    allowed: (file) => file.startsWith(PROFILE_API_DIR),
+  },
 ];
 
 /** Every violation of `rules` in one file's text. */
@@ -548,6 +560,14 @@ describe("guardrail scanner (self-test)", () => {
       expect(scan("src/features/hotel-form/a.ts", `const n = x ${needle} y;`)).toContain(rule);
       expect(scan("src/features/trips/a.ts", `const n = x ${needle} y;`)).not.toContain(rule);
     }
+  });
+
+  it("flags a profiles table call outside the profile api (PLAN-06 step 6)", () => {
+    const rule = "profiles-table-only-in-profile-api";
+    const call = `const q = supabase.from("${["prof", "iles"].join("")}").select("*");`;
+    expect(scan("src/features/trips/api/tripsApi.ts", call)).toContain(rule);
+    expect(scan("src/features/profile/hooks/x.ts", call)).toContain(rule);
+    expect(scan("src/features/profile/api/profileApi.ts", call)).not.toContain(rule);
   });
 
   it("flags each forbidden construct in feature code", () => {
