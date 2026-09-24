@@ -14,6 +14,30 @@ function translateY(): number {
   return style.transform[0]?.translateY ?? Number.NaN;
 }
 
+describe("AnimatedSheetOverlay topInset and handle", () => {
+  it("pins the panel between topInset and the bottom and draws a handle only on request", async () => {
+    await renderWithProviders(
+      <AnimatedSheetOverlay closeLabel="Close" onRequestClose={jest.fn()} closing={false} onExited={jest.fn()} topInset={104} handle testID="sheet">
+        <Text>body</Text>
+      </AnimatedSheetOverlay>,
+    );
+    const style = StyleSheet.flatten(screen.getByTestId("sheet-panel").props.style) as Record<string, unknown>;
+    expect(style).toMatchObject({ position: "absolute", top: 104, bottom: 0 });
+    expect(screen.UNSAFE_getAllByProps({ accessibilityElementsHidden: true }).length).toBeGreaterThan(0);
+  });
+
+  it("keeps the content-height layout without topInset", async () => {
+    await renderWithProviders(
+      <AnimatedSheetOverlay closeLabel="Close" onRequestClose={jest.fn()} closing={false} onExited={jest.fn()} testID="sheet">
+        <Text>body</Text>
+      </AnimatedSheetOverlay>,
+    );
+    const style = StyleSheet.flatten(screen.getByTestId("sheet-panel").props.style) as Record<string, unknown>;
+    expect(style.position).toBeUndefined();
+    expect(screen.UNSAFE_queryAllByProps({ accessibilityElementsHidden: true })).toHaveLength(0);
+  });
+});
+
 describe("AnimatedSheetOverlay motion", () => {
   it("mounts off-screen (not at its end state), then slides to 0; slides back down on close", async () => {
     const onExited = jest.fn();

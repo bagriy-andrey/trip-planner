@@ -36,6 +36,7 @@ export const ICONS = {
   suitcase: { set: "feather", glyph: "briefcase" },
   user: { set: "feather", glyph: "user" },
   calendar: { set: "feather", glyph: "calendar" },
+  search: { set: "feather", glyph: "search" },
   more: { set: "feather", glyph: "more-horizontal" },
 } as const satisfies Record<string, IconDefinition>;
 
