@@ -1,0 +1,46 @@
+import { screen, userEvent, waitFor } from "@testing-library/react-native";
+import { useState } from "react";
+import { Animated, Pressable, StyleSheet, Text } from "react-native";
+
+import { motion } from "@/lib/theme";
+import { renderWithProviders } from "@/test-utils/renderWithProviders";
+
+import { AnimatedSheetOverlay } from "../AnimatedSheetOverlay";
+
+function translateY(): number {
+  const style = StyleSheet.flatten(screen.getByTestId("sheet-panel").props.style) as {
+    transform: { translateY: number }[];
+  };
+  return style.transform[0]?.translateY ?? Number.NaN;
+}
+
+describe("AnimatedSheetOverlay motion", () => {
+  it("mounts off-screen (not at its end state), then slides to 0; slides back down on close", async () => {
+    const onExited = jest.fn();
+    function Harness() {
+      const [closing, setClosing] = useState(false);
+      return (
+        <>
+          <Pressable testID="close" onPress={() => setClosing(true)} />
+          <AnimatedSheetOverlay closeLabel="Close" onRequestClose={jest.fn()} closing={closing} onExited={onExited} testID="sheet">
+            <Text>body</Text>
+          </AnimatedSheetOverlay>
+        </>
+      );
+    }
+    const timing = jest.spyOn(Animated, "timing");
+    await renderWithProviders(<Harness />);
+    // First frame: the panel is below the window, not already in place.
+    expect(translateY()).toBeGreaterThan(0);
+    // The enter animation is started toward the end state with the theme duration. (Values driven
+    // natively do not re-render the JS style, so the end state is asserted through the animation.)
+    expect(timing).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ toValue: 1, duration: motion.sheetEnter, useNativeDriver: true }),
+    );
+
+    await userEvent.press(screen.getByTestId("close", { includeHiddenElements: true }));
+    await waitFor(() => expect(onExited).toHaveBeenCalledTimes(1));
+    expect(timing).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ toValue: 0 }));
+  });
+});

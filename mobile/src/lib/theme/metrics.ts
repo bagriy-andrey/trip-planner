@@ -1,3 +1,5 @@
+import { Easing } from "react-native";
+
 // Theme-independent sizes (same in light and dark). Canonical values live in
 // `design/tokens.md` ("Размеры и отступы"): change a value there first, then here.
 
@@ -28,6 +30,8 @@ export const spacing = {
 
 export const layout = {
   minTouch: 44,
+  /** Minimum height of a multiline text field. */
+  textAreaMinHeight: 88,
   /** 1, not `hairlineWidth`. */
   borderWidth: 1,
   tabBarHeight: 64,
@@ -73,3 +77,9 @@ export const blurIntensity = { panel: 20, tabBar: 24 } as const;
 
 /** Archived covers are muted by desaturating the backdrop, NOT by opacity. */
 export const coverMuteSaturation = 0.55;
+
+/** Sheet motion, ms: the panel slides in slower than it leaves; the scrim fades over the same span. */
+export const motion = { sheetEnter: 280, sheetExit: 200 } as const;
+
+/** Decelerate on the way in, accelerate on the way out. */
+export const easing = { enter: Easing.out(Easing.cubic), exit: Easing.in(Easing.cubic) } as const;

@@ -1,4 +1,4 @@
-import { blurIntensity, coverMuteSaturation, iconSize, layout, radius, spacing } from "../metrics";
+import { blurIntensity, coverMuteSaturation, iconSize, layout, motion, radius, spacing } from "../metrics";
 import { coverColors, darkTokens, lightTokens } from "../tokens";
 import { family, size, typography } from "../typography";
 
@@ -84,6 +84,7 @@ describe("sizes (design/tokens.md, «Размеры и отступы»)", () =>
   it("layout metrics", () => {
     expect(layout).toEqual({
       minTouch: 44,
+      textAreaMinHeight: 88,
       borderWidth: 1,
       tabBarHeight: 64,
       tabBarInsetX: 24,
@@ -171,5 +172,11 @@ describe("typography (AC-17, design/tokens.md)", () => {
     for (const style of Object.values(typography)) {
       expect(style).not.toHaveProperty("lineHeight");
     }
+  });
+});
+
+describe("motion tokens (design/tokens.md)", () => {
+  it("match tokens.md", () => {
+    expect(motion).toEqual({ sheetEnter: 280, sheetExit: 200 });
   });
 });

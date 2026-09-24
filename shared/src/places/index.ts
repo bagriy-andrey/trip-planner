@@ -19,7 +19,7 @@ export type {
 export { PLACE_DIRECTORY } from "./directory";
 export { AIRPORTS } from "./airports";
 export { foldForSearch } from "./fold";
-export { PLACE_SUGGESTION_LIMIT, findPlaceById, searchPlaces } from "./search";
+export { PLACE_SUGGESTION_LIMIT, findCityById, findPlaceById, searchCities, searchPlaces } from "./search";
 export {
   AIRPORT_SUGGESTION_LIMIT,
   cityOfAirport,

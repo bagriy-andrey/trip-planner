@@ -1,5 +1,9 @@
-import { BookingFormScreen } from "@/features/booking-form";
+import { useLocalSearchParams } from "expo-router";
 
+import { HotelFormScreen } from "@/features/hotel-form";
+
+/** S14 — create a hotel. The param is untrusted; the feature only uses it as a key. */
 export default function NewHotelRoute() {
-  return <BookingFormScreen variant="hotel" />;
+  const { tripId } = useLocalSearchParams<{ tripId: string }>();
+  return <HotelFormScreen tripId={tripId} />;
 }

@@ -14,6 +14,12 @@ export interface StepperProps {
   accessibilityLabel: string;
   decrementAccessibilityLabel: string;
   incrementAccessibilityLabel: string;
+  /** Lower bound: the decrement button is disabled at it. */
+  min?: number;
+  /** Upper bound: the increment button is disabled at it. */
+  max?: number;
+  /** Mono value face (default, ticket data). Pass false for non-ticket counts such as guests. */
+  mono?: boolean;
   onDecrement?: () => void;
   onIncrement?: () => void;
   style?: StyleProp<ViewStyle>;
@@ -25,6 +31,9 @@ export function Stepper({
   accessibilityLabel,
   decrementAccessibilityLabel,
   incrementAccessibilityLabel,
+  min,
+  max,
+  mono = true,
   onDecrement,
   onIncrement,
   style,
@@ -32,17 +41,25 @@ export function Stepper({
 }: StepperProps) {
   return (
     <View testID={testID} style={[styles.row, style]}>
-      <IconButton accessibilityLabel={decrementAccessibilityLabel} onPress={onDecrement}>
+      <IconButton
+        accessibilityLabel={decrementAccessibilityLabel}
+        onPress={onDecrement}
+        disabled={min !== undefined && value <= min}
+      >
         <Icon name="minus" />
       </IconButton>
       <AppText
-        variant="mono"
+        variant={mono ? "mono" : "body"}
         accessibilityLabel={`${accessibilityLabel}, ${value}`}
         style={styles.value}
       >
         {String(value)}
       </AppText>
-      <IconButton accessibilityLabel={incrementAccessibilityLabel} onPress={onIncrement}>
+      <IconButton
+        accessibilityLabel={incrementAccessibilityLabel}
+        onPress={onIncrement}
+        disabled={max !== undefined && value >= max}
+      >
         <Icon name="plus" />
       </IconButton>
     </View>

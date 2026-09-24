@@ -40,6 +40,7 @@ const SPEC_ROUTES = [
   "/trips/[tripId]/flights/new",
   "/trips/[tripId]/flights/[flightId]",
   "/trips/[tripId]/hotels/new",
+  "/trips/[tripId]/hotels/[hotelId]",
   "/trips/[tripId]/cars/new",
 ];
 const SERVICE_ROUTES = ["/", "/+not-found"];

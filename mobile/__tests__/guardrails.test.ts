@@ -89,6 +89,21 @@ const MOCKS_SPECIFIER = new RegExp(
   "[\"'`](?:@/|(?:\\.\\.?/)+)(?:[^\"'`\\s]*/)?" + MOCKS_DIR_NAME + "(?:/[^\"'`]*)?[\"'`]",
 );
 
+// PLAN-05 step 9. Needles are assembled from parts so this file (scanned by `mobile-all` rules)
+// never contains them.
+/** The maps allow-list lives only in shared/src/hotels/mapsUrl.ts (AC-24). */
+const MAPS_HOST_PATTERN = new RegExp(
+  [["goo", "gl"].join("\\."), ["google", "com"].join("\\.")].join("|"),
+);
+/** Hotel features never count nights themselves (AC-20). */
+const HOTEL_FEATURE_DIRS = ["src/features/hotels/", "src/features/hotel-form/"];
+const NIGHTS_ARITHMETIC_NEEDLES = [
+  ["days", "Between("].join(""),
+  ["24 * 60", "60"].join(" * "),
+  ["8640", "0000"].join(""),
+  ["864", "e5"].join(""),
+];
+
 /** `src/features/<feature>/api/**` — the feature-level backend modules. */
 function isFeatureApi(file: string): boolean {
   return /^src\/features\/[^/]+\/api\//.test(file);
@@ -467,6 +482,18 @@ const RULES: Rule[] = [
     ac: "AC-62: airport-code equality (adjacency / route-closing checks) only in shared/src/segments/route.ts",
     pattern: AIRPORT_EQUALITY_PATTERN,
   },
+  // --- PLAN-05 AC-24 / AC-20 -------------------------------------------------------------------
+  {
+    id: "no-maps-allowlist-outside-shared",
+    ac: "AC-24: maps hosts are a literal only in shared/src/hotels/mapsUrl.ts",
+    pattern: MAPS_HOST_PATTERN,
+  },
+  {
+    id: "no-nights-arithmetic-in-hotel-features",
+    ac: "AC-20: hotel features take the night count from shared/, never compute it",
+    test: (line) => NIGHTS_ARITHMETIC_NEEDLES.some((needle) => line.includes(needle)),
+    allowed: (file) => !HOTEL_FEATURE_DIRS.some((dir) => file.startsWith(dir)),
+  },
 ];
 
 /** Every violation of `rules` in one file's text. */
@@ -507,6 +534,21 @@ function format(violations: Violation[]): string[] {
 
 describe("guardrail scanner (self-test)", () => {
   const scan = (file: string, text: string) => scanText(file, text).map((v) => v.rule.split(" ")[0]);
+
+  it("flags the maps host literal and nights arithmetic (PLAN-05 step 9)", () => {
+    const scan = (file: string, text: string) => scanText(file, text).map((v) => v.rule.split(" ")[0]);
+    const host = ["maps.app.goo", "gl"].join(".");
+    const google = ["www.google", "com"].join(".");
+    expect(scan("src/features/x/X.tsx", `const u = "https://${host}/a";`)).toContain("no-maps-allowlist-outside-shared");
+    expect(scan("app/x.tsx", `const u = "${google}";`)).toContain("no-maps-allowlist-outside-shared");
+    expect(scan("src/features/x/X.tsx", `const t = "Open in Google Maps";`)).not.toContain("no-maps-allowlist-outside-shared");
+    const rule = "no-nights-arithmetic-in-hotel-features";
+    for (const needle of NIGHTS_ARITHMETIC_NEEDLES) {
+      expect(scan("src/features/hotels/a.ts", `const n = x ${needle} y;`)).toContain(rule);
+      expect(scan("src/features/hotel-form/a.ts", `const n = x ${needle} y;`)).toContain(rule);
+      expect(scan("src/features/trips/a.ts", `const n = x ${needle} y;`)).not.toContain(rule);
+    }
+  });
 
   it("flags each forbidden construct in feature code", () => {
     const file = "src/features/x/X.tsx";

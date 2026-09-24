@@ -119,6 +119,7 @@ scale = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 }
 ```ts
 layout = {
   minTouch:      44,
+  textAreaMinHeight: 88,   // мин. высота многострочного поля
   borderWidth:    1,   // не hairlineWidth
   tabBarHeight:  64,
   tabBarInsetX:  24,
@@ -152,6 +153,10 @@ iconSize = { sm: 16, md: 20, lg: 24 }
 blurIntensity = { panel: 20, tabBar: 24 }
 
 coverMuteSaturation = 0.55  // приглушение подложки в истории, НЕ прозрачность
+
+// Движение шторок (мс): вход медленнее выхода; подложка (scrim) гаснет за то же время.
+// Кривые: вход — Easing.out(cubic), выход — Easing.in(cubic). При «Уменьшить движение» — без анимации.
+motion = { sheetEnter: 280, sheetExit: 200 }
 ```
 
 Открыто: рамка и отметка чекбокса («Пока без дат») занимают шаг шкалы

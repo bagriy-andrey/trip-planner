@@ -13,7 +13,7 @@ export interface BookingFormScreenProps {
 }
 
 /**
- * S9 — booking form (modal stub) for a hotel or car. One shell; the field set
+ * S9 — booking form (modal stub) for a car. One shell; the field set
  * comes from `fields.ts`. Nothing is validated or saved and every button just
  * closes the modal (AC-12). The flight variant was removed in PLAN-04 step 11:
  * real flight data goes through `@/features/segment-form`.

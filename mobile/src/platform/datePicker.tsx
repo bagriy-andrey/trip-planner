@@ -190,6 +190,10 @@ export interface TimePickerProps {
   placeholder?: string;
   /** Same "empty state with the native control laid invisibly over it" as `DatePicker`. */
   emptyContent?: ReactNode;
+  /** Time the empty picker opens on (default "12:00"), e.g. "15:00" for hotel check-in. */
+  startTime?: TimeOfDay;
+  /** Ticket-style (mono) value where the platform lets us style it: the Android trigger. iOS's native control cannot. */
+  mono?: boolean;
   testID?: string;
 }
 
@@ -215,12 +219,12 @@ function toTimeOfDay(date: Date): TimeOfDay {
  * `mode="time"`; SPEC-04 AC-96 — no new native dependency, so no dev-client rebuild). Screens
  * see `"HH:MM"` strings, never `Date` objects or a zone.
  */
-export function TimePicker({ value, onChange, accessibilityLabel, placeholder, emptyContent, testID }: TimePickerProps) {
+export function TimePicker({ value, onChange, accessibilityLabel, placeholder, emptyContent, startTime, mono = false, testID }: TimePickerProps) {
   const { tokens, scheme } = useTheme();
   const { i18n } = useTranslation();
   const locale = resolveLocale([i18n.language]);
 
-  const shown = toLocalTime(value ?? EMPTY_START);
+  const shown = toLocalTime(value ?? startTime ?? EMPTY_START);
   const label = new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(shown);
 
   const handleChange = (event: DateTimePickerEvent, picked?: Date) => {
@@ -249,7 +253,7 @@ export function TimePicker({ value, onChange, accessibilityLabel, placeholder, e
       >
         <Text
           style={[
-            typography.body,
+            mono ? typography.mono : typography.body,
             { color: value === null ? tokens.textSecondary : tokens.text },
           ]}
         >

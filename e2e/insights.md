@@ -68,3 +68,4 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 ## Recurring Errors & Fixes
 ## Session Notes
 ## Open Questions
+- 2026-09-24 (PLAN-05 hotels): the `hotel-stay` flow (add hotel -> card on S7 -> open -> delete) was NOT authored and has never run: Maestro is not installed and the plan allows deferring step 10. When written, the time step is the risk — an empty `TimePicker` now opens the native control (not a fallback value), which Maestro may not drive; if so, move the time steps to the manual checklist (M3).

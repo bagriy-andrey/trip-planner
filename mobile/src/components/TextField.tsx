@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
 import type { Ref } from "react";
-import { AccessibilityInfo, StyleSheet, TextInput, View } from "react-native";
+import { AccessibilityInfo, StyleSheet, Text, TextInput, View } from "react-native";
 import type { StyleProp, TextInputProps, ViewStyle } from "react-native";
 
 import { layout, radius, spacing, typography, useTheme } from "@/lib/theme";
 
 import { AppText } from "./AppText";
 import { MIN_HIT_SIZE } from "./a11y";
+import { markInputTouch } from "./DismissKeyboardView";
 
 /** Content presets: keyboard, autofill hint, capitalisation and masking for the field's purpose. */
-export type TextFieldVariant = "text" | "email" | "password" | "newPassword" | "code";
+export type TextFieldVariant = "text" | "email" | "password" | "newPassword" | "code" | "url" | "decimal" | "currency";
 
 type InputTraits = Pick<
   TextInputProps,
+  | "maxLength"
   | "keyboardType"
   | "textContentType"
   | "autoComplete"
@@ -52,7 +54,16 @@ const PRESETS: Record<TextFieldVariant, InputTraits> = {
     autoCapitalize: "none",
     autoCorrect: false,
   },
+  url: {
+    keyboardType: "url",
+    textContentType: "URL",
+    autoCapitalize: "none",
+    autoCorrect: false,
+  },
+  decimal: { keyboardType: "decimal-pad" },
+  currency: { autoCapitalize: "characters", autoCorrect: false, maxLength: 3 },
 };
+
 
 export interface TextFieldProps
   extends InputTraits,
@@ -62,7 +73,6 @@ export interface TextFieldProps
       | "onSubmitEditing"
       | "onFocus"
       | "onBlur"
-      | "maxLength"
       | "placeholder"
       | "editable"
     > {
@@ -75,6 +85,16 @@ export interface TextFieldProps
   errorText?: string;
   /** Preset for keyboard/autofill/masking; explicit props override it. */
   variant?: TextFieldVariant;
+  /** Several lines, top-aligned, taller minimum height. */
+  multiline?: boolean;
+  /** Ticket-data face (booking number, amount, currency code). Never for plain prose. */
+  mono?: boolean;
+  /**
+   * Draw the value in an overlaid `Text` and make the native text invisible. For fields whose input is
+   * filtered in `onChangeText`: a character the filter rejects is briefly shown by the native input
+   * before React overwrites it; here it is never visible. Exposes the filtered value as the a11y value.
+   */
+  overlayValue?: boolean;
   /** Forwarded to the underlying input, e.g. to move focus to the next field. */
   ref?: Ref<TextInput>;
   style?: StyleProp<ViewStyle>;
@@ -92,6 +112,9 @@ export function TextField({
   onChangeText,
   errorText,
   variant = "text",
+  multiline = false,
+  mono = false,
+  overlayValue = false,
   ref,
   style,
   testID,
@@ -127,39 +150,61 @@ export function TextField({
       <AppText variant="small" color="textSecondary">
         {label}
       </AppText>
-      <TextInput
-        ref={ref}
-        value={value}
-        onChangeText={onChangeText}
-        editable={editable}
-        keyboardType={keyboardType ?? preset.keyboardType}
-        textContentType={textContentType ?? preset.textContentType}
-        autoComplete={autoComplete ?? preset.autoComplete}
-        autoCapitalize={autoCapitalize ?? preset.autoCapitalize}
-        autoCorrect={autoCorrect ?? preset.autoCorrect}
-        secureTextEntry={secureTextEntry ?? preset.secureTextEntry}
-        returnKeyType={returnKeyType}
-        onSubmitEditing={onSubmitEditing}
-        maxLength={maxLength}
-        placeholder={placeholder}
-        placeholderTextColor={tokens.textSecondary}
-        onFocus={(event) => {
-          setFocused(true);
-          onFocus?.(event);
-        }}
-        onBlur={(event) => {
-          setFocused(false);
-          onBlur?.(event);
-        }}
-        accessibilityLabel={hasError ? `${label}, ${errorText}` : label}
-        accessibilityState={{ disabled: !editable }}
-        testID={testID}
-        style={[
-          styles.input,
-          typography.body,
-          { color: tokens.text, backgroundColor: tokens.surface, borderColor },
-        ]}
-      />
+      <View>
+        <TextInput
+          ref={ref}
+          value={value}
+          onChangeText={onChangeText}
+          editable={editable}
+          onTouchStart={markInputTouch}
+          keyboardType={keyboardType ?? preset.keyboardType}
+          textContentType={textContentType ?? preset.textContentType}
+          autoComplete={autoComplete ?? preset.autoComplete}
+          autoCapitalize={autoCapitalize ?? preset.autoCapitalize}
+          autoCorrect={autoCorrect ?? preset.autoCorrect}
+          secureTextEntry={secureTextEntry ?? preset.secureTextEntry}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
+          maxLength={maxLength ?? preset.maxLength}
+          multiline={multiline}
+          placeholder={placeholder}
+          placeholderTextColor={tokens.textSecondary}
+          onFocus={(event) => {
+            setFocused(true);
+            onFocus?.(event);
+          }}
+          onBlur={(event) => {
+            setFocused(false);
+            onBlur?.(event);
+          }}
+          accessibilityLabel={hasError ? `${label}, ${errorText}` : label}
+          accessibilityState={{ disabled: !editable }}
+          testID={testID}
+          style={[
+            styles.input,
+            mono ? typography.mono : typography.body,
+            multiline && styles.multiline,
+            { color: overlayValue ? "transparent" : tokens.text, backgroundColor: tokens.surface, borderColor },
+          ]}
+          {...(overlayValue ? { selectionColor: tokens.accent, accessibilityValue: { text: value } } : {})}
+        />
+        {overlayValue && value !== "" ? (
+          <View
+            pointerEvents="none"
+            style={styles.overlay}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <Text
+              numberOfLines={1}
+              testID={testID === undefined ? undefined : `${testID}-display`}
+              style={[mono ? typography.mono : typography.body, { color: tokens.text }]}
+            >
+              {value}
+            </Text>
+          </View>
+        ) : null}
+      </View>
       {hasError ? (
         <AppText variant="small" color="danger" accessibilityRole="alert">
           {errorText}
@@ -178,4 +223,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg + layout.borderWidth,
+  },
+  multiline: { minHeight: layout.textAreaMinHeight, textAlignVertical: "top" },
 });

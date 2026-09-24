@@ -2,6 +2,7 @@ import { auth } from "./auth";
 import { bookingForm } from "./bookingForm";
 import { common } from "./common";
 import { history } from "./history";
+import { hotel } from "./hotel";
 import { legal } from "./legal";
 import { onboarding } from "./onboarding";
 import { profile } from "./profile";
@@ -20,4 +21,5 @@ export const en = {
   tripDetail,
   bookingForm,
   transport,
+  hotel,
 };

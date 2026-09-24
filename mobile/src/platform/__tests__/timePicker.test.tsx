@@ -51,6 +51,18 @@ describe("TimePicker (platform boundary)", () => {
       expect([props.value.getHours(), props.value.getMinutes()]).toEqual([12, 0]);
     });
 
+    it("an empty picker reports startTime when given, else 12:00 (AC-13)", async () => {
+      const seen: string[] = [];
+      for (const startTime of ["15:00", undefined]) {
+        const { unmount } = await renderWithProviders(
+          <TimePicker value={null} startTime={startTime} onChange={(t) => seen.push(t)} accessibilityLabel="t" testID="picker" />,
+        );
+        await userEvent.press(screen.getByTestId("picker"));
+        unmount();
+      }
+      expect(seen).toEqual(["15:00", "12:00"]);
+    });
+
     it("ignores a dismissed event", async () => {
       const onChange = jest.fn();
       await renderWithProviders(<TimePicker value="14:05" onChange={onChange} accessibilityLabel="t" />);

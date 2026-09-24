@@ -1,0 +1,1 @@
+- [Plan conventions](project_plan_conventions.md) — specs/plans/PLAN-NN-*.md, Russian, PLAN-04 structure, default single-agent + Q to owner
