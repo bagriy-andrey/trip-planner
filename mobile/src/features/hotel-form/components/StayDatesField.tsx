@@ -16,6 +16,8 @@ export interface StayDatesFieldProps {
   onChangeRange: (checkIn: CalendarDate, checkOut: CalendarDate) => void;
   /** Month the calendar opens on when nothing is chosen (today). */
   startFallback: CalendarDate;
+  /** Earliest selectable day; earlier days are disabled and the calendar cannot page before its month. */
+  minDate: CalendarDate;
   /** Missing-date / stay-too-long problems, already translated; each is shown on its own line. */
   errorTexts?: readonly string[];
   testID: string;
@@ -27,6 +29,7 @@ export function StayDatesField({
   checkOutDate,
   onChangeRange,
   startFallback,
+  minDate,
   errorTexts = [],
   testID,
 }: StayDatesFieldProps) {
@@ -42,6 +45,7 @@ export function StayDatesField({
   const fieldText = hasRange ? formatCalendarRange(locale, checkInDate, checkOutDate) : t("form.field.datesChoose");
 
   const pick = (day: CalendarDate) => {
+    if (day < minDate) return;
     const next = pickRangeDate(shown, day);
     if (next.start !== null && next.end !== null) {
       setPending(null);
@@ -82,6 +86,7 @@ export function StayDatesField({
             start={shown.start}
             end={shown.end}
             initialMonthOf={startFallback}
+            minDate={minDate}
             onPick={pick}
             testID={`${testID}-calendar`}
           />

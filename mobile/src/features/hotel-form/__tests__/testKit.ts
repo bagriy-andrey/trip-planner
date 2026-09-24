@@ -5,7 +5,9 @@ import type { Hotel, Trip } from "@tripplanner/shared";
 const LISBON = findCityById("city-lisbon");
 if (LISBON === undefined) throw new Error("fixture city missing from directory");
 
-export const SIGNED_IN = { session: { user: {} } } as const;
+/** Test "today" is before the fixtures' 2026-06 stays, so they are not past days (create mode floors at today). */
+export const TEST_TODAY = "2026-06-01";
+export const SIGNED_IN = { session: { user: {} }, today: TEST_TODAY } as const;
 
 /** A trip WITHOUT a directory city and dates: `userEvent.type` appends to a prefilled field. */
 export function makeTrip(overrides: Partial<Trip> = {}): Trip {

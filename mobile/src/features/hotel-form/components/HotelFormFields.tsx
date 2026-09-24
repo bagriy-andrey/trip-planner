@@ -77,6 +77,7 @@ export function HotelFormFields({ form, timePicker }: { form: HotelFormControlle
         checkOutDate={state.checkOutDate}
         onChangeRange={form.changeRange}
         startFallback={today}
+        minDate={form.dateFloor}
         errorTexts={errors.dates.map((id) => t(`form.validation.${id}`))}
         testID="hotel-form-dates"
       />
@@ -129,6 +130,7 @@ export function HotelFormFields({ form, timePicker }: { form: HotelFormControlle
         amount={state.costAmount}
         currency={state.costCurrency}
         onChangeAmount={form.cost.changeAmount}
+        onBlurAmount={form.cost.blurAmount}
         onOpenCurrency={form.cost.openCurrency}
         amountError={text(errors.costAmount)}
         currencyError={text(errors.costCurrency)}

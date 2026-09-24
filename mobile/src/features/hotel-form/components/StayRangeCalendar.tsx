@@ -13,6 +13,8 @@ export interface StayRangeCalendarProps {
   end: CalendarDate | null;
   /** Month shown first when nothing is chosen. */
   initialMonthOf: CalendarDate;
+  /** Earliest selectable day. Earlier days are disabled and months wholly before it are unreachable. */
+  minDate: CalendarDate;
   onPick: (date: CalendarDate) => void;
   testID?: string;
 }
@@ -29,7 +31,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * A month grid with range highlighting. It only reports taps; what a tap means (start, end,
  * start over) is `pickRangeDate` in `@tripplanner/shared`, so every client behaves alike.
  */
-export function StayRangeCalendar({ start, end, initialMonthOf, onPick, testID }: StayRangeCalendarProps) {
+export function StayRangeCalendar({ start, end, initialMonthOf, minDate, onPick, testID }: StayRangeCalendarProps) {
   const { t, i18n } = useTranslation("hotel");
   const { tokens } = useTheme();
   const locale = resolveLocale([i18n.language]);
@@ -45,6 +47,8 @@ export function StayRangeCalendar({ start, end, initialMonthOf, onPick, testID }
     ),
   );
   const weeks = monthGrid(shown, weekStart);
+  const floorMonth = monthOf(minDate);
+  const canGoBack = shown.year > floorMonth.year || (shown.year === floorMonth.year && shown.month > floorMonth.month);
 
   return (
     <View testID={testID} style={styles.root}>
@@ -52,6 +56,7 @@ export function StayRangeCalendar({ start, end, initialMonthOf, onPick, testID }
         <IconButton
           filled={false}
           accessibilityLabel={t("form.a11y.prevMonth")}
+          disabled={!canGoBack}
           onPress={() => setShown(shiftMonth(shown, -1))}
           testID={`${testID}-prev`}
         >
@@ -90,12 +95,14 @@ export function StayRangeCalendar({ start, end, initialMonthOf, onPick, testID }
               compareCalendarDates(day, start) > 0 &&
               compareCalendarDates(day, end) < 0;
             const selected = isStart || isEnd;
+            const disabled = compareCalendarDates(day, minDate) < 0;
             return (
               <Pressable
                 key={dayIndex}
                 accessibilityRole="button"
                 accessibilityLabel={formatCalendarDate(locale, day)}
-                accessibilityState={{ selected: selected || inside }}
+                accessibilityState={{ selected: selected || inside, disabled }}
+                disabled={disabled}
                 onPress={() => onPick(day)}
                 testID={`${testID}-day-${day}`}
                 style={[
@@ -104,7 +111,7 @@ export function StayRangeCalendar({ start, end, initialMonthOf, onPick, testID }
                   selected && { backgroundColor: tokens.accent, borderRadius: radius.field },
                 ]}
               >
-                <AppText color={selected ? "onAccent" : "text"}>{Number(day.slice(8))}</AppText>
+                <AppText color={selected ? "onAccent" : disabled ? "textSecondary" : "text"}>{Number(day.slice(8))}</AppText>
               </Pressable>
             );
           })}

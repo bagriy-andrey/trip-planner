@@ -20,9 +20,10 @@ import type {
 import { useRef, useState } from "react";
 
 import { useCreateHotel, useUpdateHotel } from "@/features/hotels";
+import { useToday } from "@/lib/clock";
 import { resolveLocale, useTranslation } from "@/lib/i18n";
 
-import { cityDisplayText, hotelFormEquals, nightsOf, toHotelFormInput, withDates } from "./formState";
+import { cityDisplayText, hotelDateFloor, hotelFormEquals, nightsOf, toHotelFormInput, withDates } from "./formState";
 import type { HotelFormState } from "./formState";
 import { filterMoneyInput } from "./moneyInput";
 import { isNotFound, submitErrorKind } from "./submitError";
@@ -34,6 +35,10 @@ import { useMapsLink } from "./useMapsLink";
 export type HotelFormTarget =
   | { mode: "create"; tripId: string }
   | { mode: "edit"; tripId: string; hotelId: string };
+
+/** Mobile-only date rule (needs the clock, so it is not a `shared` id): key under `hotel.form.validation`. */
+export const CHECK_IN_IN_PAST = "checkIn.inPast";
+export type DatesErrorId = HotelFieldErrorId | typeof CHECK_IN_IN_PAST;
 
 /** Field groups whose error shows after the user leaves them (or after the first save attempt, AC-15). */
 type Group = "name" | "city" | "dates" | "times" | "address" | "mapsUrl" | "cost" | "bookingRef" | "notes";
@@ -52,6 +57,10 @@ export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
 
   const [state, setState] = useState<HotelFormState>(initial);
   const [initialState] = useState<HotelFormState>(initial);
+  const today = useToday();
+  // Days before this are not selectable (create: today; edit: min(today, stored check-in)).
+  const dateFloor = hotelDateFloor(target.mode, today, initialState.checkInDate);
+  const checkInInPast = state.checkInDate !== null && state.checkInDate < dateFloor;
   const [attempted, setAttempted] = useState(false);
   const [touched, setTouched] = useState<ReadonlySet<Group>>(new Set());
   const [citySuggestionsOpen, setCitySuggestionsOpen] = useState(false);
@@ -90,9 +99,13 @@ export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
         : raw.city;
   // The range field owns the missing-date and stay-too-long errors; the cross-field "not after
   // check-in" (same day, both times) belongs under the check-out TIME field.
-  const datesErrors: HotelFieldErrorId[] = visible("dates")
-    ? [raw.checkInDate, raw.checkOutDate, raw.checkOut === HOTEL_FIELD_ERROR.checkOutStayTooLong ? raw.checkOut : undefined]
-        .filter((id): id is HotelFieldErrorId => id !== undefined)
+  const datesErrors: DatesErrorId[] = visible("dates")
+    ? [
+        raw.checkInDate,
+        checkInInPast ? CHECK_IN_IN_PAST : undefined,
+        raw.checkOutDate,
+        raw.checkOut === HOTEL_FIELD_ERROR.checkOutStayTooLong ? raw.checkOut : undefined,
+      ].filter((id): id is DatesErrorId => id !== undefined)
     : [];
   const timesError =
     visible("times") && raw.checkOut === HOTEL_FIELD_ERROR.checkOutNotAfterCheckIn ? raw.checkOut : undefined;
@@ -167,6 +180,7 @@ export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
   const submit = async () => {
     if (inFlight.current) return;
     setAttempted(true);
+    if (checkInInPast) return;
     const result = parseHotelForm(toHotelFormInput(state));
     if (!result.ok) return;
     inFlight.current = true;
@@ -200,6 +214,7 @@ export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
     city: { change: changeCity, select: selectCity, clear: clearCity, blur: () => touch("city"), suggestions: citySuggestions },
     address: { change: (address: string) => apply({ address }), blur: () => touch("address") },
     maps: { ...maps, blur: () => { touch("mapsUrl"); maps.commit(); } },
+    dateFloor,
     changeRange,
     changeCheckInTime,
     changeCheckOutTime,
@@ -209,6 +224,10 @@ export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
     stepBreakfastDays,
     cost: {
       changeAmount: (text: string) => apply({ costAmount: filterMoneyInput(text) }),
+      // A filled amount without a currency reports the missing currency once the user leaves the amount.
+      blurAmount: () => {
+        if (state.costAmount !== "") touch("cost");
+      },
       currencyOpen,
       openCurrency: () => setCurrencyOpen(true),
       closeCurrency: () => setCurrencyOpen(false),

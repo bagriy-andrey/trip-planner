@@ -25,7 +25,8 @@ export const hotel = {
       cost: "Стоимость",
       costAmountPlaceholder: "Сумма",
       currency: "Валюта",
-      currencyPlaceholder: "Выберите валюту",
+      currencyPlaceholder: "EUR",
+      currencyRequired: "Валюта (обязательно)",
       bookingRef: "Номер брони",
       notes: "Заметки",
     },
@@ -54,6 +55,7 @@ export const hotel = {
       prevMonth: "Предыдущий месяц",
       nextMonth: "Следующий месяц",
       currencyField: "Валюта: {{value}}",
+      currencyEmpty: "не выбрана",
       currencyClose: "Закрыть выбор валюты",
       timeClose: "Закрыть выбор времени",
     },
@@ -119,7 +121,7 @@ export const hotel = {
     validation: {
       name: { required: "Укажите название", tooLong: "Слишком длинное название" },
       city: { required: "Выберите город", notInDirectory: "Выберите город из списка" },
-      checkIn: { dateRequired: "Укажите дату заезда" },
+      checkIn: { dateRequired: "Укажите дату заезда", inPast: "Дата заезда не может быть в прошлом" },
       checkOut: {
         dateRequired: "Укажите дату выезда",
         notAfterCheckIn: "Выезд должен быть позже заезда",

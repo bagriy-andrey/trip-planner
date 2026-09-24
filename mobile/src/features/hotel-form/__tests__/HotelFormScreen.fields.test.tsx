@@ -85,11 +85,12 @@ describe("HotelFormScreen cost (AC-19, currency dropdown)", () => {
 
   it("never defaults the currency: the field shows the placeholder and a missing pair is reported", async () => {
     await renderCreate();
-    await waitFor(() => expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: Choose a currency"));
+    await waitFor(() => expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: not chosen"));
     await userEvent.type(screen.getByTestId("hotel-form-cost-amount"), "120.50");
     await userEvent.press(screen.getByRole("button", { name: "Save" }));
-    // The placeholder and the error both read "Choose a currency".
-    expect(screen.getAllByText("Choose a currency")).toHaveLength(2);
+    // Only the error reads "Choose a currency"; the placeholder is the muted hint EUR.
+    expect(screen.getAllByText("Choose a currency")).toHaveLength(1);
+    expect(screen.getByText("EUR")).toBeOnTheScreen();
   });
 
   it("opens a bottom sheet with the full list; tapping a row selects it and closes", async () => {
@@ -125,7 +126,7 @@ describe("HotelFormScreen cost (AC-19, currency dropdown)", () => {
     await waitFor(() => expect(screen.queryByTestId(sheet)).not.toBeOnTheScreen());
     await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
     await userEvent.press(screen.getByTestId(`${sheet}-none`));
-    await waitFor(() => expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: Choose a currency"));
+    await waitFor(() => expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: not chosen"));
   });
 
   it("closes from the scrim without changing the choice", async () => {
