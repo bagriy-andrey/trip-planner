@@ -1,4 +1,4 @@
-import { blurIntensity, coverMuteSaturation, iconSize, layout, radius, spacing } from "../metrics";
+import { blurIntensity, coverMuteSaturation, iconSize, layout, motion, radius, spacing } from "../metrics";
 import { coverColors, darkTokens, lightTokens } from "../tokens";
 import { family, size, typography } from "../typography";
 
@@ -172,5 +172,11 @@ describe("typography (AC-17, design/tokens.md)", () => {
     for (const style of Object.values(typography)) {
       expect(style).not.toHaveProperty("lineHeight");
     }
+  });
+});
+
+describe("motion tokens (design/tokens.md)", () => {
+  it("match tokens.md", () => {
+    expect(motion).toEqual({ sheetEnter: 280, sheetExit: 200 });
   });
 });

@@ -7,6 +7,7 @@ import { layout, radius, spacing, typography, useTheme } from "@/lib/theme";
 
 import { AppText } from "./AppText";
 import { MIN_HIT_SIZE } from "./a11y";
+import { markInputTouch } from "./DismissKeyboardView";
 
 /** Content presets: keyboard, autofill hint, capitalisation and masking for the field's purpose. */
 export type TextFieldVariant = "text" | "email" | "password" | "newPassword" | "code" | "url" | "decimal" | "currency";
@@ -147,6 +148,7 @@ export function TextField({
         value={value}
         onChangeText={onChangeText}
         editable={editable}
+        onTouchStart={markInputTouch}
         keyboardType={keyboardType ?? preset.keyboardType}
         textContentType={textContentType ?? preset.textContentType}
         autoComplete={autoComplete ?? preset.autoComplete}

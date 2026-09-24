@@ -85,7 +85,7 @@ describe("HotelFormScreen cost (AC-19, currency dropdown)", () => {
 
   it("never defaults the currency: the field shows the placeholder and a missing pair is reported", async () => {
     await renderCreate();
-    expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: Choose a currency");
+    await waitFor(() => expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: Choose a currency"));
     await userEvent.type(screen.getByTestId("hotel-form-cost-amount"), "120.50");
     await userEvent.press(screen.getByRole("button", { name: "Save" }));
     // The placeholder and the error both read "Choose a currency".
@@ -99,8 +99,8 @@ describe("HotelFormScreen cost (AC-19, currency dropdown)", () => {
     expect(screen.getByTestId(`${sheet}-option-EUR`)).toBeOnTheScreen();
     expect(screen.getByTestId(`${sheet}-option-ARS`)).toBeOnTheScreen();
     await userEvent.press(screen.getByTestId(`${sheet}-option-EUR`));
-    expect(screen.queryByTestId(sheet)).not.toBeOnTheScreen();
-    expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: EUR");
+    await waitFor(() => expect(screen.queryByTestId(sheet)).not.toBeOnTheScreen());
+    await waitFor(() => expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: EUR"));
   });
 
   it("searches by code or by localized name, case-insensitively", async () => {
@@ -124,14 +124,14 @@ describe("HotelFormScreen cost (AC-19, currency dropdown)", () => {
     await userEvent.press(screen.getByTestId(`${sheet}-option-GBP`));
     await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
     await userEvent.press(screen.getByTestId(`${sheet}-none`));
-    expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: Choose a currency");
+    await waitFor(() => expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: Choose a currency"));
   });
 
   it("closes from the scrim without changing the choice", async () => {
     await renderCreate();
     await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
     await userEvent.press(screen.getByTestId(`${sheet}-backdrop`));
-    expect(screen.queryByTestId(sheet)).not.toBeOnTheScreen();
+    await waitFor(() => expect(screen.queryByTestId(sheet)).not.toBeOnTheScreen());
   });
 });
 
@@ -181,8 +181,8 @@ describe("HotelFormScreen check-out rule (AC-16)", () => {
   it("blocks saving when check-out is not after check-in and shows the error under Check-out", async () => {
     await renderCreate({ startDate: "2026-06-15", endDate: "2026-06-15" });
     await userEvent.type(screen.getByTestId("hotel-form-name"), "Casa");
-    await userEvent.press(screen.getByTestId("hotel-form-check-in-time-picker"));
-    await userEvent.press(screen.getByTestId("hotel-form-check-out-time-picker"));
+    await userEvent.press(screen.getByTestId("hotel-form-check-in-time-empty"));
+    await userEvent.press(screen.getByTestId("hotel-form-check-out-time-empty"));
     await userEvent.press(screen.getByRole("button", { name: "Save" }));
     // Same day, both times set, out (11:00) not after in (15:00): the error sits under the check-out time.
     expect(screen.getByText("Check-out must be after check-in")).toBeOnTheScreen();
