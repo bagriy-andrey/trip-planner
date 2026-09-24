@@ -1,3 +1,4 @@
+import { screen, userEvent, waitFor } from "@testing-library/react-native";
 import { findCityById } from "@tripplanner/shared";
 import type { Hotel, Trip } from "@tripplanner/shared";
 
@@ -55,6 +56,13 @@ export function makeHotel(overrides: Partial<Hotel> = {}): Hotel {
     notes: null,
     ...overrides,
   };
+}
+
+/** Taps a time field, confirms the sheet's suggested time with Done and waits for the sheet to leave. */
+export async function pickTime(field: "check-in" | "check-out"): Promise<void> {
+  await userEvent.press(screen.getByTestId(`hotel-form-${field}-time-empty`));
+  await userEvent.press(screen.getByTestId("time-sheet-done"));
+  await waitFor(() => expect(screen.queryByTestId("time-sheet")).not.toBeOnTheScreen());
 }
 
 // A helper under `__tests__/` is collected by jest, so it carries one tiny test.

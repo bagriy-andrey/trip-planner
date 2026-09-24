@@ -1,3 +1,4 @@
+import { isClockTime } from "@tripplanner/shared";
 import type { ClockTime, HotelFieldErrorId } from "@tripplanner/shared";
 import { StyleSheet, View } from "react-native";
 
@@ -5,6 +6,8 @@ import { TextField } from "@/components";
 import { useToday } from "@/lib/clock";
 import { useTranslation } from "@/lib/i18n";
 import { spacing } from "@/lib/theme";
+
+import type { TimeSheetPicker } from "@/platform/timeSheetPicker";
 
 import type { HotelFormController } from "../hooks/useHotelForm";
 import { BreakfastBlock } from "./BreakfastBlock";
@@ -16,12 +19,12 @@ import { NightsLine } from "./NightsLine";
 import { StayDatesField } from "./StayDatesField";
 import { StayTimeField } from "./StayTimeField";
 
-/** Where the EMPTY time pickers open (a hint; the fields stay empty until picked): typical hotel check-in / check-out hours. */
+/** Where the time sheet opens while a field is EMPTY (it stays empty until the user confirms): typical hotel check-in / check-out hours. */
 const CHECK_IN_START: ClockTime = "15:00";
 const CHECK_OUT_START: ClockTime = "11:00";
 
 /** The fields in the order of AC-8. Holds no logic: everything comes from `useHotelForm`. */
-export function HotelFormFields({ form }: { form: HotelFormController }) {
+export function HotelFormFields({ form, timePicker }: { form: HotelFormController; timePicker: TimeSheetPicker }) {
   const { t } = useTranslation("hotel");
   const today = useToday();
   const { state, errors } = form;
@@ -80,15 +83,29 @@ export function HotelFormFields({ form }: { form: HotelFormController }) {
       <StayTimeField
         label={t("form.field.checkInTime")}
         time={state.checkInTime}
-        onChange={form.changeCheckInTime}
-        startTime={CHECK_IN_START}
+        onOpen={() =>
+          timePicker.open({
+            title: t("form.field.checkInTime"),
+            value: state.checkInTime,
+            startTime: CHECK_IN_START,
+            onPick: (picked) => isClockTime(picked) && form.changeCheckInTime(picked),
+          })
+        }
+        onClear={() => form.changeCheckInTime(null)}
         testID="hotel-form-check-in-time"
       />
       <StayTimeField
         label={t("form.field.checkOutTime")}
         time={state.checkOutTime}
-        onChange={form.changeCheckOutTime}
-        startTime={CHECK_OUT_START}
+        onOpen={() =>
+          timePicker.open({
+            title: t("form.field.checkOutTime"),
+            value: state.checkOutTime,
+            startTime: CHECK_OUT_START,
+            onPick: (picked) => isClockTime(picked) && form.changeCheckOutTime(picked),
+          })
+        }
+        onClear={() => form.changeCheckOutTime(null)}
         errorText={text(errors.checkOutTime)}
         testID="hotel-form-check-out-time"
       />

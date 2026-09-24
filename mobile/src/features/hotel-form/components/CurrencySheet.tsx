@@ -3,11 +3,9 @@ import type { CurrencyCode } from "@tripplanner/shared";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 
-import { AppText, Icon, PressableRow, TextField } from "@/components";
+import { AnimatedSheetOverlay, AppText, Icon, PressableRow, TextField } from "@/components";
 import { useTranslation } from "@/lib/i18n";
 import { layout, spacing, useTheme } from "@/lib/theme";
-
-import { ConfirmOverlay } from "./ConfirmOverlay";
 
 /** The list takes at most this share of the window height (1/2), the rest is header + search. */
 const LIST_SHARE = 2;
@@ -39,11 +37,19 @@ export function CurrencySheet({ selected, onSelect, onClose, testID }: CurrencyS
   const { tokens } = useTheme();
   const { height } = useWindowDimensions();
   const [query, setQuery] = useState("");
+  // What to do once the exit animation has finished: null = just close, else apply this choice.
+  const [exit, setExit] = useState<{ code: CurrencyCode | null } | "close" | null>(null);
   const options: CurrencyOption[] = CURRENCIES.map((code) => ({ code, name: t(`form.currencyName.${code}`) }));
   const shown = filterCurrencies(options, query);
 
   return (
-    <ConfirmOverlay closeLabel={t("form.a11y.currencyClose")} onClose={onClose} testID={testID}>
+    <AnimatedSheetOverlay
+      closeLabel={t("form.a11y.currencyClose")}
+      onRequestClose={() => setExit((current) => current ?? "close")}
+      closing={exit !== null}
+      onExited={() => (exit === null || exit === "close" ? onClose() : onSelect(exit.code))}
+      testID={testID}
+    >
       <AppText variant="h2" accessibilityRole="header">
         {t("form.currency.title")}
       </AppText>
@@ -59,7 +65,7 @@ export function CurrencySheet({ selected, onSelect, onClose, testID }: CurrencyS
         {selected === "" ? null : (
           <PressableRow
             accessibilityLabel={t("form.currency.none")}
-            onPress={() => onSelect(null)}
+            onPress={() => setExit((current) => current ?? { code: null })}
             testID={`${testID}-none`}
             style={styles.row}
           >
@@ -76,7 +82,7 @@ export function CurrencySheet({ selected, onSelect, onClose, testID }: CurrencyS
             <PressableRow
               key={option.code}
               accessibilityLabel={`${option.code}, ${option.name}`}
-              onPress={() => onSelect(option.code)}
+              onPress={() => setExit((current) => current ?? { code: option.code })}
               testID={`${testID}-option-${option.code}`}
               style={[styles.row, option.code === selected && { backgroundColor: tokens.surfaceStrong }]}
             >
@@ -90,7 +96,7 @@ export function CurrencySheet({ selected, onSelect, onClose, testID }: CurrencyS
           ))
         )}
       </ScrollView>
-    </ConfirmOverlay>
+    </AnimatedSheetOverlay>
   );
 }
 

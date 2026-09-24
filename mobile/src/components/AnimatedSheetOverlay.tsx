@@ -34,6 +34,7 @@ export function AnimatedSheetOverlay({
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const progress = useRef(new Animated.Value(0)).current;
+  // Unknown = animate: the async Reduce Motion read must never suppress the first slide-in.
   const reduceMotion = useRef(false);
   const onExitedRef = useRef(onExited);
   onExitedRef.current = onExited;
@@ -82,6 +83,7 @@ export function AnimatedSheetOverlay({
         />
       </Animated.View>
       <Animated.View
+        testID={testID === undefined ? undefined : `${testID}-panel`}
         style={[
           styles.panel,
           {

@@ -2,6 +2,8 @@ export { MIN_HIT_SIZE } from "./a11y";
 export type { AccessibleProps, InteractiveRole } from "./a11y";
 export { AppText } from "./AppText";
 export type { AppTextColor, AppTextProps } from "./AppText";
+export { AnimatedSheetOverlay } from "./AnimatedSheetOverlay";
+export type { AnimatedSheetOverlayProps } from "./AnimatedSheetOverlay";
 export { Avatar } from "./Avatar";
 export type { AvatarProps } from "./Avatar";
 export { AvatarButton } from "./AvatarButton";

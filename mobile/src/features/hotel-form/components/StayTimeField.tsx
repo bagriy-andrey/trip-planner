@@ -1,25 +1,24 @@
-import { isClockTime } from "@tripplanner/shared";
 import type { ClockTime } from "@tripplanner/shared";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText, Icon, IconButton } from "@/components";
 import { useTranslation } from "@/lib/i18n";
 import { layout, radius, spacing, useTheme } from "@/lib/theme";
-import { TimePicker } from "@/platform/datePicker";
 
 export interface StayTimeFieldProps {
   /** "Время заезда" / "Время выезда". */
   label: string;
   time: ClockTime | null;
-  onChange: (time: ClockTime | null) => void;
-  /** Time the EMPTY picker opens on (a hint only: an empty field stays empty until the user picks). */
-  startTime: ClockTime;
+  /** Tap anywhere on the field: the screen opens the time sheet (an empty field stays empty until confirmed). */
+  onOpen: () => void;
+  /** "x": back to "not set". */
+  onClear: () => void;
   errorText?: string;
   testID: string;
 }
 
-/** One OPTIONAL time of the stay: tap the empty field to pick, "×" clears it back to "not set". */
-export function StayTimeField({ label, time, onChange, startTime, errorText, testID }: StayTimeFieldProps) {
+/** One OPTIONAL time of the stay: a tap opens the time sheet at once, "×" clears it back to "not set". */
+export function StayTimeField({ label, time, onOpen, onClear, errorText, testID }: StayTimeFieldProps) {
   const { t } = useTranslation("hotel");
   const { tokens } = useTheme();
   return (
@@ -28,39 +27,20 @@ export function StayTimeField({ label, time, onChange, startTime, errorText, tes
         {label}
       </AppText>
       <View style={styles.control}>
-        <View style={styles.picker}>
-          {time === null ? (
-            // Empty: a plain button that sets the suggested time. The native compact picker laid
-            // invisibly over an empty field only hits inside its own small pill (not the whole
-            // field), so an empty field could not be tapped on a device. The native picker mounts
-            // once a time exists, and the user adjusts it there.
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={label}
-              onPress={() => onChange(startTime)}
-              testID={`${testID}-empty`}
-              style={[styles.empty, { backgroundColor: tokens.surface, borderColor: tokens.surfaceBorder }]}
-            >
-              <Icon name="clock" color="textSecondary" />
-            </Pressable>
-          ) : (
-            <TimePicker
-              value={time}
-              onChange={(picked) => {
-                if (isClockTime(picked)) onChange(picked);
-              }}
-              startTime={startTime}
-              mono
-              accessibilityLabel={`${label}: ${time}`}
-              testID={`${testID}-picker`}
-            />
-          )}
-        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={time === null ? label : `${label}: ${time}`}
+          onPress={onOpen}
+          testID={time === null ? `${testID}-empty` : `${testID}-value`}
+          style={[styles.field, { backgroundColor: tokens.surface, borderColor: tokens.surfaceBorder }]}
+        >
+          {time === null ? <Icon name="clock" color="textSecondary" /> : <AppText variant="mono">{time}</AppText>}
+        </Pressable>
         {time !== null ? (
           <IconButton
             filled={false}
             accessibilityLabel={`${t("form.a11y.clear")}: ${label}`}
-            onPress={() => onChange(null)}
+            onPress={onClear}
             testID={`${testID}-clear`}
           >
             <Icon name="close" color="textSecondary" />
@@ -79,8 +59,8 @@ export function StayTimeField({ label, time, onChange, startTime, errorText, tes
 const styles = StyleSheet.create({
   block: { gap: spacing.xs },
   control: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
-  picker: { flex: 1 },
-  empty: {
+  field: {
+    flex: 1,
     minHeight: layout.minTouch,
     flexDirection: "row",
     alignItems: "center",

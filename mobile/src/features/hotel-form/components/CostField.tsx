@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText, Icon, TextField } from "@/components";
 import { layout, radius, spacing, useTheme } from "@/lib/theme";
 import { useTranslation } from "@/lib/i18n";
+
+import { filterMoneyInput } from "../hooks/moneyInput";
 
 export interface CostFieldProps {
   amount: string;
@@ -28,6 +31,16 @@ export function CostField({
 }: CostFieldProps) {
   const { t } = useTranslation("hotel");
   const { tokens } = useTheme();
+  // A controlled native input keeps whatever the user typed unless React re-renders it with a
+  // value: when the filter drops the char ("12" + "a" -> "12") the state does not change, React
+  // bails out, and the native field would keep showing "12a". Bumping this forces the re-render
+  // so the native text is overwritten with the filtered value.
+  const [, forceRender] = useState(0);
+  const handleChange = (raw: string) => {
+    const filtered = filterMoneyInput(raw);
+    if (filtered !== raw) forceRender((n) => n + 1);
+    onChangeAmount(filtered);
+  };
   const chosen = currency !== "";
   const text = chosen ? currency : t("form.field.currencyPlaceholder");
   return (
@@ -37,7 +50,7 @@ export function CostField({
         label={t("form.field.cost")}
         placeholder={t("form.field.costAmountPlaceholder")}
         value={amount}
-        onChangeText={onChangeAmount}
+        onChangeText={handleChange}
         errorText={amountError}
         variant="decimal"
         mono

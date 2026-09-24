@@ -52,6 +52,7 @@ export const hotel = {
       nextMonth: "Next month",
       currencyField: "Currency: {{value}}",
       currencyClose: "Close currency picker",
+      timeClose: "Close time picker",
     },
     currency: {
       title: "Currency",
