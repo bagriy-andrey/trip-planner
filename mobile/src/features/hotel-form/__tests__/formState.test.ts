@@ -1,7 +1,9 @@
 import { findCityById } from "@tripplanner/shared";
+import type { CalendarDate } from "@tripplanner/shared";
 
 import {
   EMPTY_HOTEL_FORM,
+  hotelDateFloor,
   hotelFormEquals,
   hotelFormFromHotel,
   hotelFormFromTrip,
@@ -16,6 +18,7 @@ describe("hotelFormFromTrip", () => {
     const state = hotelFormFromTrip(
       makeTrip({ place: LISBON_PLACE, startDate: "2026-06-15", endDate: "2026-06-20" }),
       "en",
+      "2026-06-01",
     );
     expect(state.city?.id).toBe("city-lisbon");
     expect(state.cityText).toBe("Lisbon");
@@ -23,16 +26,47 @@ describe("hotelFormFromTrip", () => {
   });
 
   it("leaves the city empty for a country or free-text trip (AC-11)", () => {
-    expect(hotelFormFromTrip(makeTrip(), "en").city).toBeNull();
+    expect(hotelFormFromTrip(makeTrip(), "en", "2026-06-01").city).toBeNull();
     const country = makeTrip({ place: { kind: "country", placeId: "country-pt", countryCode: "PT" } });
-    expect(hotelFormFromTrip(country, "en").cityText).toBe("");
+    expect(hotelFormFromTrip(country, "en", "2026-06-01").cityText).toBe("");
   });
 
   it("leaves dates empty for a trip without dates", () => {
-    const state = hotelFormFromTrip(makeTrip({ place: LISBON_PLACE }), "ru");
+    const state = hotelFormFromTrip(makeTrip({ place: LISBON_PLACE }), "ru", "2026-06-01");
     expect(state).toMatchObject({ checkInDate: null, checkOutDate: null, cityText: "Лиссабон" });
     expect(nightsOf(state)).toBeNull();
   });
+});
+
+describe("hotelFormFromTrip past-date clamp", () => {
+  const trip = (startDate: CalendarDate | null, endDate: CalendarDate | null) => makeTrip({ place: LISBON_PLACE, startDate, endDate });
+
+  it("clamps a start in the past to today and keeps the end", () => {
+    expect(hotelFormFromTrip(trip("2026-06-01", "2026-06-20"), "en", "2026-06-10")).toMatchObject({
+      checkInDate: "2026-06-10",
+      checkOutDate: "2026-06-20",
+    });
+  });
+
+  it("leaves the range empty for a trip that already ended", () => {
+    expect(hotelFormFromTrip(trip("2026-05-01", "2026-05-09"), "en", "2026-06-10")).toMatchObject({
+      checkInDate: null,
+      checkOutDate: null,
+    });
+  });
+
+  it("keeps a future or current range as is", () => {
+    expect(hotelFormFromTrip(trip("2026-06-10", "2026-06-12"), "en", "2026-06-10")).toMatchObject({
+      checkInDate: "2026-06-10",
+      checkOutDate: "2026-06-12",
+    });
+  });
+});
+
+describe("hotelDateFloor", () => {
+  it("create: today", () => expect(hotelDateFloor("create", "2026-06-10", "2026-05-01")).toBe("2026-06-10"));
+  it("edit of a past hotel: its own check-in", () => expect(hotelDateFloor("edit", "2026-06-10", "2026-05-01")).toBe("2026-05-01"));
+  it("edit of a future hotel: today", () => expect(hotelDateFloor("edit", "2026-06-10", "2026-07-01")).toBe("2026-06-10"));
 });
 
 describe("hotelFormFromHotel", () => {

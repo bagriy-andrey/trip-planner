@@ -62,15 +62,31 @@ export function cityDisplayText(city: CityRecord, lang: PlaceLanguage): string {
   return city[lang];
 }
 
-/** Create-mode prefill (AC-10/AC-11): the trip's city (when from the directory) and dates; times stay empty. */
-export function hotelFormFromTrip(trip: Trip, lang: PlaceLanguage): HotelFormState {
+/**
+ * Earliest day the stay's dates may be picked. Create: today. Edit: today, or the stored check-in when
+ * that is already in the past, so an old hotel stays editable without touching its dates while no
+ * NEW past day can be picked. Clock-dependent, hence here and not in `shared`.
+ */
+export function hotelDateFloor(mode: "create" | "edit", today: CalendarDate, initialCheckIn: CalendarDate | null): CalendarDate {
+  if (mode === "create" || initialCheckIn === null) return today;
+  return initialCheckIn < today ? initialCheckIn : today;
+}
+
+/**
+ * Create-mode prefill (AC-10/AC-11): the trip's city (when from the directory) and dates; times stay
+ * empty. A trip that already began must not prefill past days: the start is clamped to today, and a
+ * trip that already ended leaves the range empty (the user picks it).
+ */
+export function hotelFormFromTrip(trip: Trip, lang: PlaceLanguage, today: CalendarDate): HotelFormState {
   const city = trip.place.kind === "city" ? findCityById(trip.place.placeId) : undefined;
+  const ended = trip.endDate !== null && trip.endDate < today;
+  const checkInDate = ended ? null : trip.startDate !== null && trip.startDate < today ? today : trip.startDate;
   return {
     ...EMPTY_HOTEL_FORM,
     city: city ?? null,
     cityText: city === undefined ? "" : cityDisplayText(city, lang),
-    checkInDate: trip.startDate,
-    checkOutDate: trip.endDate,
+    checkInDate,
+    checkOutDate: ended ? null : trip.endDate,
   };
 }
 

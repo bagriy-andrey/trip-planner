@@ -24,7 +24,8 @@ export const hotel = {
       cost: "Cost",
       costAmountPlaceholder: "Amount",
       currency: "Currency",
-      currencyPlaceholder: "Choose a currency",
+      currencyPlaceholder: "EUR",
+      currencyRequired: "Currency (required)",
       bookingRef: "Booking reference",
       notes: "Notes",
     },
@@ -51,6 +52,7 @@ export const hotel = {
       prevMonth: "Previous month",
       nextMonth: "Next month",
       currencyField: "Currency: {{value}}",
+      currencyEmpty: "not chosen",
       currencyClose: "Close currency picker",
       timeClose: "Close time picker",
     },
@@ -116,7 +118,7 @@ export const hotel = {
     validation: {
       name: { required: "Enter a name", tooLong: "Name is too long" },
       city: { required: "Choose a city", notInDirectory: "Choose a city from the list" },
-      checkIn: { dateRequired: "Enter a check-in date" },
+      checkIn: { dateRequired: "Enter a check-in date", inPast: "Check-in date cannot be in the past" },
       checkOut: {
         dateRequired: "Enter a check-out date",
         notAfterCheckIn: "Check-out must be after check-in",
