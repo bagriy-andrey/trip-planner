@@ -7,7 +7,7 @@ import { getTrip } from "@/features/trips/api";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
 import { HotelFormScreen } from "../HotelFormScreen";
-import { LISBON_PLACE, SIGNED_IN, makeHotel, makeTrip } from "./testKit";
+import { LISBON_PLACE, SIGNED_IN, makeHotel, makeTrip, pickTime } from "./testKit";
 
 jest.mock("@/lib/supabase", () => ({ supabase: { from: jest.fn() } }));
 jest.mock("@/features/trips/api", () => ({ ...jest.requireActual("@/features/trips/api"), getTrip: jest.fn() }));
@@ -122,6 +122,7 @@ describe("HotelFormScreen cost (AC-19, currency dropdown)", () => {
     await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
     expect(screen.queryByTestId(`${sheet}-none`)).not.toBeOnTheScreen();
     await userEvent.press(screen.getByTestId(`${sheet}-option-GBP`));
+    await waitFor(() => expect(screen.queryByTestId(sheet)).not.toBeOnTheScreen());
     await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
     await userEvent.press(screen.getByTestId(`${sheet}-none`));
     await waitFor(() => expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: Choose a currency"));
@@ -181,8 +182,8 @@ describe("HotelFormScreen check-out rule (AC-16)", () => {
   it("blocks saving when check-out is not after check-in and shows the error under Check-out", async () => {
     await renderCreate({ startDate: "2026-06-15", endDate: "2026-06-15" });
     await userEvent.type(screen.getByTestId("hotel-form-name"), "Casa");
-    await userEvent.press(screen.getByTestId("hotel-form-check-in-time-empty"));
-    await userEvent.press(screen.getByTestId("hotel-form-check-out-time-empty"));
+    await pickTime("check-in");
+    await pickTime("check-out");
     await userEvent.press(screen.getByRole("button", { name: "Save" }));
     // Same day, both times set, out (11:00) not after in (15:00): the error sits under the check-out time.
     expect(screen.getByText("Check-out must be after check-in")).toBeOnTheScreen();

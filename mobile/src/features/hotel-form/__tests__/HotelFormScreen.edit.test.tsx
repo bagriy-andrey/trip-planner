@@ -51,8 +51,8 @@ describe("HotelFormScreen edit (AC-31)", () => {
     expect(screen.getByTestId("hotel-form-name").props.value).toBe("Casa Alfama");
     expect(screen.getByTestId("hotel-form-city").props.value).toBe("Lisbon");
     expect(screen.getByTestId("hotel-form-dates-field").props.accessibilityLabel).toMatch(/Jun 15.*18, 2026/);
-    expect(screen.getByTestId("hotel-form-check-in-time-picker").props.accessibilityLabel).toContain("15:00");
-    expect(screen.getByTestId("hotel-form-check-out-time-picker").props.accessibilityLabel).toContain("11:00");
+    expect(screen.getByTestId("hotel-form-check-in-time-value").props.accessibilityLabel).toContain("15:00");
+    expect(screen.getByTestId("hotel-form-check-out-time-value").props.accessibilityLabel).toContain("11:00");
     expect(screen.getByText("3 nights — calculated from dates")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
   });

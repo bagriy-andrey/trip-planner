@@ -6,7 +6,7 @@ import { getTrip } from "@/features/trips/api";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
 import { HotelFormScreen } from "../HotelFormScreen";
-import { LISBON_PLACE, SIGNED_IN, makeHotel, makeTrip } from "./testKit";
+import { LISBON_PLACE, SIGNED_IN, makeHotel, makeTrip, pickTime } from "./testKit";
 
 jest.mock("@/lib/supabase", () => ({ supabase: { from: jest.fn() } }));
 jest.mock("@/features/trips/api", () => ({ ...jest.requireActual("@/features/trips/api"), getTrip: jest.fn() }));
@@ -105,10 +105,10 @@ describe("HotelFormScreen create — dates range and optional times", () => {
   it("keeps the times empty by default and clears a picked time with the cross", async () => {
     await renderCreate();
     expect(screen.getByTestId("hotel-form-check-in-time-empty").props.accessibilityLabel).toBe("Check-in time");
-    await userEvent.press(screen.getByTestId("hotel-form-check-in-time-empty"));
-    await userEvent.press(screen.getByTestId("hotel-form-check-out-time-empty"));
-    expect(screen.getByTestId("hotel-form-check-in-time-picker").props.accessibilityLabel).toContain("15:00");
-    expect(screen.getByTestId("hotel-form-check-out-time-picker").props.accessibilityLabel).toContain("11:00");
+    await pickTime("check-in");
+    await pickTime("check-out");
+    expect(screen.getByTestId("hotel-form-check-in-time-value").props.accessibilityLabel).toContain("15:00");
+    expect(screen.getByTestId("hotel-form-check-out-time-value").props.accessibilityLabel).toContain("11:00");
     await userEvent.press(screen.getByTestId("hotel-form-check-in-time-clear"));
     expect(screen.queryByTestId("hotel-form-check-in-time-clear")).not.toBeOnTheScreen();
     expect(screen.getByTestId("hotel-form-check-out-time-clear")).toBeOnTheScreen();
@@ -140,8 +140,8 @@ describe("HotelFormScreen create — Save (AC-29, AC-34, AC-40)", () => {
   async function fillValid() {
     await renderCreate(CITY_TRIP);
     await userEvent.type(screen.getByTestId("hotel-form-name"), "Casa Alfama");
-    await userEvent.press(screen.getByTestId("hotel-form-check-in-time-empty"));
-    await userEvent.press(screen.getByTestId("hotel-form-check-out-time-empty"));
+    await pickTime("check-in");
+    await pickTime("check-out");
   }
 
   it("saves calendar dates and wall-clock times as typed (no instants), then closes the form", async () => {

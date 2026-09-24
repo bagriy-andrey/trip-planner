@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText, DismissKeyboardView, ModalHeader, PrimaryButton, Screen, SecondaryButton } from "@/components";
 import { useTranslation } from "@/lib/i18n";
 import { layout, radius, spacing, useTheme } from "@/lib/theme";
+import { useTimeSheetPicker } from "@/platform/timeSheetPicker";
 
 import { useHotelForm } from "../hooks/useHotelForm";
 import type { HotelFormTarget } from "../hooks/useHotelForm";
@@ -32,6 +33,11 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
   const router = useRouter();
   const form = useHotelForm(target, initial);
   const { guard, del } = form;
+  const timePicker = useTimeSheetPicker({
+    done: tCommon("actions.done"),
+    cancel: tCommon("actions.cancel"),
+    close: t("form.a11y.timeClose"),
+  });
 
   const submitMessage = form.submitError ?? undefined;
   useEffect(() => {
@@ -40,7 +46,7 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
 
   if (form.gone) return <HotelNotFound onBack={() => router.back()} />;
 
-  const overlayOpen = guard.confirmOpen || del.open || form.cost.currencyOpen;
+  const overlayOpen = guard.confirmOpen || del.open || form.cost.currencyOpen || timePicker.element !== null;
   const deleteError = del.error === null ? null : tTrips(`errors.${del.error}`);
 
   return (
@@ -58,7 +64,7 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
             cancelAsIcon
             hideDone
           />
-          <HotelFormFields form={form} />
+          <HotelFormFields form={form} timePicker={timePicker} />
           {del.canDelete ? (
             <Pressable
               accessibilityRole="button"
@@ -100,6 +106,8 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
           testID="hotel-form-currency-sheet"
         />
       ) : null}
+
+      {timePicker.element}
 
       {guard.confirmOpen ? (
         <ConfirmOverlay closeLabel={tCommon("actions.cancel")} onClose={guard.cancelConfirm} testID="hotel-form-unsaved">

@@ -55,6 +55,7 @@ export const hotel = {
       nextMonth: "Следующий месяц",
       currencyField: "Валюта: {{value}}",
       currencyClose: "Закрыть выбор валюты",
+      timeClose: "Закрыть выбор времени",
     },
     currency: {
       title: "Валюта",
