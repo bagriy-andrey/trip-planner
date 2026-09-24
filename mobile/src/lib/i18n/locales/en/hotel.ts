@@ -61,10 +61,9 @@ export const hotel = {
     validation: {
       name: { required: "Enter a name", tooLong: "Name is too long" },
       city: { required: "Choose a city", notInDirectory: "Choose a city from the list" },
-      checkIn: { dateRequired: "Enter a check-in date", timeRequired: "Enter a check-in time" },
+      checkIn: { dateRequired: "Enter a check-in date" },
       checkOut: {
         dateRequired: "Enter a check-out date",
-        timeRequired: "Enter a check-out time",
         notAfterCheckIn: "Check-out must be after check-in",
         stayTooLong: "The stay is too long",
       },

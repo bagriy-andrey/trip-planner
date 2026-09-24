@@ -4,8 +4,8 @@ import { parseMoneyAmount } from "../money/amount";
 import { isCurrencyCode, type CurrencyCode } from "../money/currencies";
 import { findCityById } from "../places/search";
 import type { CityRecord } from "../places/schema";
-import { isClockTime, zonedDateTimeToInstant } from "../segments/time";
-import { isCalendarDate } from "../trips/calendarDate";
+import { isClockTime, type ClockTime } from "../segments/time";
+import { isCalendarDate, type CalendarDate } from "../trips/calendarDate";
 import { breakfastDaysRange } from "./breakfast";
 import { HOTEL_FIELD_ERROR, isHotelFieldErrorId, type HotelFieldErrorId } from "./errorCodes";
 import { parseMapsUrl } from "./mapsUrl";
@@ -55,7 +55,7 @@ export type HotelFormInput = {
   mapsUrl?: string | null;
   /** "YYYY-MM-DD", local to the hotel's city. */
   checkInDate?: string | null;
-  /** "HH:MM". */
+  /** Optional "HH:MM" (local); empty means unknown. */
   checkInTime?: string | null;
   checkOutDate?: string | null;
   checkOutTime?: string | null;
@@ -75,8 +75,12 @@ export type HotelFormValue = {
   timeZone: string;
   address: string | null;
   mapsUrl: string | null;
-  checkInAt: Date;
-  checkOutAt: Date;
+  /** "YYYY-MM-DD", local to the hotel's city. */
+  checkInDate: CalendarDate;
+  checkOutDate: CalendarDate;
+  /** "HH:MM" local, or null when not given. */
+  checkInTime: ClockTime | null;
+  checkOutTime: ClockTime | null;
   guests: number;
   parking: HotelParking;
   breakfast: HotelBreakfast;
@@ -162,30 +166,20 @@ export const hotelFormSchema = z
     const inTime = trimmed(raw.checkInTime);
     const outDate = trimmed(raw.checkOutDate);
     const outTime = trimmed(raw.checkOutTime);
-    const inDateOk = isCalendarDate(inDate);
-    const outDateOk = isCalendarDate(outDate);
-    if (!inDateOk) report("checkInDate", HOTEL_FIELD_ERROR.checkInDateRequired);
-    if (!isClockTime(inTime)) report("checkInTime", HOTEL_FIELD_ERROR.checkInTimeRequired);
-    if (!outDateOk) report("checkOutDate", HOTEL_FIELD_ERROR.checkOutDateRequired);
-    if (!isClockTime(outTime)) report("checkOutTime", HOTEL_FIELD_ERROR.checkOutTimeRequired);
+    // Times are optional: empty is null; a non-empty malformed value is treated as unknown too
+    // (the UI only offers a picker), never defaulted here.
+    const inTimeValue: ClockTime | null = isClockTime(inTime) ? inTime : null;
+    const outTimeValue: ClockTime | null = isClockTime(outTime) ? outTime : null;
+    if (!isCalendarDate(inDate)) report("checkInDate", HOTEL_FIELD_ERROR.checkInDateRequired);
+    if (!isCalendarDate(outDate)) report("checkOutDate", HOTEL_FIELD_ERROR.checkOutDateRequired);
 
-    let checkInAt: Date | undefined;
-    let checkOutAt: Date | undefined;
-    if (city !== undefined && isCalendarDate(inDate) && isClockTime(inTime)) {
-      checkInAt = zonedDateTimeToInstant(inDate, inTime, city.timeZone);
-    }
-    if (city !== undefined && isCalendarDate(outDate) && isClockTime(outTime)) {
-      checkOutAt = zonedDateTimeToInstant(outDate, outTime, city.timeZone);
-    }
     let nights: number | null = null;
     if (isCalendarDate(inDate) && isCalendarDate(outDate)) {
       nights = nightsBetweenDates(inDate, outDate);
-    }
-    if (checkInAt !== undefined && checkOutAt !== undefined) {
-      if (checkOutAt.getTime() <= checkInAt.getTime()) {
+      if (nights < 0) report("checkOut", HOTEL_FIELD_ERROR.checkOutNotAfterCheckIn);
+      else if (nights > HOTEL_MAX_NIGHTS) report("checkOut", HOTEL_FIELD_ERROR.checkOutStayTooLong);
+      else if (nights === 0 && inTimeValue !== null && outTimeValue !== null && outTimeValue <= inTimeValue) {
         report("checkOut", HOTEL_FIELD_ERROR.checkOutNotAfterCheckIn);
-      } else if (nights !== null && nights > HOTEL_MAX_NIGHTS) {
-        report("checkOut", HOTEL_FIELD_ERROR.checkOutStayTooLong);
       }
     }
 
@@ -288,8 +282,8 @@ export const hotelFormSchema = z
       failed ||
       name === null ||
       city === undefined ||
-      checkInAt === undefined ||
-      checkOutAt === undefined
+      !isCalendarDate(inDate) ||
+      !isCalendarDate(outDate)
     ) {
       return z.NEVER;
     }
@@ -300,8 +294,10 @@ export const hotelFormSchema = z
       timeZone: city.timeZone,
       address,
       mapsUrl,
-      checkInAt,
-      checkOutAt,
+      checkInDate: inDate,
+      checkOutDate: outDate,
+      checkInTime: inTimeValue,
+      checkOutTime: outTimeValue,
       guests,
       parking,
       breakfast,

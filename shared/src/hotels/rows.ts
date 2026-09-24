@@ -4,6 +4,8 @@ import { isCurrencyCode } from "../money/currencies";
 import type { CityRecord } from "../places/schema";
 import { findCityById } from "../places/search";
 import { isValidTimeZone } from "../places/timeZone";
+import { isClockTime } from "../segments/time";
+import { isCalendarDate } from "../trips/calendarDate";
 import {
   HOTEL_ADDRESS_MAX_LENGTH,
   HOTEL_BOOKING_REF_MAX_LENGTH,
@@ -17,6 +19,14 @@ import {
 } from "./schemas";
 
 const ISO_INSTANT = z.iso.datetime({ offset: true });
+const DATE_COLUMN = z.string().refine(isCalendarDate);
+/** Postgres `time` arrives as "HH:MM:SS"; normalised to "HH:MM". */
+const timeColumn = z
+  .string()
+  .regex(/^\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/)
+  .transform((v) => v.slice(0, 5))
+  .refine(isClockTime)
+  .nullable();
 const SOURCE = z.enum(["manual", "imported_pending", "imported_confirmed"]);
 
 /** `numeric(12,2)` arrives as a JSON number or a string; both become the canonical "12.50". */
@@ -48,8 +58,10 @@ export const hotelRowSchema = z
     time_zone: z.string().refine(isValidTimeZone),
     address: z.string().min(1).max(HOTEL_ADDRESS_MAX_LENGTH).nullable(),
     maps_url: z.string().min(1).nullable(),
-    check_in_at: ISO_INSTANT,
-    check_out_at: ISO_INSTANT,
+    check_in_date: DATE_COLUMN,
+    check_out_date: DATE_COLUMN,
+    check_in_time: timeColumn,
+    check_out_time: timeColumn,
     guests: z.number().int().min(HOTEL_GUESTS_MIN).max(HOTEL_GUESTS_MAX),
     parking: z.enum(HOTEL_PARKING),
     breakfast: z.enum(HOTEL_BREAKFAST),
@@ -113,8 +125,10 @@ export function toHotel(row: HotelRow): Hotel {
     timeZone: row.time_zone,
     address: row.address,
     mapsUrl: row.maps_url,
-    checkInAt: new Date(row.check_in_at),
-    checkOutAt: new Date(row.check_out_at),
+    checkInDate: row.check_in_date,
+    checkOutDate: row.check_out_date,
+    checkInTime: row.check_in_time,
+    checkOutTime: row.check_out_time,
     guests: row.guests,
     parking: row.parking,
     breakfast: row.breakfast,
@@ -139,8 +153,10 @@ export type HotelWrite = {
   time_zone: string;
   address: string | null;
   maps_url: string | null;
-  check_in_at: string;
-  check_out_at: string;
+  check_in_date: string;
+  check_out_date: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
   guests: number;
   parking: HotelFormValue["parking"];
   breakfast: HotelFormValue["breakfast"];
@@ -161,8 +177,10 @@ export function toHotelWrite(value: HotelFormValue, tripId: string): HotelWrite 
     time_zone: value.timeZone,
     address: value.address,
     maps_url: value.mapsUrl,
-    check_in_at: value.checkInAt.toISOString(),
-    check_out_at: value.checkOutAt.toISOString(),
+    check_in_date: value.checkInDate,
+    check_out_date: value.checkOutDate,
+    check_in_time: value.checkInTime,
+    check_out_time: value.checkOutTime,
     guests: value.guests,
     parking: value.parking,
     breakfast: value.breakfast,
