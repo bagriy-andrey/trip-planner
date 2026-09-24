@@ -23,8 +23,10 @@ const goodRow = {
   time_zone: "Europe/Lisbon",
   address: "Rua 1",
   maps_url: null,
-  check_in_at: "2026-06-15T14:00:00+00:00",
-  check_out_at: "2026-06-18T10:00:00+00:00",
+  check_in_date: "2026-06-15",
+  check_out_date: "2026-06-18",
+  check_in_time: "15:00:00",
+  check_out_time: null,
   guests: 2,
   parking: "none",
   breakfast: "none",
@@ -100,13 +102,13 @@ afterEach(() => {
 });
 
 describe("listHotels", () => {
-  it("reads trip_hotels of the trip ordered by check_in_at and maps rows", async () => {
+  it("reads trip_hotels of the trip ordered by check-in date then time and maps rows", async () => {
     const calls = mockRequest(ok([goodRow]));
     const result = await listHotels(TRIP_ID);
 
     expect(from).toHaveBeenCalledWith("trip_hotels");
     expect(callOf(calls, "eq")).toEqual(["trip_id", TRIP_ID]);
-    expect(callOf(calls, "order")).toEqual(["check_in_at", { ascending: true }]);
+    expect(callOf(calls, "order")).toEqual(["check_in_date", { ascending: true }]);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data[0]).toMatchObject({ id: HOTEL_ID, tripId: TRIP_ID, name: "Casa Alfama" });

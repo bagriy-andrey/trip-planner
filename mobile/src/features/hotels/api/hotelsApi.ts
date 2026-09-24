@@ -27,7 +27,7 @@ export type DeleteHotelResult = HotelResult<{ id: string }>;
 type Operation = "listHotels" | "getHotel" | "createHotel" | "updateHotel" | "deleteHotel";
 
 const HOTEL_COLUMNS =
-  "id,trip_id,source,name,city_place_id,time_zone,address,maps_url,check_in_at,check_out_at," +
+  "id,trip_id,source,name,city_place_id,time_zone,address,maps_url,check_in_date,check_out_date,check_in_time,check_out_time," +
   "guests,parking,breakfast,breakfast_days,cost_amount,cost_currency,booking_ref,notes," +
   "created_at,updated_at";
 
@@ -86,7 +86,8 @@ export async function listHotels(tripId: string): Promise<ListHotelsResult> {
       .from("trip_hotels")
       .select(HOTEL_COLUMNS)
       .eq("trip_id", tripId)
-      .order("check_in_at", { ascending: true });
+      .order("check_in_date", { ascending: true })
+      .order("check_in_time", { ascending: true, nullsFirst: true });
     if (error) return failure("listHotels", error, status);
     if (!Array.isArray(data)) return unreadable("listHotels");
     const hotels: Hotel[] = [];

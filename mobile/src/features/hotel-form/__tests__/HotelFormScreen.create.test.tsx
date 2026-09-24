@@ -48,8 +48,9 @@ describe("HotelFormScreen create — layout (AC-8, AC-9)", () => {
       "hotel-form-city",
       "hotel-form-address",
       "hotel-form-maps",
-      "hotel-form-check-in",
-      "hotel-form-check-out",
+      "hotel-form-dates",
+      "hotel-form-check-in-time",
+      "hotel-form-check-out-time",
       "hotel-form-stay",
       "hotel-form-breakfast",
       "hotel-form-cost",
@@ -72,12 +73,12 @@ describe("HotelFormScreen create — layout (AC-8, AC-9)", () => {
 });
 
 describe("HotelFormScreen create — prefill (AC-10, AC-11)", () => {
-  it("takes the city and dates of a city trip; times stay empty; shows the nights", async () => {
+  it("takes the city and the trip's dates as one range; times stay empty; shows the nights", async () => {
     await renderCreate(CITY_TRIP);
     expect(screen.getByTestId("hotel-form-city").props.value).toBe("Lisbon");
     expect(screen.getByText("5 nights — calculated from dates")).toBeOnTheScreen();
     expect(screen.queryByTestId("hotel-form-check-in-time-clear")).not.toBeOnTheScreen();
-    expect(screen.getByTestId("hotel-form-check-in-date-clear")).toBeOnTheScreen();
+    expect(screen.getByTestId("hotel-form-dates-field").props.accessibilityLabel).toMatch(/Jun 15.*20, 2026/);
   });
 
   it("leaves the city empty and shows no nights line for a trip without city or dates", async () => {
@@ -100,21 +101,38 @@ describe("HotelFormScreen create — city only from the directory (AC-12)", () =
   });
 });
 
-describe("HotelFormScreen create — pickers (AC-13)", () => {
-  it("opens the time pickers on 15:00 and 11:00 and clears with the cross", async () => {
+describe("HotelFormScreen create — dates range and optional times", () => {
+  it("keeps the times empty by default and clears a picked time with the cross", async () => {
     await renderCreate();
-    await userEvent.press(screen.getByTestId("hotel-form-check-in-time"));
-    await userEvent.press(screen.getByTestId("hotel-form-check-out-time"));
-    expect(screen.getByTestId("hotel-form-check-in-time").props.accessibilityLabel).toContain("15:00");
-    expect(screen.getByTestId("hotel-form-check-out-time").props.accessibilityLabel).toContain("11:00");
+    expect(screen.getByTestId("hotel-form-check-in-time-picker").props.accessibilityLabel).toBe("Check-in time");
+    await userEvent.press(screen.getByTestId("hotel-form-check-in-time-picker"));
+    await userEvent.press(screen.getByTestId("hotel-form-check-out-time-picker"));
+    expect(screen.getByTestId("hotel-form-check-in-time-picker").props.accessibilityLabel).toContain("15:00");
+    expect(screen.getByTestId("hotel-form-check-out-time-picker").props.accessibilityLabel).toContain("11:00");
     await userEvent.press(screen.getByTestId("hotel-form-check-in-time-clear"));
     expect(screen.queryByTestId("hotel-form-check-in-time-clear")).not.toBeOnTheScreen();
+    expect(screen.getByTestId("hotel-form-check-out-time-clear")).toBeOnTheScreen();
   });
 
-  it("opens the check-out calendar on the check-in date", async () => {
-    await renderCreate({ startDate: "2026-06-15", endDate: null });
-    await userEvent.press(screen.getByTestId("hotel-form-check-out-date"));
-    expect(screen.getByTestId("hotel-form-check-out-date").props.accessibilityLabel).toContain("Jun 15, 2026");
+  it("picks a range in the inline calendar: from, then to; the range is highlighted", async () => {
+    await renderCreate({ startDate: "2026-06-15", endDate: "2026-06-20" });
+    await userEvent.press(screen.getByTestId("hotel-form-dates-field"));
+    const day = (d: string) => screen.getByTestId(`hotel-form-dates-calendar-day-${d}`);
+    expect(day("2026-06-17").props.accessibilityState).toMatchObject({ selected: true });
+    await userEvent.press(day("2026-06-10"));
+    await userEvent.press(day("2026-06-12"));
+    expect(screen.queryByTestId("hotel-form-dates-calendar")).not.toBeOnTheScreen();
+    expect(screen.getByTestId("hotel-form-dates-field").props.accessibilityLabel).toMatch(/Jun 10.*12, 2026/);
+    expect(screen.getByText("2 nights — calculated from dates")).toBeOnTheScreen();
+  });
+
+  it("allows a same-day range (no nights line)", async () => {
+    await renderCreate({ startDate: "2026-06-15", endDate: "2026-06-20" });
+    await userEvent.press(screen.getByTestId("hotel-form-dates-field"));
+    await userEvent.press(screen.getByTestId("hotel-form-dates-calendar-day-2026-06-11"));
+    await userEvent.press(screen.getByTestId("hotel-form-dates-calendar-day-2026-06-11"));
+    expect(screen.getByTestId("hotel-form-dates-field").props.accessibilityLabel).toContain("Jun 11, 2026");
+    expect(screen.queryByText(/calculated from dates/)).not.toBeOnTheScreen();
   });
 });
 
@@ -122,21 +140,38 @@ describe("HotelFormScreen create — Save (AC-29, AC-34, AC-40)", () => {
   async function fillValid() {
     await renderCreate(CITY_TRIP);
     await userEvent.type(screen.getByTestId("hotel-form-name"), "Casa Alfama");
-    await userEvent.press(screen.getByTestId("hotel-form-check-in-time"));
-    await userEvent.press(screen.getByTestId("hotel-form-check-out-time"));
+    await userEvent.press(screen.getByTestId("hotel-form-check-in-time-picker"));
+    await userEvent.press(screen.getByTestId("hotel-form-check-out-time-picker"));
   }
 
-  it("saves the UTC moments built in the hotel's zone, then closes the form", async () => {
+  it("saves calendar dates and wall-clock times as typed (no instants), then closes the form", async () => {
     await fillValid();
     await userEvent.press(saveButton());
     await waitFor(() => expect(createHotelMock).toHaveBeenCalledTimes(1));
     const [tripId, form] = createHotelMock.mock.calls[0] as [string, Record<string, unknown>];
     expect(tripId).toBe("trip-1");
-    expect(form).toMatchObject({ name: "Casa Alfama", timeZone: "Europe/Lisbon", guests: 1, parking: "none", breakfast: "none" });
-    expect((form.checkInAt as Date).toISOString()).toBe("2026-06-15T14:00:00.000Z");
-    expect((form.checkOutAt as Date).toISOString()).toBe("2026-06-20T10:00:00.000Z");
+    expect(form).toMatchObject({
+      name: "Casa Alfama",
+      timeZone: "Europe/Lisbon",
+      guests: 1,
+      parking: "none",
+      breakfast: "none",
+      checkInDate: "2026-06-15",
+      checkOutDate: "2026-06-20",
+      checkInTime: "15:00",
+      checkOutTime: "11:00",
+    });
+    expect(form).not.toHaveProperty("checkInAt");
     expect(form).not.toHaveProperty("source");
     await waitFor(() => expect(mockRouter.back).toHaveBeenCalledTimes(1));
+  });
+
+  it("saves without any time: both stay null", async () => {
+    await renderCreate(CITY_TRIP);
+    await userEvent.type(screen.getByTestId("hotel-form-name"), "Casa");
+    await userEvent.press(saveButton());
+    await waitFor(() => expect(createHotelMock).toHaveBeenCalledTimes(1));
+    expect(createHotelMock.mock.calls[0]?.[1]).toMatchObject({ checkInTime: null, checkOutTime: null });
   });
 
   it("shows every error at once after the first attempt and sends nothing", async () => {

@@ -1,6 +1,6 @@
 import type { Hotel } from "@tripplanner/shared";
 
-import { formatSegmentDateTime } from "@/lib/i18n/format";
+import { formatCalendarDay, formatClockTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n";
 import { i18n } from "@/lib/i18n";
 
@@ -15,13 +15,19 @@ export interface HotelCardData {
   a11yLabel: string;
 }
 
+/** "12 мая" or "12 мая, 15:00": the time is shown only when set (wall-clock of the hotel, no zone maths). */
+function stayText(locale: Locale, date: string, time: string | null): string {
+  const day = formatCalendarDay(locale, date);
+  return time === null ? day : `${day}, ${formatClockTime(locale, time)}`;
+}
+
 /**
- * Card view-model. Times are ALWAYS formatted in the hotel's own zone (formatters default to UTC).
- * No calendar arithmetic here: the stored breakfast day count is shown as is.
+ * Card view-model. Dates are calendar dates and times are the hotel's local wall-clock, so nothing
+ * is converted. No calendar arithmetic here: the stored breakfast day count is shown as is.
  */
 export function toHotelCardData(hotel: Hotel, locale: Locale): HotelCardData {
-  const checkInText = formatSegmentDateTime(locale, hotel.checkInAt, hotel.timeZone);
-  const checkOutText = formatSegmentDateTime(locale, hotel.checkOutAt, hotel.timeZone);
+  const checkInText = stayText(locale, hotel.checkInDate, hotel.checkInTime);
+  const checkOutText = stayText(locale, hotel.checkOutDate, hotel.checkOutTime);
   let breakfastChip: BreakfastChip = null;
   if (hotel.breakfast === "all") breakfastChip = { kind: "all" };
   else if (hotel.breakfast === "partial" && hotel.breakfastDays !== null) {

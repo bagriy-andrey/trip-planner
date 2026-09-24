@@ -1,97 +1,90 @@
-import type { CurrencyCode } from "@tripplanner/shared";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { AppText, PressableRow, TextField } from "@/components";
+import { AppText, Icon, TextField } from "@/components";
 import { layout, radius, spacing, useTheme } from "@/lib/theme";
 import { useTranslation } from "@/lib/i18n";
 
 export interface CostFieldProps {
   amount: string;
+  /** Chosen ISO code, or "" while none is chosen (never defaulted). */
   currency: string;
   onChangeAmount: (text: string) => void;
-  onChangeCurrency: (text: string) => void;
-  onSelectCurrency: (code: CurrencyCode) => void;
-  onBlurCurrency: () => void;
-  /** At most 4 codes from `searchCurrencies`; empty = none. */
-  suggestions: readonly CurrencyCode[];
+  /** Opens the currency bottom sheet (rendered by the screen, above everything). */
+  onOpenCurrency: () => void;
   amountError?: string;
   currencyError?: string;
   testID: string;
 }
 
-/** "Стоимость": amount + currency (both mono, ticket data) with tappable currency suggestions (AC-19). */
+/** "Стоимость": amount (mono, ticket data) + a currency dropdown button that opens the picker sheet (AC-19). */
 export function CostField({
   amount,
   currency,
   onChangeAmount,
-  onChangeCurrency,
-  onSelectCurrency,
-  onBlurCurrency,
-  suggestions,
+  onOpenCurrency,
   amountError,
   currencyError,
   testID,
 }: CostFieldProps) {
   const { t } = useTranslation("hotel");
   const { tokens } = useTheme();
+  const chosen = currency !== "";
+  const text = chosen ? currency : t("form.field.currencyPlaceholder");
   return (
-    <View testID={testID} style={styles.block}>
-      <View style={styles.row}>
-        <TextField
-          style={styles.amount}
-          label={t("form.field.cost")}
-          placeholder={t("form.field.costAmountPlaceholder")}
-          value={amount}
-          onChangeText={onChangeAmount}
-          errorText={amountError}
-          variant="decimal"
-          mono
-          testID={`${testID}-amount`}
-        />
-        <TextField
-          style={styles.currency}
-          label={t("form.field.currency")}
-          placeholder={t("form.field.currencyPlaceholder")}
-          value={currency}
-          onChangeText={onChangeCurrency}
-          onBlur={onBlurCurrency}
-          errorText={currencyError}
-          variant="currency"
-          mono
+    <View testID={testID} style={styles.row}>
+      <TextField
+        style={styles.amount}
+        label={t("form.field.cost")}
+        placeholder={t("form.field.costAmountPlaceholder")}
+        value={amount}
+        onChangeText={onChangeAmount}
+        errorText={amountError}
+        variant="decimal"
+        mono
+        testID={`${testID}-amount`}
+      />
+      <View style={styles.currency}>
+        <AppText variant="small" color="textSecondary">
+          {t("form.field.currency")}
+        </AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("form.a11y.currencyField", { value: text })}
+          onPress={onOpenCurrency}
           testID={`${testID}-currency`}
-        />
+          style={[
+            styles.button,
+            { backgroundColor: tokens.surface, borderColor: currencyError === undefined ? tokens.surfaceBorder : tokens.danger },
+          ]}
+        >
+          <AppText variant={chosen ? "mono" : "body"} color={chosen ? "text" : "textSecondary"} style={styles.buttonText}>
+            {text}
+          </AppText>
+          <Icon name="chevron" color="textSecondary" />
+        </Pressable>
+        {currencyError === undefined ? null : (
+          <AppText variant="small" color="danger" accessibilityRole="alert">
+            {currencyError}
+          </AppText>
+        )}
       </View>
-      {suggestions.length > 0 ? (
-        <View style={styles.chips}>
-          {suggestions.map((code) => (
-            <PressableRow
-              key={code}
-              accessibilityLabel={t("form.a11y.currencySuggestion", { code })}
-              onPress={() => onSelectCurrency(code)}
-              testID={`${testID}-suggestion-${code}`}
-              style={[styles.chip, { backgroundColor: tokens.surface, borderColor: tokens.surfaceBorder }]}
-            >
-              <AppText variant="mono">{code}</AppText>
-            </PressableRow>
-          ))}
-        </View>
-      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  block: { gap: spacing.sm },
-  row: { flexDirection: "row", gap: spacing.gap },
+  row: { flexDirection: "row", gap: spacing.gap, alignItems: "flex-start" },
   amount: { flex: 2 },
-  currency: { flex: 1 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  chip: {
+  currency: { flex: 2, gap: spacing.xs },
+  button: {
     minHeight: layout.minTouch,
-    minWidth: layout.minTouch,
-    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.pill,
+    borderRadius: radius.field,
     borderWidth: layout.borderWidth,
   },
+  buttonText: { flexShrink: 1 },
 });

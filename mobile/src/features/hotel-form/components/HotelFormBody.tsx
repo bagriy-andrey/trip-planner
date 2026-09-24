@@ -11,6 +11,7 @@ import { useHotelForm } from "../hooks/useHotelForm";
 import type { HotelFormTarget } from "../hooks/useHotelForm";
 import type { HotelFormState } from "../hooks/formState";
 import { ConfirmOverlay } from "./ConfirmOverlay";
+import { CurrencySheet } from "./CurrencySheet";
 import { HotelFormFields } from "./HotelFormFields";
 import { HotelNotFound } from "./HotelFormStates";
 
@@ -39,7 +40,7 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
 
   if (form.gone) return <HotelNotFound onBack={() => router.back()} />;
 
-  const overlayOpen = guard.confirmOpen || del.open;
+  const overlayOpen = guard.confirmOpen || del.open || form.cost.currencyOpen;
   const deleteError = del.error === null ? null : tTrips(`errors.${del.error}`);
 
   return (
@@ -90,6 +91,15 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
           />
         </View>
       </View>
+
+      {form.cost.currencyOpen ? (
+        <CurrencySheet
+          selected={form.state.costCurrency}
+          onSelect={form.cost.selectCurrency}
+          onClose={form.cost.closeCurrency}
+          testID="hotel-form-currency-sheet"
+        />
+      ) : null}
 
       {guard.confirmOpen ? (
         <ConfirmOverlay closeLabel={tCommon("actions.cancel")} onClose={guard.cancelConfirm} testID="hotel-form-unsaved">

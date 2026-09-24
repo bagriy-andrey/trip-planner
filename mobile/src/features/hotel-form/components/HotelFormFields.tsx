@@ -13,9 +13,10 @@ import { CostField } from "./CostField";
 import { GuestsParkingBlock } from "./GuestsParkingBlock";
 import { MapsLinkField } from "./MapsLinkField";
 import { NightsLine } from "./NightsLine";
-import { StayDateTimeRow } from "./StayDateTimeRow";
+import { StayDatesField } from "./StayDatesField";
+import { StayTimeField } from "./StayTimeField";
 
-/** Where the empty time pickers open (AC-13): typical hotel check-in / check-out hours. */
+/** Where the EMPTY time pickers open (a hint; the fields stay empty until picked): typical hotel check-in / check-out hours. */
 const CHECK_IN_START: ClockTime = "15:00";
 const CHECK_OUT_START: ClockTime = "11:00";
 
@@ -68,28 +69,28 @@ export function HotelFormFields({ form }: { form: HotelFormController }) {
         openFailed={form.maps.openFailed}
         testID="hotel-form-maps"
       />
-      <StayDateTimeRow
-        label={t("form.field.checkIn")}
-        date={state.checkInDate}
-        time={state.checkInTime}
-        onChangeDate={form.checkIn.changeDate}
-        onChangeTime={form.checkIn.changeTime}
-        startDate={today}
-        startTime={CHECK_IN_START}
-        errorText={text(errors.checkIn)}
-        testID="hotel-form-check-in"
+      <StayDatesField
+        checkInDate={state.checkInDate}
+        checkOutDate={state.checkOutDate}
+        onChangeRange={form.changeRange}
+        startFallback={today}
+        errorTexts={errors.dates.map((id) => t(`form.validation.${id}`))}
+        testID="hotel-form-dates"
       />
-      <StayDateTimeRow
-        label={t("form.field.checkOut")}
-        date={state.checkOutDate}
+      <StayTimeField
+        label={t("form.field.checkInTime")}
+        time={state.checkInTime}
+        onChange={form.changeCheckInTime}
+        startTime={CHECK_IN_START}
+        testID="hotel-form-check-in-time"
+      />
+      <StayTimeField
+        label={t("form.field.checkOutTime")}
         time={state.checkOutTime}
-        onChangeDate={form.checkOut.changeDate}
-        onChangeTime={form.checkOut.changeTime}
-        minimumDate={state.checkInDate ?? undefined}
-        startDate={state.checkInDate ?? today}
+        onChange={form.changeCheckOutTime}
         startTime={CHECK_OUT_START}
-        errorText={text(errors.checkOut)}
-        testID="hotel-form-check-out"
+        errorText={text(errors.checkOutTime)}
+        testID="hotel-form-check-out-time"
       />
       <NightsLine nights={form.nights} testID="hotel-form-nights" />
       <GuestsParkingBlock
@@ -111,10 +112,7 @@ export function HotelFormFields({ form }: { form: HotelFormController }) {
         amount={state.costAmount}
         currency={state.costCurrency}
         onChangeAmount={form.cost.changeAmount}
-        onChangeCurrency={form.cost.changeCurrency}
-        onSelectCurrency={form.cost.selectCurrency}
-        onBlurCurrency={form.cost.blurCurrency}
-        suggestions={form.cost.suggestions}
+        onOpenCurrency={form.cost.openCurrency}
         amountError={text(errors.costAmount)}
         currencyError={text(errors.costCurrency)}
         testID="hotel-form-cost"

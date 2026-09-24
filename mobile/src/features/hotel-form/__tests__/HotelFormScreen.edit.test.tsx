@@ -45,14 +45,14 @@ async function renderEdit(hotelId: string = HOTEL_ID) {
 }
 
 describe("HotelFormScreen edit (AC-31)", () => {
-  it("shows the saved values in the hotel's zone and keeps Save active", async () => {
+  it("shows the saved dates range and optional times and keeps Save active", async () => {
     await renderEdit();
     await screen.findByTestId("hotel-form-name");
     expect(screen.getByTestId("hotel-form-name").props.value).toBe("Casa Alfama");
     expect(screen.getByTestId("hotel-form-city").props.value).toBe("Lisbon");
-    // 14:00Z / 10:00Z in Lisbon (UTC+1 in June).
-    expect(screen.getByTestId("hotel-form-check-in-time").props.accessibilityLabel).toContain("15:00");
-    expect(screen.getByTestId("hotel-form-check-out-time").props.accessibilityLabel).toContain("11:00");
+    expect(screen.getByTestId("hotel-form-dates-field").props.accessibilityLabel).toMatch(/Jun 15.*18, 2026/);
+    expect(screen.getByTestId("hotel-form-check-in-time-picker").props.accessibilityLabel).toContain("15:00");
+    expect(screen.getByTestId("hotel-form-check-out-time-picker").props.accessibilityLabel).toContain("11:00");
     expect(screen.getByText("3 nights — calculated from dates")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
   });
