@@ -4,7 +4,7 @@
 - Scope: Expo SDK 57 skeleton (`mobile/`, PLAN-01 Step 10), iOS.
 - Result: `iosPrivacyManifests` in `mobile/app.privacy.ts` mirrors the union below into `ios.privacyManifests`.
   Apple does not reliably parse manifests of statically linked pods, so the app-level manifest repeats them.
-- Latest entry: 2026-09-21, SPEC-03 trips CRUD (`@react-native-community/datetimepicker` 9.1.0, `@tanstack/react-query`) - see "Audit 2026-09-21 (SPEC-03 ...)" at the end. Union unchanged. Earlier: 2026-09-21, SPEC-02 email auth (`expo-secure-store`, `expo-crypto`, `aes-js`). Union unchanged.
+- Latest entry: 2026-09-25, SPEC-07 car rental (`expo-clipboard`) - see "Audit 2026-09-25 (SPEC-07 ...)" at the end. Earlier: 2026-09-21, SPEC-03 trips CRUD (`@react-native-community/datetimepicker` 9.1.0, `@tanstack/react-query`) - see "Audit 2026-09-21 (SPEC-03 ...)" at the end. Union unchanged. Earlier: 2026-09-21, SPEC-02 email auth (`expo-secure-store`, `expo-crypto`, `aes-js`). Union unchanged.
 - Re-run on every Expo SDK bump and on every new native dependency (a new native module also means a new dev-client build).
 
 ## How it was done
