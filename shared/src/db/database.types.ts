@@ -70,6 +70,101 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_cars: {
+        Row: {
+          address: string | null
+          booking_ref: string
+          car_class: string | null
+          company: string | null
+          cost_amount: number | null
+          cost_currency: string | null
+          created_at: string
+          deposit_amount: number | null
+          extra_driver: boolean
+          fuel_policy: string | null
+          id: string
+          insurance: string | null
+          maps_url: string | null
+          notes: string | null
+          payment_status: string | null
+          phone: string | null
+          pickup_date: string
+          pickup_place: string
+          pickup_time: string
+          return_date: string
+          return_place: string | null
+          return_same_place: boolean
+          return_time: string
+          source: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          booking_ref: string
+          car_class?: string | null
+          company?: string | null
+          cost_amount?: number | null
+          cost_currency?: string | null
+          created_at?: string
+          deposit_amount?: number | null
+          extra_driver?: boolean
+          fuel_policy?: string | null
+          id?: string
+          insurance?: string | null
+          maps_url?: string | null
+          notes?: string | null
+          payment_status?: string | null
+          phone?: string | null
+          pickup_date: string
+          pickup_place: string
+          pickup_time: string
+          return_date: string
+          return_place?: string | null
+          return_same_place?: boolean
+          return_time: string
+          source?: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          booking_ref?: string
+          car_class?: string | null
+          company?: string | null
+          cost_amount?: number | null
+          cost_currency?: string | null
+          created_at?: string
+          deposit_amount?: number | null
+          extra_driver?: boolean
+          fuel_policy?: string | null
+          id?: string
+          insurance?: string | null
+          maps_url?: string | null
+          notes?: string | null
+          payment_status?: string | null
+          phone?: string | null
+          pickup_date?: string
+          pickup_place?: string
+          pickup_time?: string
+          return_date?: string
+          return_place?: string | null
+          return_same_place?: boolean
+          return_time?: string
+          source?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_cars_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_hotels: {
         Row: {
           address: string | null
