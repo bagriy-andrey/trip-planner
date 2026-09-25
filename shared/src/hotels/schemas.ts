@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parseForm, type FormFieldErrors } from "../forms/parse";
+import { codePointLength, multiLine, singleLine, trimmed } from "../forms/text";
 import { parseMoneyAmount } from "../money/amount";
 import { isCurrencyCode, type CurrencyCode } from "../money/currencies";
 import { findCityById } from "../places/search";
@@ -23,29 +24,6 @@ export const HOTEL_BREAKFAST = ["all", "partial", "none"] as const;
 
 export type HotelParking = (typeof HOTEL_PARKING)[number];
 export type HotelBreakfast = (typeof HOTEL_BREAKFAST)[number];
-
-/** Code points, not UTF-16 units: an emoji counts once. */
-function codePointLength(value: string): number {
-  return Array.from(value).length;
-}
-
-/** Single-line text: trim + collapse every whitespace run. Empty gives `null`. */
-function singleLine(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const text = value.trim().replace(/\s+/g, " ");
-  return text === "" ? null : text;
-}
-
-/** Multi-line text: trim + CRLF/CR to LF; inner line breaks are kept. Empty gives `null`. */
-function multiLine(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const text = value.trim().replace(/\r\n?/g, "\n");
-  return text === "" ? null : text;
-}
-
-function trimmed(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
 
 /** What the form holds before validation: every field optional and untrusted. */
 export type HotelFormInput = {
