@@ -1,1 +1,1 @@
-- [Plan conventions](project_plan_conventions.md) — specs/plans/PLAN-NN-*.md, Russian, PLAN-04 structure, default single-agent + Q to owner
+- [Plan conventions](project_plan_conventions.md) — specs/plans/PLAN-NN-*.md, Russian, PLAN-04/07 structure, ru/en/uk, extraction-step ownership
