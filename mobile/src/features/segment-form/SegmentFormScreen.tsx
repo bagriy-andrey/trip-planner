@@ -328,15 +328,13 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
         testID="segment-form-cancel"
       />
       {form.canDelete ? (
-        <Pressable
-          accessibilityRole="button"
+        <SecondaryButton
+          tone="danger"
+          label={t("segment.delete")}
           accessibilityLabel={t("segment.delete")}
           onPress={form.askDelete}
           testID="segment-form-delete"
-          style={styles.delete}
-        >
-          <AppText color="danger">{t("segment.delete")}</AppText>
-        </Pressable>
+        />
       ) : null}
 
     </Screen>
@@ -597,7 +595,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  delete: { minHeight: layout.minTouch, alignItems: "center", justifyContent: "center" },
   overlayRoot: { justifyContent: "flex-end" },
   overlayPanel: {
     gap: spacing.sm,

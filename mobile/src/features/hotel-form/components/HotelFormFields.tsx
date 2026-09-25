@@ -3,7 +3,6 @@ import type { ClockTime, HotelFieldErrorId } from "@tripplanner/shared";
 import { StyleSheet, View } from "react-native";
 
 import { MapsLinkField, TextField } from "@/components";
-import { useToday } from "@/lib/clock";
 import { useTranslation } from "@/lib/i18n";
 import { spacing } from "@/lib/theme";
 
@@ -23,9 +22,16 @@ const CHECK_IN_START: ClockTime = "15:00";
 const CHECK_OUT_START: ClockTime = "11:00";
 
 /** The fields in the order of AC-8. Holds no logic: everything comes from `useHotelForm`. */
-export function HotelFormFields({ form, timePicker }: { form: HotelFormController; timePicker: TimeSheetPicker }) {
+export function HotelFormFields({
+  form,
+  timePicker,
+  onOpenDates,
+}: {
+  form: HotelFormController;
+  timePicker: TimeSheetPicker;
+  onOpenDates: () => void;
+}) {
   const { t } = useTranslation("hotel");
-  const today = useToday();
   const { state, errors } = form;
   const text = (id: HotelFieldErrorId | undefined) => (id === undefined ? undefined : t(`form.validation.${id}`));
 
@@ -83,41 +89,41 @@ export function HotelFormFields({ form, timePicker }: { form: HotelFormControlle
       <StayDatesField
         checkInDate={state.checkInDate}
         checkOutDate={state.checkOutDate}
-        onChangeRange={form.changeRange}
-        startFallback={today}
-        minDate={form.dateFloor}
+        onOpen={onOpenDates}
         errorTexts={errors.dates.map((id) => t(`form.validation.${id}`))}
         testID="hotel-form-dates"
       />
-      <StayTimeField
-        label={t("form.field.checkInTime")}
-        time={state.checkInTime}
-        onOpen={() =>
-          timePicker.open({
-            title: t("form.field.checkInTime"),
-            value: state.checkInTime,
-            startTime: CHECK_IN_START,
-            onPick: (picked) => isClockTime(picked) && form.changeCheckInTime(picked),
-          })
-        }
-        onClear={() => form.changeCheckInTime(null)}
-        testID="hotel-form-check-in-time"
-      />
-      <StayTimeField
-        label={t("form.field.checkOutTime")}
-        time={state.checkOutTime}
-        onOpen={() =>
-          timePicker.open({
-            title: t("form.field.checkOutTime"),
-            value: state.checkOutTime,
-            startTime: CHECK_OUT_START,
-            onPick: (picked) => isClockTime(picked) && form.changeCheckOutTime(picked),
-          })
-        }
-        onClear={() => form.changeCheckOutTime(null)}
-        errorText={text(errors.checkOutTime)}
-        testID="hotel-form-check-out-time"
-      />
+      <View style={styles.times}>
+        <StayTimeField
+          label={t("form.field.checkInTime")}
+          time={state.checkInTime}
+          onOpen={() =>
+            timePicker.open({
+              title: t("form.field.checkInTime"),
+              value: state.checkInTime,
+              startTime: CHECK_IN_START,
+              onPick: (picked) => isClockTime(picked) && form.changeCheckInTime(picked),
+            })
+          }
+          onClear={() => form.changeCheckInTime(null)}
+          testID="hotel-form-check-in-time"
+        />
+        <StayTimeField
+          label={t("form.field.checkOutTime")}
+          time={state.checkOutTime}
+          onOpen={() =>
+            timePicker.open({
+              title: t("form.field.checkOutTime"),
+              value: state.checkOutTime,
+              startTime: CHECK_OUT_START,
+              onPick: (picked) => isClockTime(picked) && form.changeCheckOutTime(picked),
+            })
+          }
+          onClear={() => form.changeCheckOutTime(null)}
+          errorText={text(errors.checkOutTime)}
+          testID="hotel-form-check-out-time"
+        />
+      </View>
       <NightsLine nights={form.nights} testID="hotel-form-nights" />
       <GuestsParkingBlock
         guests={state.guests}
@@ -171,4 +177,5 @@ export function HotelFormFields({ form, timePicker }: { form: HotelFormControlle
 
 const styles = StyleSheet.create({
   fields: { gap: spacing.block },
+  times: { flexDirection: "row", gap: spacing.gap, alignItems: "flex-start" },
 });

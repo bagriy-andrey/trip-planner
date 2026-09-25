@@ -71,8 +71,10 @@ describe("HotelFormScreen breakfast (AC-22, AC-23, AC-44)", () => {
 
     // Re-pick a one-night range: the breakfast count is pulled back to 1.
     await userEvent.press(screen.getByTestId("hotel-form-dates-field"));
-    await userEvent.press(screen.getByTestId("hotel-form-dates-calendar-day-2026-06-10"));
-    await userEvent.press(screen.getByTestId("hotel-form-dates-calendar-day-2026-06-11"));
+    await userEvent.press(screen.getByTestId("hotel-form-dates-sheet-calendar-day-2026-06-10"));
+    await userEvent.press(screen.getByTestId("hotel-form-dates-sheet-calendar-day-2026-06-11"));
+    await userEvent.press(screen.getByTestId("hotel-form-dates-sheet-done"));
+    await waitFor(() => expect(screen.queryByTestId("hotel-form-dates-sheet")).not.toBeOnTheScreen());
     expect(screen.getByLabelText("Days with breakfast, 1")).toBeOnTheScreen();
     expect(screen.getByText("1 night — calculated from dates")).toBeOnTheScreen();
   });

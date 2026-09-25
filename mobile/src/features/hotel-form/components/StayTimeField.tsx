@@ -57,7 +57,7 @@ export function StayTimeField({ label, time, onOpen, onClear, errorText, testID 
 }
 
 const styles = StyleSheet.create({
-  block: { gap: spacing.xs },
+  block: { flex: 1, gap: spacing.xs },
   control: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   field: {
     flex: 1,

@@ -47,7 +47,7 @@ async function renderCreate(overrides: Partial<Trip> = {}, today: CalendarDate =
   await screen.findByTestId("hotel-form-name");
 }
 
-const day = (d: string) => screen.getByTestId(`hotel-form-dates-calendar-day-${d}`);
+const day = (d: string) => screen.getByTestId(`hotel-form-dates-sheet-calendar-day-${d}`);
 const saveButton = () => screen.getByRole("button", { name: "Save" });
 
 describe("create: past days are not selectable", () => {
@@ -63,6 +63,8 @@ describe("create: past days are not selectable", () => {
     expect(screen.getByText("Tap the check-in day")).toBeOnTheScreen();
     await userEvent.press(day("2026-06-12"));
     await userEvent.press(day("2026-06-14"));
+    await userEvent.press(screen.getByTestId("hotel-form-dates-sheet-done"));
+    await waitFor(() => expect(screen.queryByTestId("hotel-form-dates-sheet")).not.toBeOnTheScreen());
     expect(screen.getByTestId("hotel-form-dates-field").props.accessibilityLabel).toMatch(/Jun 12.*14, 2026/);
   });
 
@@ -76,9 +78,9 @@ describe("create: past days are not selectable", () => {
   it("does not page back before today's month", async () => {
     await renderCreate();
     await userEvent.press(screen.getByTestId("hotel-form-dates-field"));
-    expect(screen.getByTestId("hotel-form-dates-calendar-prev").props.accessibilityState).toMatchObject({ disabled: true });
-    await userEvent.press(screen.getByTestId("hotel-form-dates-calendar-next"));
-    expect(screen.getByTestId("hotel-form-dates-calendar-prev").props.accessibilityState).toMatchObject({ disabled: false });
+    expect(screen.getByTestId("hotel-form-dates-sheet-calendar-prev").props.accessibilityState).toMatchObject({ disabled: true });
+    await userEvent.press(screen.getByTestId("hotel-form-dates-sheet-calendar-next"));
+    expect(screen.getByTestId("hotel-form-dates-sheet-calendar-prev").props.accessibilityState).toMatchObject({ disabled: false });
   });
 
   it("clamps a trip that already began: start becomes today, end stays", async () => {
@@ -117,7 +119,7 @@ describe("edit: an existing past hotel stays editable", () => {
   it("a hotel in the future floors at today", async () => {
     await renderEdit("2026-07-10", "2026-07-12");
     await userEvent.press(screen.getByTestId("hotel-form-dates-field"));
-    await userEvent.press(screen.getByTestId("hotel-form-dates-calendar-prev"));
+    await userEvent.press(screen.getByTestId("hotel-form-dates-sheet-calendar-prev"));
     expect(day("2026-06-09").props.accessibilityState).toMatchObject({ disabled: true });
     expect(day("2026-06-10").props.accessibilityState).toMatchObject({ disabled: false });
   });

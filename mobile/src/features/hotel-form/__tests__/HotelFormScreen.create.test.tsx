@@ -117,14 +117,15 @@ describe("HotelFormScreen create — dates range and optional times", () => {
     expect(screen.getByTestId("hotel-form-check-out-time-clear")).toBeOnTheScreen();
   });
 
-  it("picks a range in the inline calendar: from, then to; the range is highlighted", async () => {
+  it("picks a range in the dates sheet: from, then to; the range is highlighted", async () => {
     await renderCreate({ startDate: "2026-06-15", endDate: "2026-06-20" });
     await userEvent.press(screen.getByTestId("hotel-form-dates-field"));
-    const day = (d: string) => screen.getByTestId(`hotel-form-dates-calendar-day-${d}`);
+    const day = (d: string) => screen.getByTestId(`hotel-form-dates-sheet-calendar-day-${d}`);
     expect(day("2026-06-17").props.accessibilityState).toMatchObject({ selected: true });
     await userEvent.press(day("2026-06-10"));
     await userEvent.press(day("2026-06-12"));
-    expect(screen.queryByTestId("hotel-form-dates-calendar")).not.toBeOnTheScreen();
+    await userEvent.press(screen.getByTestId("hotel-form-dates-sheet-done"));
+    await waitFor(() => expect(screen.queryByTestId("hotel-form-dates-sheet")).not.toBeOnTheScreen());
     expect(screen.getByTestId("hotel-form-dates-field").props.accessibilityLabel).toMatch(/Jun 10.*12, 2026/);
     expect(screen.getByText("2 nights — calculated from dates")).toBeOnTheScreen();
   });
@@ -132,8 +133,10 @@ describe("HotelFormScreen create — dates range and optional times", () => {
   it("allows a same-day range (no nights line)", async () => {
     await renderCreate({ startDate: "2026-06-15", endDate: "2026-06-20" });
     await userEvent.press(screen.getByTestId("hotel-form-dates-field"));
-    await userEvent.press(screen.getByTestId("hotel-form-dates-calendar-day-2026-06-11"));
-    await userEvent.press(screen.getByTestId("hotel-form-dates-calendar-day-2026-06-11"));
+    await userEvent.press(screen.getByTestId("hotel-form-dates-sheet-calendar-day-2026-06-11"));
+    await userEvent.press(screen.getByTestId("hotel-form-dates-sheet-calendar-day-2026-06-11"));
+    await userEvent.press(screen.getByTestId("hotel-form-dates-sheet-done"));
+    await waitFor(() => expect(screen.queryByTestId("hotel-form-dates-sheet")).not.toBeOnTheScreen());
     expect(screen.getByTestId("hotel-form-dates-field").props.accessibilityLabel).toContain("Jun 11, 2026");
     expect(screen.queryByText(/calculated from dates/)).not.toBeOnTheScreen();
   });

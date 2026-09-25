@@ -1,12 +1,11 @@
 import { isCurrencyCode } from "@tripplanner/shared";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { AccessibilityInfo, Pressable, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AccessibilityInfo, StyleSheet, View } from "react-native";
 
-import { AppText, CurrencyPickerSheet, DismissKeyboardView, ModalHeader, PrimaryButton, Screen } from "@/components";
+import { AppText, CurrencyPickerSheet, DismissKeyboardView, ModalHeader, PrimaryButton, Screen, SecondaryButton } from "@/components";
 import { useTranslation } from "@/lib/i18n";
-import { layout, spacing, useTheme } from "@/lib/theme";
+import { spacing } from "@/lib/theme";
 import { useTimeSheetPicker } from "@/platform/timeSheetPicker";
 
 import { useCarForm } from "../hooks/useCarForm";
@@ -29,8 +28,6 @@ export interface CarFormBodyProps {
 export function CarFormBody({ target, initial, carName }: CarFormBodyProps) {
   const { t } = useTranslation("car");
   const { t: tCommon } = useTranslation("common");
-  const { tokens } = useTheme();
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const form = useCarForm(target, initial);
   const [datesOpen, setDatesOpen] = useState(false);
@@ -61,29 +58,10 @@ export function CarFormBody({ target, initial, carName }: CarFormBodyProps) {
           <ModalHeader
             title={t("form.title")}
             cancelLabel={tCommon("actions.cancel")}
-            onCancel={guard.requestClose}
-            cancelAsIcon
+            hideCancel
             hideDone
           />
           <CarFormFields form={form} timePicker={timePicker} initial={initial} onOpenDates={() => setDatesOpen(true)} />
-          {del.canDelete ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("form.delete.link")}
-              onPress={del.ask}
-              testID="car-form-delete"
-              style={styles.delete}
-            >
-              <AppText color="danger">{t("form.delete.link")}</AppText>
-            </Pressable>
-          ) : null}
-        </Screen>
-        <View
-          style={[
-            styles.bottom,
-            { backgroundColor: tokens.bg, borderTopColor: tokens.divider, paddingBottom: insets.bottom + spacing.md },
-          ]}
-        >
           {submitMessage === undefined ? null : (
             <AppText color="danger" accessibilityRole="alert" testID="car-form-error">
               {submitMessage}
@@ -96,7 +74,22 @@ export function CarFormBody({ target, initial, carName }: CarFormBodyProps) {
             onPress={form.submit}
             testID="car-form-save"
           />
-        </View>
+          <SecondaryButton
+            label={tCommon("actions.cancel")}
+            accessibilityLabel={tCommon("actions.cancel")}
+            onPress={guard.requestClose}
+            testID="car-form-cancel"
+          />
+          {del.canDelete ? (
+            <SecondaryButton
+              tone="danger"
+              label={t("form.delete.link")}
+              accessibilityLabel={t("form.delete.link")}
+              onPress={del.ask}
+              testID="car-form-delete"
+            />
+          ) : null}
+        </Screen>
       </View>
 
       {form.currency.open ? (
@@ -131,11 +124,4 @@ export function CarFormBody({ target, initial, carName }: CarFormBodyProps) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   content: { gap: spacing.xl, paddingBottom: spacing.xl },
-  delete: { minHeight: layout.minTouch, alignItems: "center", justifyContent: "center" },
-  bottom: {
-    gap: spacing.sm,
-    paddingHorizontal: spacing.screenX,
-    paddingTop: spacing.md,
-    borderTopWidth: layout.borderWidth,
-  },
 });

@@ -1,10 +1,10 @@
 import { isCurrencyCode } from "@tripplanner/shared";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, ConfirmOverlay, CurrencyPickerSheet, DismissKeyboardView, ModalHeader, PrimaryButton, Screen, SecondaryButton } from "@/components";
+import { useToday } from "@/lib/clock";
 import { useTranslation } from "@/lib/i18n";
 import { layout, radius, spacing, useTheme } from "@/lib/theme";
 import { useTimeSheetPicker } from "@/platform/timeSheetPicker";
@@ -15,6 +15,7 @@ import type { HotelFormState } from "../hooks/formState";
 
 import { HotelFormFields } from "./HotelFormFields";
 import { HotelNotFound } from "./HotelFormStates";
+import { StayDatesSheet } from "./StayDatesSheet";
 
 export interface HotelFormBodyProps {
   target: HotelFormTarget;
@@ -29,10 +30,11 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
   const { t: tCommon } = useTranslation("common");
   const { t: tTrips } = useTranslation("trips");
   const { tokens } = useTheme();
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const form = useHotelForm(target, initial);
   const { guard, del } = form;
+  const today = useToday();
+  const [datesOpen, setDatesOpen] = useState(false);
   const timePicker = useTimeSheetPicker({
     done: tCommon("actions.done"),
     cancel: tCommon("actions.cancel"),
@@ -46,7 +48,7 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
 
   if (form.gone) return <HotelNotFound onBack={() => router.back()} />;
 
-  const overlayOpen = guard.confirmOpen || del.open || form.cost.currencyOpen || timePicker.element !== null;
+  const overlayOpen = guard.confirmOpen || del.open || form.cost.currencyOpen || datesOpen || timePicker.element !== null;
   const deleteError = del.error === null ? null : tTrips(`errors.${del.error}`);
 
   return (
@@ -60,29 +62,10 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
           <ModalHeader
             title={t("form.title")}
             cancelLabel={tCommon("actions.cancel")}
-            onCancel={guard.requestClose}
-            cancelAsIcon
+            hideCancel
             hideDone
           />
-          <HotelFormFields form={form} timePicker={timePicker} />
-          {del.canDelete ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("form.delete.link")}
-              onPress={del.ask}
-              testID="hotel-form-delete"
-              style={styles.delete}
-            >
-              <AppText color="danger">{t("form.delete.link")}</AppText>
-            </Pressable>
-          ) : null}
-        </Screen>
-        <View
-          style={[
-            styles.bottom,
-            { backgroundColor: tokens.bg, borderTopColor: tokens.divider, paddingBottom: insets.bottom + spacing.md },
-          ]}
-        >
+          <HotelFormFields form={form} timePicker={timePicker} onOpenDates={() => setDatesOpen(true)} />
           {submitMessage === undefined ? null : (
             <AppText color="danger" accessibilityRole="alert" testID="hotel-form-error">
               {submitMessage}
@@ -95,7 +78,22 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
             onPress={form.submit}
             testID="hotel-form-save"
           />
-        </View>
+          <SecondaryButton
+            label={tCommon("actions.cancel")}
+            accessibilityLabel={tCommon("actions.cancel")}
+            onPress={guard.requestClose}
+            testID="hotel-form-cancel"
+          />
+          {del.canDelete ? (
+            <SecondaryButton
+              tone="danger"
+              label={t("form.delete.link")}
+              accessibilityLabel={t("form.delete.link")}
+              onPress={del.ask}
+              testID="hotel-form-delete"
+            />
+          ) : null}
+        </Screen>
       </View>
 
       {form.cost.currencyOpen ? (
@@ -110,6 +108,21 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
       ) : null}
 
       {timePicker.element}
+
+      {datesOpen ? (
+        <StayDatesSheet
+          checkInDate={form.state.checkInDate}
+          checkOutDate={form.state.checkOutDate}
+          startFallback={today}
+          minDate={form.dateFloor}
+          onDone={(checkIn, checkOut) => {
+            form.changeRange(checkIn, checkOut);
+            setDatesOpen(false);
+          }}
+          onClose={() => setDatesOpen(false)}
+          testID="hotel-form-dates-sheet"
+        />
+      ) : null}
 
       {guard.confirmOpen ? (
         <ConfirmOverlay closeLabel={tCommon("actions.cancel")} onClose={guard.cancelConfirm} testID="hotel-form-unsaved">
@@ -171,13 +184,6 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
 const styles = StyleSheet.create({
   root: { flex: 1 },
   content: { gap: spacing.xl, paddingBottom: spacing.xl },
-  delete: { minHeight: layout.minTouch, alignItems: "center", justifyContent: "center" },
-  bottom: {
-    gap: spacing.sm,
-    paddingHorizontal: spacing.screenX,
-    paddingTop: spacing.md,
-    borderTopWidth: layout.borderWidth,
-  },
   confirmDelete: {
     minHeight: layout.minTouch,
     paddingVertical: spacing.md,

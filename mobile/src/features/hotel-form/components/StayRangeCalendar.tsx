@@ -5,13 +5,13 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText, Icon, IconButton } from "@/components";
 import { formatCalendarDate, resolveLocale, useTranslation } from "@/lib/i18n";
-import { layout, radius, spacing, useTheme } from "@/lib/theme";
+import { layout, spacing, useTheme } from "@/lib/theme";
 
 export interface StayRangeCalendarProps {
   /** Chosen start (and end once picked); a lone start means "waiting for the end". */
   start: CalendarDate | null;
   end: CalendarDate | null;
-  /** Month shown first when nothing is chosen. */
+  /** Month shown first when no start is chosen. */
   initialMonthOf: CalendarDate;
   /** Earliest selectable day. Earlier days are disabled and months wholly before it are unreachable. */
   minDate: CalendarDate;
@@ -24,31 +24,27 @@ function monthOf(date: CalendarDate): YearMonth {
   return { year, month };
 }
 
-const REFERENCE_SUNDAY = Date.UTC(2023, 0, 1);
+/** 2023-01-02 is a Monday: the grid starts the week on Monday (AC-16). */
+const REFERENCE_MONDAY = Date.UTC(2023, 0, 2);
 const DAY_MS = 24 * 60 * 60 * 1000;
+const EDGE_RADIUS = layout.minTouch / 2;
 
-/**
- * A month grid with range highlighting. It only reports taps; what a tap means (start, end,
- * start over) is `pickRangeDate` in `@tripplanner/shared`, so every client behaves alike.
- */
+/** A month grid, weeks from Monday. It only reports taps; what a tap means is `pickRangeDate` in `shared`. */
 export function StayRangeCalendar({ start, end, initialMonthOf, minDate, onPick, testID }: StayRangeCalendarProps) {
   const { t, i18n } = useTranslation("hotel");
   const { tokens } = useTheme();
   const locale = resolveLocale([i18n.language]);
-  const weekStart = locale === "ru" ? 1 : 0;
   const [shown, setShown] = useState<YearMonth>(() => monthOf(start ?? initialMonthOf));
 
   const title = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", timeZone: "UTC" }).format(
     new Date(Date.UTC(shown.year, shown.month - 1, 1)),
   );
   const weekdays = Array.from({ length: 7 }, (_, i) =>
-    new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(
-      new Date(REFERENCE_SUNDAY + ((i + weekStart) % 7) * DAY_MS),
-    ),
+    new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(new Date(REFERENCE_MONDAY + i * DAY_MS)),
   );
-  const weeks = monthGrid(shown, weekStart);
   const floorMonth = monthOf(minDate);
   const canGoBack = shown.year > floorMonth.year || (shown.year === floorMonth.year && shown.month > floorMonth.month);
+  const ranged = start !== null && end !== null && start !== end;
 
   return (
     <View testID={testID} style={styles.root}>
@@ -60,7 +56,7 @@ export function StayRangeCalendar({ start, end, initialMonthOf, minDate, onPick,
           onPress={() => setShown(shiftMonth(shown, -1))}
           testID={`${testID}-prev`}
         >
-          <Icon name="back" />
+          <Icon name="chevronLeft" />
         </IconButton>
         <AppText variant="cardTitle" accessibilityRole="header">
           {title}
@@ -71,31 +67,28 @@ export function StayRangeCalendar({ start, end, initialMonthOf, minDate, onPick,
           onPress={() => setShown(shiftMonth(shown, 1))}
           testID={`${testID}-next`}
         >
-          <Icon name="forward" />
+          <Icon name="chevron" />
         </IconButton>
       </View>
       <View style={styles.week}>
         {weekdays.map((name, i) => (
           <View key={i} style={styles.cell}>
-            <AppText variant="small" color="textSecondary">
+            <AppText variant="small" color="textTertiary">
               {name}
             </AppText>
           </View>
         ))}
       </View>
-      {weeks.map((week, weekIndex) => (
+      {monthGrid(shown, 1).map((week, weekIndex) => (
         <View key={weekIndex} style={styles.week}>
           {week.map((day, dayIndex) => {
             if (day === null) return <View key={dayIndex} style={styles.cell} />;
             const isStart = day === start;
             const isEnd = day === end;
-            const inside =
-              start !== null &&
-              end !== null &&
-              compareCalendarDates(day, start) > 0 &&
-              compareCalendarDates(day, end) < 0;
             const selected = isStart || isEnd;
+            const inside = start !== null && end !== null && compareCalendarDates(day, start) > 0 && compareCalendarDates(day, end) < 0;
             const disabled = compareCalendarDates(day, minDate) < 0;
+            const band = inside || (ranged && selected);
             return (
               <Pressable
                 key={dayIndex}
@@ -107,11 +100,16 @@ export function StayRangeCalendar({ start, end, initialMonthOf, minDate, onPick,
                 testID={`${testID}-day-${day}`}
                 style={[
                   styles.cell,
-                  inside && { backgroundColor: tokens.surfaceStrong },
-                  selected && { backgroundColor: tokens.accent, borderRadius: radius.field },
+                  band && { backgroundColor: tokens.surfaceStrong },
+                  ranged && isStart && styles.bandStart,
+                  ranged && isEnd && styles.bandEnd,
                 ]}
               >
-                <AppText color={selected ? "onAccent" : disabled ? "textSecondary" : "text"}>{Number(day.slice(8))}</AppText>
+                <View style={[styles.circle, selected && { backgroundColor: tokens.accent }]}>
+                  <AppText variant="mono" color={selected ? "onAccent" : disabled ? "textTertiary" : "text"}>
+                    {Number(day.slice(8))}
+                  </AppText>
+                </View>
               </Pressable>
             );
           })}
@@ -126,4 +124,13 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   week: { flexDirection: "row" },
   cell: { flex: 1, minHeight: layout.minTouch, alignItems: "center", justifyContent: "center" },
+  circle: {
+    width: layout.calendarDayCircle,
+    height: layout.calendarDayCircle,
+    borderRadius: layout.calendarDayCircle / 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bandStart: { borderTopLeftRadius: EDGE_RADIUS, borderBottomLeftRadius: EDGE_RADIUS },
+  bandEnd: { borderTopRightRadius: EDGE_RADIUS, borderBottomRightRadius: EDGE_RADIUS },
 });
