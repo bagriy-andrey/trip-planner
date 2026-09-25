@@ -161,6 +161,12 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
   unused by segment-form) is dead. Grep every consumer of a locale namespace being trimmed for
   `useTranslation("<ns>")` across the WHOLE mobile/src tree before deleting any key in it, not just
   inside the feature that "owns" the stub.
+- 2026-09-24 (SPEC-06 research): first-segment prefill contradicts SPEC-04 AC-38. AC-38 says the trip
+  city's airport goes into «Куда», but `shared/src/segments/prefill.ts` `firstSegmentPrefill` returns it
+  as `fromAirport`, and `segmentFormFromFirstPrefill` (segment-form/hooks/formState.ts) fills «Откуда».
+  Its own docstring repeats the mismatch, so a test written from the code will pass while the spec is
+  violated. SPEC-06 fixes it (home airport → «Откуда», trip city → «Куда»); when touching prefill,
+  follow the spec, not the existing helper's naming.
 ## Open Questions
 - 2026-09-22: PLAN-04 step 5 contrast recheck of `warnBg`/`warnBorder`/`danger` (`design/tokens.md`)
   found the LIGHT theme's `danger` (`#C0503C`) at only ≈4.2:1 on `bg` — below the 4.5:1 rule for
