@@ -43,3 +43,15 @@ describe("rowValueOf", () => {
     expect(rowValueOf("homeCurrency", p({ homeCurrency: "EUR" }), "en")).toEqual({ kind: "rawCode", code: "EUR" });
   });
 });
+
+describe("rowValueOf: own city", () => {
+  it("shows the typed city as is, without a flag", () => {
+    expect(rowValueOf("homeCity", p({ homeCityName: "Nowy Sącz" }), "en")).toEqual({ kind: "city", name: "Nowy Sącz" });
+  });
+  it("a directory city wins if both were ever stored", () => {
+    expect(rowValueOf("homeCity", p({ homeCityId: "city-lisbon", homeCityName: "Nowy Sącz" }), "en")).toEqual({
+      kind: "city",
+      name: "Lisbon",
+    });
+  });
+});

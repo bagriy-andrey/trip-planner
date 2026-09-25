@@ -33,7 +33,9 @@ export function ProfileFieldPicker({ editor, lang }: ProfileFieldPickerProps) {
     <PickerSheet
       title={t(`fields.${activeField}`)}
       selectedKey={selectedKeyOf(activeField, display)}
-      search={(query) => itemsFor(activeField, query, lang, display)}
+      search={(query) =>
+        itemsFor(activeField, query, lang, display, (name) => tPicker("addCustom", { name }))
+      }
       emptyWhenBlank={
         emptyWhenBlankFor(activeField, display)
           ? { title: tPicker("noCities.title"), body: tPicker("noCities.body") }

@@ -11,9 +11,13 @@ import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/d
 import type { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { toCalendarDate } from "@tripplanner/shared";
 import type { CalendarDate } from "@tripplanner/shared";
+import { useState } from "react";
 import type { ReactNode } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { AnimatedSheetOverlay } from "@/components/AnimatedSheetOverlay";
+import { PrimaryButton } from "@/components/PrimaryButton";
+import { SecondaryButton } from "@/components/SecondaryButton";
 import { formatCalendarDate, resolveLocale, useTranslation } from "@/lib/i18n";
 import { useToday } from "@/lib/clock";
 import { layout, radius, spacing, typography, useTheme } from "@/lib/theme";
@@ -52,9 +56,6 @@ export interface DatePickerProps {
   startDate?: CalendarDate;
   testID?: string;
 }
-
-/** UIKit stops hit-testing views below alpha 0.01, so the invisible native control must stay just above it. */
-const INVISIBLE_BUT_TAPPABLE = 0.02;
 
 /** Hour the picker's `Date` is pinned to, far from any midnight DST jump. */
 const NOON = 12;
@@ -129,7 +130,26 @@ export function DatePicker({
     );
   }
 
-  const native = (
+  // Nothing chosen yet: a plain button (its WHOLE face is the tap target, in every language) opens a
+  // sheet with the native wheel. The compact control only reacts inside its own pill, and where iOS
+  // draws that pill depends on the locale, so it cannot be laid invisibly over an icon.
+  if (value === null && emptyContent !== undefined) {
+    return (
+      <EmptyFieldSheet
+        mode="date"
+        shown={shown}
+        minimum={minimum}
+        maximum={maximum}
+        onPick={(picked) => onChange(toCalendarDate(picked))}
+        accessibilityLabel={accessibilityLabel}
+        testID={testID}
+      >
+        {emptyContent}
+      </EmptyFieldSheet>
+    );
+  }
+
+  return (
     <DateTimePicker
       mode="date"
       display="compact"
@@ -142,15 +162,88 @@ export function DatePicker({
       accentColor={tokens.accent}
       accessibilityLabel={accessibilityLabel}
       testID={testID}
-      style={value === null && emptyContent !== undefined ? styles.overlay : undefined}
     />
   );
-  if (value !== null || emptyContent === undefined) return native;
+}
+
+interface EmptyFieldSheetProps {
+  mode: "date" | "time";
+  shown: Date;
+  minimum?: Date;
+  maximum?: Date;
+  onPick: (picked: Date) => void;
+  accessibilityLabel: string;
+  testID?: string;
+  children: ReactNode;
+}
+
+/** The empty state of an iOS date/time field: a field-styled button that opens a bottom sheet with the native wheel. */
+function EmptyFieldSheet({ mode, shown, minimum, maximum, onPick, accessibilityLabel, testID = "picker", children }: EmptyFieldSheetProps) {
+  const { tokens, scheme } = useTheme();
+  const { t, i18n } = useTranslation("common");
+  const locale = resolveLocale([i18n.language]);
+  const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [draft, setDraft] = useState<Date>(shown);
+
+  const requestClose = () => setClosing(true);
+  const confirm = () => {
+    onPick(draft);
+    setClosing(true);
+  };
+
   return (
-    <View style={[styles.emptyField, { borderColor: tokens.surfaceBorder, backgroundColor: tokens.surface }]}>
-      {emptyContent}
-      {native}
-    </View>
+    <>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        onPress={() => {
+          setDraft(shown);
+          setClosing(false);
+          setOpen(true);
+        }}
+        testID={testID}
+        style={[styles.emptyField, { borderColor: tokens.surfaceBorder, backgroundColor: tokens.surface }]}
+      >
+        {children}
+      </Pressable>
+      {open ? (
+        <Modal transparent animationType="none" statusBarTranslucent onRequestClose={requestClose}>
+          <AnimatedSheetOverlay
+            closeLabel={t("actions.cancel")}
+            onRequestClose={requestClose}
+            closing={closing}
+            onExited={() => setOpen(false)}
+            testID={`${testID}-sheet`}
+          >
+            <View style={styles.wheel}>
+              <DateTimePicker
+                mode={mode}
+                display="spinner"
+                value={draft}
+                minimumDate={minimum}
+                maximumDate={maximum}
+                onChange={(_event: DateTimePickerEvent, picked?: Date) => {
+                  if (picked !== undefined) setDraft(picked);
+                }}
+                locale={locale}
+                themeVariant={scheme}
+                textColor={tokens.text}
+                accessibilityLabel={accessibilityLabel}
+                testID={`${testID}-sheet-picker`}
+              />
+            </View>
+            <PrimaryButton label={t("actions.done")} accessibilityLabel={t("actions.done")} onPress={confirm} testID={`${testID}-sheet-done`} />
+            <SecondaryButton
+              label={t("actions.cancel")}
+              accessibilityLabel={t("actions.cancel")}
+              onPress={requestClose}
+              testID={`${testID}-sheet-cancel`}
+            />
+          </AnimatedSheetOverlay>
+        </Modal>
+      ) : null}
+    </>
   );
 }
 
@@ -172,7 +265,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.field,
     borderWidth: layout.borderWidth,
   },
-  overlay: { ...StyleSheet.absoluteFill, opacity: INVISIBLE_BUT_TAPPABLE },
+  wheel: { alignItems: "center", paddingVertical: spacing.sm },
 });
 
 export interface TimePickerProps {
@@ -263,7 +356,22 @@ export function TimePicker({ value, onChange, accessibilityLabel, placeholder, e
     );
   }
 
-  const native = (
+  // Same reasoning as `DatePicker`: the empty state is a button with a sheet, not an invisible compact control.
+  if (value === null && emptyContent !== undefined) {
+    return (
+      <EmptyFieldSheet
+        mode="time"
+        shown={shown}
+        onPick={(picked) => onChange(toTimeOfDay(picked))}
+        accessibilityLabel={accessibilityLabel}
+        testID={testID}
+      >
+        {emptyContent}
+      </EmptyFieldSheet>
+    );
+  }
+
+  return (
     <DateTimePicker
       mode="time"
       display="compact"
@@ -274,14 +382,6 @@ export function TimePicker({ value, onChange, accessibilityLabel, placeholder, e
       accentColor={tokens.accent}
       accessibilityLabel={accessibilityLabel}
       testID={testID}
-      style={value === null && emptyContent !== undefined ? styles.overlay : undefined}
     />
-  );
-  if (value !== null || emptyContent === undefined) return native;
-  return (
-    <View style={[styles.emptyField, { borderColor: tokens.surfaceBorder, backgroundColor: tokens.surface }]}>
-      {emptyContent}
-      {native}
-    </View>
   );
 }

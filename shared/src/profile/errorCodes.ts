@@ -11,6 +11,8 @@ export const PROFILE_WRITE_ERROR = {
   homeCurrencyUnknown: "homeCurrency.unknown",
   homeCityCountryMismatch: "homeCity.countryMismatch",
   homeCityResidenceMissing: "homeCity.residenceMissing",
+  homeCityNameInvalid: "homeCity.nameInvalid",
+  homeCityNameConflict: "homeCity.nameConflict",
 } as const;
 
 export type ProfileWriteErrorId = (typeof PROFILE_WRITE_ERROR)[keyof typeof PROFILE_WRITE_ERROR];

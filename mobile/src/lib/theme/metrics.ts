@@ -53,6 +53,8 @@ export const layout = {
   sheetTopInset: 104,
   sheetHandleW: 36,
   sheetHandleH: 4,
+  /** A one-line label may shrink to this scale before it is cut: translated labels are longer than English ones. */
+  minFontScale: 0.75,
   /** Indicator dot; the active one stretches to `dotActiveW`. */
   dot: 6,
   dotActiveW: 20,

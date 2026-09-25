@@ -3,7 +3,7 @@ import { findPlaceById } from "@tripplanner/shared";
 import type { RouteView, Segment } from "@tripplanner/shared";
 
 import { AppText, GlassSurface, Icon, Pill, PressableRow } from "@/components";
-import { useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, useTranslation } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 // `formatSegmentDateTime` is not re-exported by `lib/i18n`'s barrel (a step-4 gap found while
 // building this component) — imported straight from its module.
@@ -145,7 +145,7 @@ interface NotClosedBannerProps {
 function NotClosedBanner({ cityId, locale, onPress, testID }: NotClosedBannerProps) {
   const { t } = useTranslation("transport");
   const { tokens } = useTheme();
-  const cityName = findPlaceById(cityId)?.[locale] ?? cityId;
+  const cityName = findPlaceById(cityId)?.[placeLanguageOf(locale)] ?? cityId;
   const text = t("route.notClosedBanner", { city: cityName });
 
   return (

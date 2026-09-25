@@ -19,7 +19,7 @@ export type ProfileResult<T> = ProfileSuccess<T> | ProfileFailure;
 type Operation = "profile.load" | "profile.save";
 
 const PROFILE_COLUMNS =
-  "user_id,citizenship_country_code,residence_country_code,home_city_place_id,home_airport_code,home_currency";
+  "user_id,citizenship_country_code,residence_country_code,home_city_place_id,home_city_name,home_airport_code,home_currency";
 
 function failure(operation: Operation, error: unknown, status?: number): ProfileFailure {
   const kind = mapTripError(error, status);

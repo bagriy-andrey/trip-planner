@@ -17,8 +17,8 @@ describe("app.config.ts", () => {
     expect(config.ios?.supportsTablet).toBe(false);
   });
 
-  it("declares exactly ru and en app-metadata locales", () => {
-    expect(Object.keys(config.locales ?? {}).sort()).toEqual(["en", "ru"]);
+  it("declares exactly the ru, en and uk app-metadata locales", () => {
+    expect(Object.keys(config.locales ?? {}).sort()).toEqual(["en", "ru", "uk"]);
   });
 
   it("declares no permission usage strings", () => {

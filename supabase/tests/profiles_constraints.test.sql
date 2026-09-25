@@ -1,13 +1,13 @@
 -- Constraint tests for public.profiles (SPEC-06 AC-6): failing inserts per CHECK, plus valid edges.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(24);
 
 insert into auth.users (id, email) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'a@example.test');
 
 select is(
   (select count(*)::int from pg_constraint where conrelid = 'public.profiles'::regclass and contype = 'c'),
-  5, 'profiles has exactly 5 check constraints');
+  7, 'profiles has exactly 7 check constraints');
 
 -- One failing insert per constraint (two shapes for the code-like ones)
 select throws_ok($$insert into public.profiles (user_id, citizenship_country_code) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'pl')$$,
@@ -31,6 +31,18 @@ select throws_ok($$insert into public.profiles (user_id, home_currency) values (
 select throws_ok($$insert into public.profiles (user_id, home_currency) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'EU')$$,
   '23514', null, 'profiles_home_currency_fmt rejects two letters');
 
+-- Own city (home_city_name): length, whitespace, line breaks, and exclusivity with the directory id
+select throws_ok($$insert into public.profiles (user_id, home_city_name) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'K')$$,
+  '23514', null, 'profiles_home_city_name_fmt rejects one character');
+select throws_ok($$insert into public.profiles (user_id, home_city_name) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', repeat('a', 81))$$,
+  '23514', null, 'profiles_home_city_name_fmt rejects 81 characters');
+select throws_ok($$insert into public.profiles (user_id, home_city_name) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', ' Krakow')$$,
+  '23514', null, 'profiles_home_city_name_fmt rejects a leading space');
+select throws_ok($$insert into public.profiles (user_id, home_city_name) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', E'Kra\nkow')$$,
+  '23514', null, 'profiles_home_city_name_fmt rejects a line break');
+select throws_ok($$insert into public.profiles (user_id, home_city_place_id, home_city_name) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'city-krakow', 'Krakow')$$,
+  '23514', null, 'profiles_home_city_exclusive rejects a directory id together with an own name');
+
 -- Valid rows
 select lives_ok($$insert into public.profiles (user_id) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')$$,
   'every optional column accepts null');
@@ -44,6 +56,11 @@ select lives_ok($$update public.profiles set home_city_place_id = 'city-' || rep
 select lives_ok($$update public.profiles set home_city_place_id = 'city-new-york-2'
   where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'$$,
   'a city id with digits and hyphens is accepted');
+select lives_ok($$update public.profiles set home_city_place_id = null, home_city_name = repeat('a', 80)
+  where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'$$,
+  'an own city name of exactly 80 characters is accepted');
+select lives_ok($$update public.profiles set home_city_name = 'Nowy Sącz-2' where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'$$,
+  'an own city name with spaces, diacritics and digits is accepted');
 
 -- updated_at trigger: now() is frozen in a transaction, so start from an old value
 update public.profiles set created_at = '2020-01-01 00:00:00+00', updated_at = '2020-01-01 00:00:00+00'

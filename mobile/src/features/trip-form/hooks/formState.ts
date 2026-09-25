@@ -38,7 +38,7 @@ export function formStateFromTrip(trip: Trip, lang: PlaceLanguage): TripFormStat
       ? place.placeId
       : null;
   return {
-    destination: resolveDestinationName(trip, lang),
+    destination: resolveDestinationName(trip),
     placeId: pickedId,
     title: trip.title ?? "",
     startDate: trip.startDate,

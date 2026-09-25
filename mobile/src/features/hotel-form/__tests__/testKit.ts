@@ -78,6 +78,6 @@ describe("hotel-form testKit", () => {
 export function profileResult(homeCurrency: string | null) {
   return {
     ok: true as const,
-    data: { citizenship: null, residence: null, homeCityId: null, homeAirport: null, homeCurrency },
+    data: { citizenship: null, residence: null, homeCityId: null, homeCityName: null, homeAirport: null, homeCurrency },
   };
 }

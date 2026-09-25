@@ -24,7 +24,7 @@ import { useEffect, useRef, useState } from "react";
 import { TripApiError, useTripQuery } from "@/features/trips";
 import { useSegmentMutations, useSegmentsQuery } from "@/features/transport";
 import { useNow, useToday } from "@/lib/clock";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 
 import {
   EMPTY_SEGMENT_FORM,
@@ -88,7 +88,7 @@ export function useSegmentForm(target: SegmentFormTarget, initial: SegmentFormSt
   const now = useNow();
   const { t: tTrips } = useTranslation("trips");
   const { i18n } = useTranslation();
-  const lang = resolveLocale([i18n.language]);
+  const lang = placeLanguageOf(resolveLocale([i18n.language]));
 
   const tripQuery = useTripQuery(target.tripId);
   const segmentsQuery = useSegmentsQuery(target.tripId);

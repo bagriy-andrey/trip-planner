@@ -125,7 +125,7 @@ describe("TripsScreen (S4) — list", () => {
     expect(await screen.findByTestId("trip-card-soon")).toBeOnTheScreen();
   });
 
-  it("uses Russian copy and the directory name in the UI language", async () => {
+  it("uses Russian copy for the app's own text but keeps the place as the user saved it", async () => {
     const lisbon = makeTrip({
       id: "pt",
       destination: "Lisbon",
@@ -135,7 +135,7 @@ describe("TripsScreen (S4) — list", () => {
     });
     await renderTrips([lisbon, undated], { ...SIGNED_IN, locale: "ru" });
     const card = await screen.findByTestId("trip-card-pt");
-    expect(within(card).getByText("Лиссабон")).toBeOnTheScreen();
+    expect(within(card).getByText("Lisbon")).toBeOnTheScreen();
     expect(within(card).getByText("через 5 дней")).toBeOnTheScreen();
     expect(within(screen.getByTestId("trip-card-undated")).getByText("дата не выбрана")).toBeOnTheScreen();
     expect(screen.getByRole("header", { name: "Поездки" })).toBeOnTheScreen();

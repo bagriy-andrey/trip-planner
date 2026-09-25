@@ -3,7 +3,7 @@ import { findPlaceById } from "@tripplanner/shared";
 import type { RouteView } from "@tripplanner/shared";
 
 import { AppText, Icon } from "@/components";
-import { useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, useTranslation } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { layout, radius, spacing, useTheme } from "@/lib/theme";
 
@@ -23,7 +23,7 @@ export interface NotClosedCardProps {
 export function NotClosedCard({ openAt, locale, testID }: NotClosedCardProps) {
   const { t } = useTranslation("transport");
   const { tokens } = useTheme();
-  const cityName = findPlaceById(openAt.cityId)?.[locale] ?? openAt.cityId;
+  const cityName = findPlaceById(openAt.cityId)?.[placeLanguageOf(locale)] ?? openAt.cityId;
 
   return (
     <View

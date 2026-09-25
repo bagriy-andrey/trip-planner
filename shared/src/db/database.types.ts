@@ -39,6 +39,7 @@ export type Database = {
           citizenship_country_code: string | null
           created_at: string
           home_airport_code: string | null
+          home_city_name: string | null
           home_city_place_id: string | null
           home_currency: string | null
           residence_country_code: string | null
@@ -49,6 +50,7 @@ export type Database = {
           citizenship_country_code?: string | null
           created_at?: string
           home_airport_code?: string | null
+          home_city_name?: string | null
           home_city_place_id?: string | null
           home_currency?: string | null
           residence_country_code?: string | null
@@ -59,6 +61,7 @@ export type Database = {
           citizenship_country_code?: string | null
           created_at?: string
           home_airport_code?: string | null
+          home_city_name?: string | null
           home_city_place_id?: string | null
           home_currency?: string | null
           residence_country_code?: string | null

@@ -20,7 +20,7 @@ import { useSegmentQuery, useSegmentsQuery } from "@/features/transport";
 import { useTripQuery } from "@/features/trips";
 import type { TripErrorKind } from "@/features/trips";
 import { useToday } from "@/lib/clock";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 import { layout, radius, spacing, typography, useTheme } from "@/lib/theme";
 
 import { AirportField } from "./components/AirportField";
@@ -56,7 +56,7 @@ export function SegmentFormScreen({ tripId, segmentId }: SegmentFormScreenProps)
  */
 function CreateSegmentLoader({ tripId }: { tripId: string }) {
   const { i18n } = useTranslation();
-  const lang = resolveLocale([i18n.language]);
+  const lang = placeLanguageOf(resolveLocale([i18n.language]));
   const router = useRouter();
   const tripQuery = useTripQuery(tripId);
   const segmentsQuery = useSegmentsQuery(tripId);
@@ -94,7 +94,7 @@ function CreateSegmentLoader({ tripId }: { tripId: string }) {
  * (AC-80/81) — same convention as S7/S8b's "trip not found". */
 function EditSegmentLoader({ tripId, segmentId }: { tripId: string; segmentId: string }) {
   const { i18n } = useTranslation();
-  const lang = resolveLocale([i18n.language]);
+  const lang = placeLanguageOf(resolveLocale([i18n.language]));
   const router = useRouter();
   const segmentQuery = useSegmentQuery(tripId, segmentId);
 

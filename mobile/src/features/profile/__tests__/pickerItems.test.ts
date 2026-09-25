@@ -1,7 +1,7 @@
 import { EMPTY_PROFILE, PLACE_DIRECTORY } from "@tripplanner/shared";
 import type { Profile } from "@tripplanner/shared";
 
-import { emptyWhenBlankFor, itemsFor, selectedKeyOf } from "../pickerItems";
+import { customKeyOf, customNameOf, emptyWhenBlankFor, itemsFor, selectedKeyOf } from "../pickerItems";
 
 const p = (over: Partial<Profile>): Profile => ({ ...EMPTY_PROFILE, ...over });
 
@@ -65,5 +65,33 @@ describe("emptyWhenBlankFor (AC-26)", () => {
     expect(emptyWhenBlankFor("homeCity", p({ residence: "PT" }))).toBe(false);
     expect(emptyWhenBlankFor("homeCity", EMPTY_PROFILE)).toBe(false);
     expect(emptyWhenBlankFor("homeAirport", p({ residence: cityless.countryCode }))).toBe(false);
+  });
+});
+
+describe("own city rows", () => {
+  const add = (name: string) => `Add "${name}"`;
+
+  it("offers an add row first for a typed city that is not in the list", () => {
+    const [first] = itemsFor("homeCity", "Nowy Sącz", "en", p({ residence: "PL" }), add);
+    expect(first).toEqual({ key: "custom:Nowy Sącz", name: 'Add "Nowy Sącz"', code: "", kind: "add" });
+  });
+  it("normalises the typed text in the add row", () => {
+    const [first] = itemsFor("homeCity", "  Nowy   Sącz ", "en", p({ residence: "PL" }), add);
+    expect(first?.key).toBe("custom:Nowy Sącz");
+  });
+  it("offers no add row for one character, for blank text, or when the name is already listed", () => {
+    expect(itemsFor("homeCity", "K", "en", EMPTY_PROFILE, add).some((row) => row.kind === "add")).toBe(false);
+    expect(itemsFor("homeCity", "   ", "en", EMPTY_PROFILE, add).some((row) => row.kind === "add")).toBe(false);
+    expect(itemsFor("homeCity", "Lisbon", "en", EMPTY_PROFILE, add).some((row) => row.kind === "add")).toBe(false);
+  });
+  it("keeps the saved own city visible and selected when the whole list is shown", () => {
+    const profile = p({ homeCityName: "Nowy Sącz" });
+    const [first] = itemsFor("homeCity", "", "en", profile, add);
+    expect(first).toEqual({ key: "custom:Nowy Sącz", name: "Nowy Sącz", code: "" });
+    expect(selectedKeyOf("homeCity", profile)).toBe("custom:Nowy Sącz");
+  });
+  it("round-trips the own-city key", () => {
+    expect(customNameOf(customKeyOf("Nowy Sącz"))).toBe("Nowy Sącz");
+    expect(customNameOf("city-lisbon")).toBeNull();
   });
 });

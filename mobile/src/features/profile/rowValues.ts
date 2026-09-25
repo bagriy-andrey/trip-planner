@@ -6,7 +6,8 @@ export type RowValue =
   | { kind: "country"; code: string; name: string }
   | { kind: "rawCode"; code: string; spoken?: string }
   | { kind: "city"; name: string }
-  | { kind: "unknownCity" };
+  | { kind: "unknownCity" }
+  | { kind: "text"; text: string };
 
 function countryValue(code: string | null, lang: PlaceLanguage): RowValue {
   if (code === null) return { kind: "empty" };
@@ -23,7 +24,10 @@ export function rowValueOf(field: ProfileField, profile: Profile, lang: PlaceLan
     case "residence":
       return countryValue(profile.residence, lang);
     case "homeCity": {
-      if (profile.homeCityId === null) return { kind: "empty" };
+      if (profile.homeCityId === null) {
+        // The user's own city text is shown as typed (there is no directory record, so no flag).
+        return profile.homeCityName === null ? { kind: "empty" } : { kind: "city", name: profile.homeCityName };
+      }
       const city = findCityById(profile.homeCityId);
       return city === undefined ? { kind: "unknownCity" } : { kind: "city", name: city[lang] };
     }

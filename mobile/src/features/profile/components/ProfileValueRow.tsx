@@ -41,6 +41,8 @@ function ValueView({ value }: { value: RowValue }) {
       );
     case "unknownCity":
       return <AppText color="textSecondary">{t("values.notInDirectory")}</AppText>;
+    case "text":
+      return <AppText>{value.text}</AppText>;
   }
 }
 
@@ -61,6 +63,8 @@ export function ProfileValueRow({ label, hint, value, onPress, testID }: Profile
         return v.spoken ?? v.code;
       case "unknownCity":
         return t("values.notInDirectory");
+      case "text":
+        return v.text;
     }
   };
   const spoken = value === null ? label : t("a11y.row", { label, value: spokenOf(value) });
@@ -94,9 +98,10 @@ export function ProfileValueRow({ label, hint, value, onPress, testID }: Profile
 }
 
 const styles = StyleSheet.create({
-  row: { flexWrap: "wrap", justifyContent: "space-between", paddingVertical: spacing.sm },
-  label: { flexShrink: 1 },
-  value: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexShrink: 1 },
+  // One row in every language: the label (and its hint) wraps inside its own column, the value never drops below it.
+  row: { justifyContent: "space-between", paddingVertical: spacing.sm },
+  label: { flex: 1, flexShrink: 1 },
+  value: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexShrink: 0, maxWidth: "50%", justifyContent: "flex-end" },
   inline: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexShrink: 1 },
   shrink: { flexShrink: 1 },
   placeholder: { width: MIN_HIT_SIZE * 2, height: spacing.lg, borderRadius: radius.tile },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyProfileChoice } from "../links";
+import { applyCustomCity, applyProfileChoice } from "../links";
 import { EMPTY_PROFILE } from "../types";
 import type { Profile } from "../types";
 
@@ -80,5 +80,49 @@ describe("applyProfileChoice: residence (AC-25)", () => {
     expect(applyProfileChoice(p({ residence: "PL", homeCityId: "city-unknown" }), "residence", "DE")).toEqual({
       residence: "DE",
     });
+  });
+});
+
+describe("applyProfileChoice: an own city coexists with 'Not specified'", () => {
+  it("clears an own city name with 'Not specified'", () => {
+    expect(applyProfileChoice(p({ homeCityName: "Nowy Sącz" }), "homeCity", null)).toEqual({ homeCityName: null });
+  });
+  it("writes nothing when there is no city at all", () => {
+    expect(applyProfileChoice(EMPTY_PROFILE, "homeCity", null)).toBeNull();
+  });
+  it("a directory city replaces an own name and keeps the other links", () => {
+    expect(applyProfileChoice(p({ residence: "PL", homeCityName: "Nowy Sącz" }), "homeCity", "city-krakow")).toEqual({
+      homeCityId: "city-krakow",
+      homeCityName: null,
+      homeAirport: "KRK",
+    });
+  });
+  it("changing the residence keeps an own city name", () => {
+    expect(applyProfileChoice(p({ residence: "PL", homeCityName: "Nowy Sącz" }), "residence", "DE")).toEqual({
+      residence: "DE",
+    });
+  });
+});
+
+describe("applyCustomCity", () => {
+  it("stores only the name and leaves residence and airport alone", () => {
+    expect(applyCustomCity(p({ residence: "PL", homeAirport: "KRK" }), "Nowy Sącz")).toEqual({
+      homeCityName: "Nowy Sącz",
+    });
+  });
+  it("normalises the text before storing", () => {
+    expect(applyCustomCity(EMPTY_PROFILE, "  Nowy \n  Sącz ")).toEqual({ homeCityName: "Nowy Sącz" });
+  });
+  it("replaces a directory city with the own name", () => {
+    expect(applyCustomCity(p({ residence: "PL", homeCityId: "city-krakow" }), "Nowy Sącz")).toEqual({
+      homeCityName: "Nowy Sącz",
+      homeCityId: null,
+    });
+  });
+  it("returns null for the same own city again and for invalid text", () => {
+    expect(applyCustomCity(p({ homeCityName: "Nowy Sącz" }), " Nowy  Sącz ")).toBeNull();
+    expect(applyCustomCity(EMPTY_PROFILE, "K")).toBeNull();
+    expect(applyCustomCity(EMPTY_PROFILE, "   ")).toBeNull();
+    expect(applyCustomCity(EMPTY_PROFILE, "a".repeat(81))).toBeNull();
   });
 });

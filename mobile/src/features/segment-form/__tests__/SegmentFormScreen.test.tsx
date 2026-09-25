@@ -100,6 +100,13 @@ beforeEach(() => {
   deleteSegmentMock.mockResolvedValue({ ok: true, data: { id: "segment-1" } });
 });
 
+/** An EMPTY date/time field is a button that opens a sheet: press it, confirm the wheel's value, press Done. */
+async function pickEmpty(testID: string) {
+  await userEvent.press(screen.getByTestId(testID));
+  await userEvent.press(screen.getByTestId(`${testID}-sheet-picker`));
+  await userEvent.press(screen.getByTestId(`${testID}-sheet-done`));
+}
+
 async function renderCreate(tripOverrides: Partial<Trip> = {}, segments: Segment[] = []) {
   getTripMock.mockResolvedValue({ ok: true, data: makeTrip(tripOverrides) });
   listSegmentsMock.mockResolvedValue({ ok: true, data: segments });
@@ -154,10 +161,10 @@ describe("SegmentFormScreen — save button gating (AC-26)", () => {
     await userEvent.press(await screen.findByTestId("airport-suggestion-airport-opo"));
     expect(saveButton()).toBeDisabled();
 
-    await userEvent.press(screen.getByTestId("segment-form-departure-date"));
+    await pickEmpty("segment-form-departure-date");
     expect(saveButton()).toBeDisabled();
 
-    await userEvent.press(screen.getByTestId("segment-form-departure-time"));
+    await pickEmpty("segment-form-departure-time");
     expect(saveButton()).toBeEnabled();
   });
 });
@@ -261,8 +268,8 @@ async function fillMinimalSegment() {
   await userEvent.press(await screen.findByTestId("airport-suggestion-airport-krk"));
   await userEvent.type(screen.getByTestId("segment-form-to"), "OPO");
   await userEvent.press(await screen.findByTestId("airport-suggestion-airport-opo"));
-  await userEvent.press(screen.getByTestId("segment-form-departure-date"));
-  await userEvent.press(screen.getByTestId("segment-form-departure-time"));
+  await pickEmpty("segment-form-departure-date");
+  await pickEmpty("segment-form-departure-time");
 }
 
 describe("SegmentFormScreen — Save (AC-45)", () => {
@@ -304,7 +311,7 @@ describe("SegmentFormScreen — departure rules", () => {
 
   it("clears an arrival time again", async () => {
     await renderCreate();
-    await userEvent.press(screen.getByTestId("segment-form-arrival-time"));
+    await pickEmpty("segment-form-arrival-time");
     await userEvent.press(screen.getByTestId("segment-form-arrival-time-clear"));
     expect(screen.queryByTestId("segment-form-arrival-time-clear")).toBeNull();
   });

@@ -3,7 +3,7 @@ import type { Edge } from "react-native-safe-area-context";
 
 import { AppText, Screen, SecondaryButton } from "@/components";
 import { signOut } from "@/features/auth";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 import { displayNameOf, useSession } from "@/lib/session";
 import { spacing } from "@/lib/theme";
 
@@ -19,14 +19,14 @@ const TAB_EDGES: readonly Edge[] = ["top", "left", "right"];
 
 /**
  * S6 — profile tab. Name and email come from the session. "About me" and the currency row are
- * edited through one picker sheet; theme sits outside the cards. There is no language row: the UI
- * language follows the device.
+ * edited through one picker sheet; the UI language is a device-local picker row in the settings card;
+ * theme sits outside the cards.
  */
 export function ProfileScreen() {
   const { t, i18n } = useTranslation("profile");
   const { user } = useSession();
   const editor = useProfileEditor();
-  const lang = resolveLocale([i18n.language]);
+  const lang = placeLanguageOf(resolveLocale([i18n.language]));
   const sheetOpen = editor.activeField !== null;
 
   // No navigation here: signOut ends the session and the root layout's route gating moves the

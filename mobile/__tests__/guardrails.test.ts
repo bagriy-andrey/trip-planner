@@ -5,7 +5,7 @@
 // SPEC-02 replaced two SPEC-01 rules deliberately — never by deleting them:
 //   - `no-backend-or-network` (AC-25, "no backend anywhere")  -> `backend-only-behind-the-boundary`
 //   - "exactly one AsyncStorage key, one setItem" (AC-33)     -> a check against the registry
-//     `src/lib/storage/keys.ts` (exactly three declared keys, declared write sites, secret keys
+//     `src/lib/storage/keys.ts` (exactly four declared keys, declared write sites, secret keys
 //     only as ciphertext).
 //
 // Scope: everything under app/ and src/, except test files (`__tests__/`, `*.test.*`,
@@ -1011,9 +1011,9 @@ describe("source guardrails", () => {
     const entries = Object.entries(STORAGE_KEYS);
     const secretEntries = entries.filter(([, info]) => info.secret);
 
-    it("declares exactly three AsyncStorage keys: theme, encrypted session, first-launch flag", () => {
-      expect(entries.map(([name]) => name).sort()).toEqual(["firstLaunch", "session", "theme"]);
-      expect(new Set(entries.map(([, info]) => info.key)).size).toBe(3);
+    it("declares exactly four AsyncStorage keys: theme, language, encrypted session, first-launch flag", () => {
+      expect(entries.map(([name]) => name).sort()).toEqual(["firstLaunch", "language", "session", "theme"]);
+      expect(new Set(entries.map(([, info]) => info.key)).size).toBe(4);
       for (const [, info] of entries) expect(info.purpose.length).toBeGreaterThan(10);
     });
 

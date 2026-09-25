@@ -2,6 +2,7 @@ import { isCurrencyCode } from "../money/currencies";
 import { findAirportByCode } from "../places/airportSearch";
 import { PLACE_DIRECTORY } from "../places/directory";
 import { findCityById } from "../places/search";
+import { isValidCityName } from "./cityName";
 import { PROFILE_WRITE_ERROR } from "./errorCodes";
 import type { ProfileWriteErrorId } from "./errorCodes";
 import type { Profile, ProfilePatch } from "./types";
@@ -19,7 +20,7 @@ function isCountryCode(code: string): boolean {
  */
 export function validateProfilePatch(current: Profile, patch: ProfilePatch): ProfileValidation {
   const errors: ProfileWriteErrorId[] = [];
-  const { citizenship, residence, homeCityId, homeAirport, homeCurrency } = patch;
+  const { citizenship, residence, homeCityId, homeCityName, homeAirport, homeCurrency } = patch;
 
   if (typeof citizenship === "string" && !isCountryCode(citizenship)) {
     errors.push(PROFILE_WRITE_ERROR.citizenshipUnknown);
@@ -29,6 +30,15 @@ export function validateProfilePatch(current: Profile, patch: ProfilePatch): Pro
   }
   if (typeof homeCityId === "string" && findCityById(homeCityId) === undefined) {
     errors.push(PROFILE_WRITE_ERROR.homeCityUnknown);
+  }
+  if (typeof homeCityName === "string" && !isValidCityName(homeCityName)) {
+    errors.push(PROFILE_WRITE_ERROR.homeCityNameInvalid);
+  }
+  if (patch.homeCityId !== undefined || patch.homeCityName !== undefined) {
+    const after = { ...current, ...patch };
+    if (after.homeCityId !== null && after.homeCityName !== null) {
+      errors.push(PROFILE_WRITE_ERROR.homeCityNameConflict);
+    }
   }
   if (typeof homeAirport === "string" && findAirportByCode(homeAirport) === undefined) {
     errors.push(PROFILE_WRITE_ERROR.homeAirportUnknown);

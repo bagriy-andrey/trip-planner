@@ -4,7 +4,7 @@ import { AccessibilityInfo, ActivityIndicator, StyleSheet, View } from "react-na
 
 import { AppText, EmptyState, PrimaryButton, Screen, SecondaryButton, TextField } from "@/components";
 import { useTripQuery } from "@/features/trips";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 import { spacing, useTheme } from "@/lib/theme";
 
 import { DatesBlock } from "./components/DatesBlock";
@@ -42,7 +42,7 @@ function EditTripLoader({ tripId }: { tripId: string }) {
       <TripFormBody
         key={trip.id}
         target={{ mode: "edit", tripId }}
-        initial={formStateFromTrip(trip, resolveLocale([i18n.language]))}
+        initial={formStateFromTrip(trip, placeLanguageOf(resolveLocale([i18n.language])))}
       />
     );
   }

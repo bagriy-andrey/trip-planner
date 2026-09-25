@@ -7,7 +7,7 @@ import type { Edge } from "react-native-safe-area-context";
 
 import { AppText, AvatarButton, Screen } from "@/components";
 import { useToday } from "@/lib/clock";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 import { displayNameOf, initialOf, useSession } from "@/lib/session";
 import { spacing } from "@/lib/theme";
 
@@ -42,7 +42,7 @@ export function TripsScreen() {
   // "Upcoming" is a property of the LIST: exactly one trip of it gets the accent chip (AC-23).
   const cards = useMemo(() => {
     const upcomingId = pickUpcomingTripId(active);
-    return active.map((trip) => toTripCardData(trip, { today, language: locale, upcomingId }));
+    return active.map((trip) => toTripCardData(trip, { today, upcomingId }));
   }, [active, today, locale]);
   const status = useTripListStatus("trips", { trips, isError }, cards.length);
 

@@ -12,7 +12,7 @@ export type TripStatusKind = "upcoming" | "planned" | "draft" | "completed" | "a
 /** Everything a trip card needs to render, built from the domain `Trip`. */
 export interface TripCardData {
   id: string;
-  /** The place in the UI language (`resolveDestinationName`); never the user-given title. */
+  /** The place exactly as the user saved it (`resolveDestinationName`), never translated; not the user-given title. */
   placeName: string;
   /** Null for a draft trip without dates. */
   startDate: CalendarDate | null;
@@ -24,17 +24,16 @@ export interface TripCardData {
 
 export interface TripCardContext {
   today: CalendarDate;
-  language: PlaceLanguage;
   /** `pickUpcomingTripId(activeTrips)`; `null` on the history list and when no trip has dates. */
   upcomingId: string | null;
 }
 
-/** The presentation of one trip in a list. Pure: the clock and the language are injected. */
-export function toTripCardData(trip: Trip, { today, language, upcomingId }: TripCardContext): TripCardData {
+/** The presentation of one trip in a list. Pure: the clock is injected. */
+export function toTripCardData(trip: Trip, { today, upcomingId }: TripCardContext): TripCardData {
   const derived = deriveTripStatus(trip, today);
   return {
     id: trip.id,
-    placeName: resolveDestinationName(trip, language),
+    placeName: resolveDestinationName(trip),
     startDate: trip.startDate,
     endDate: trip.endDate,
     status: derived === "planned" && trip.id === upcomingId ? "upcoming" : derived,

@@ -100,6 +100,7 @@ describe("sizes (design/tokens.md, «Размеры и отступы»)", () =>
       sheetTopInset: 104,
       sheetHandleW: 36,
       sheetHandleH: 4,
+      minFontScale: 0.75,
       dot: 6,
       dotActiveW: 20,
       switchW: 44,

@@ -4,7 +4,7 @@ import { useHomeDefaults } from "@/features/profile";
 import { useHotelQuery } from "@/features/hotels";
 import { useTripQuery } from "@/features/trips";
 import { useToday } from "@/lib/clock";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 
 import { HotelFormBody } from "./components/HotelFormBody";
 import { HotelFormLoadError, HotelFormLoading, HotelNotFound } from "./components/HotelFormStates";
@@ -28,7 +28,7 @@ export function HotelFormScreen({ tripId, hotelId }: HotelFormScreenProps) {
 /** Create needs the trip first: its city and dates prefill the form (AC-10/AC-11). */
 function CreateHotelLoader({ tripId }: { tripId: string }) {
   const { i18n } = useTranslation();
-  const lang = resolveLocale([i18n.language]);
+  const lang = placeLanguageOf(resolveLocale([i18n.language]));
   const router = useRouter();
   const today = useToday();
   const { homeCurrency } = useHomeDefaults();
@@ -49,7 +49,7 @@ function CreateHotelLoader({ tripId }: { tripId: string }) {
 /** Edit: one hotel by id, scoped to the trip. Unknown, foreign, malformed and deleted ids all read "not found" (AC-33). */
 function EditHotelLoader({ tripId, hotelId }: { tripId: string; hotelId: string }) {
   const { i18n } = useTranslation();
-  const lang = resolveLocale([i18n.language]);
+  const lang = placeLanguageOf(resolveLocale([i18n.language]));
   const router = useRouter();
   const query = useHotelQuery(tripId, hotelId);
   const back = () => router.back();

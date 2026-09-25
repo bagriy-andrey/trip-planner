@@ -18,7 +18,7 @@ type Exit = { key: string | null } | "close";
  * isolates the accessibility tree; it pushes no route. A choice or a cancel first plays the exit
  * animation, then calls `onSelect`/`onClose`; the first tap wins (a double tap selects once).
  */
-export function PickerSheet({ title, selectedKey, search, emptyWhenBlank, required = false, onSelect, onClose, testID }: PickerSheetProps) {
+export function PickerSheet({ title, selectedKey, search, emptyWhenBlank, required = false, clearable = true, onSelect, onClose, testID }: PickerSheetProps) {
   const { t } = useTranslation("picker");
   const { tokens } = useTheme();
   const [query, setQuery] = useState("");
@@ -28,7 +28,7 @@ export function PickerSheet({ title, selectedKey, search, emptyWhenBlank, requir
   const blank = query.trim() === "";
   const items = search(query);
   const withNone: readonly PickerItem[] =
-    selectedKey === null ? items : [{ key: "", name: t("notSpecified"), code: "" }, ...items];
+    selectedKey === null || !clearable ? items : [{ key: "", name: t("notSpecified"), code: "" }, ...items];
   // AC-26: a blank query that finds nothing (e.g. a country with no listed cities).
   const empty = blank && items.length === 0 ? (emptyWhenBlank ?? null) : null;
 

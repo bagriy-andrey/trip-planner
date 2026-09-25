@@ -4,12 +4,19 @@ export const profile = {
     notifications: "Уведомления",
     connectedAccounts: "Подключённые аккаунты",
     currency: "Валюта",
+    language: "Язык",
     theme: "Тема оформления",
   },
   themeOptions: {
     light: "Светлая",
     dark: "Тёмная",
     system: "Системная",
+  },
+  languageOptions: {
+    system: "Системный",
+    en: "English",
+    ru: "Русский",
+    uk: "Українська",
   },
   aboutMe: {
     title: "О себе",

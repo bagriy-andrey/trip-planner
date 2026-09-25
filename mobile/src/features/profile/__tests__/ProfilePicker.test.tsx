@@ -116,3 +116,50 @@ describe("Profile pickers", () => {
     expect(screen.queryByTestId("save-error-aboutMe")).toBeNull();
   });
 });
+
+describe("Profile pickers: an own city (not in the list)", () => {
+  const savedPatch = () => mockSave.mock.calls[0]?.[1];
+
+  it("typing a city that is not listed offers 'Add', and saves only the name", async () => {
+    seed({ residence: "PL", homeAirport: "WAW" });
+    await openScreen();
+    await userEvent.press(screen.getByTestId("row-homeCity"));
+    await userEvent.type(screen.getByTestId("profile-picker-search"), "Nowy Sącz");
+    await userEvent.press(screen.getByTestId("profile-picker-item-custom:Nowy Sącz"));
+    await waitFor(() => expect(within(screen.getByTestId("row-homeCity")).getByText("Nowy Sącz")).toBeOnTheScreen());
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(savedPatch()).toEqual({ homeCityName: "Nowy Sącz" });
+    expect(within(screen.getByTestId("row-residence")).getByText("Poland")).toBeOnTheScreen();
+  });
+
+  it("works in a country without listed cities, where the hint invites typing (AC-26)", async () => {
+    seed({ residence: "AD" });
+    await openScreen();
+    await userEvent.press(screen.getByTestId("row-homeCity"));
+    expect(screen.getByText("Type your own city in the search box or leave the field empty.")).toBeOnTheScreen();
+    await userEvent.type(screen.getByTestId("profile-picker-search"), "Andorra la Vella");
+    await userEvent.press(screen.getByTestId("profile-picker-item-custom:Andorra la Vella"));
+    await waitFor(() =>
+      expect(within(screen.getByTestId("row-homeCity")).getByText("Andorra la Vella")).toBeOnTheScreen(),
+    );
+    expect(savedPatch()).toEqual({ homeCityName: "Andorra la Vella" });
+  });
+
+  it("'Not specified' clears an own city", async () => {
+    seed({ homeCityName: "Nowy Sącz" });
+    await openScreen();
+    await userEvent.press(screen.getByTestId("row-homeCity"));
+    await userEvent.press(screen.getByTestId("profile-picker-none"));
+    await waitFor(() => expect(within(screen.getByTestId("row-homeCity")).getByText("Not specified")).toBeOnTheScreen());
+    expect(savedPatch()).toEqual({ homeCityName: null });
+  });
+
+  it("choosing a listed city replaces the own city name", async () => {
+    seed({ residence: "PL", homeCityName: "Nowy Sącz" });
+    await openScreen();
+    await userEvent.press(screen.getByTestId("row-homeCity"));
+    await pick("Krak", KRAKOW.id);
+    await waitFor(() => expect(within(screen.getByTestId("row-homeCity")).getByText(KRAKOW.en)).toBeOnTheScreen());
+    expect(savedPatch()).toMatchObject({ homeCityId: KRAKOW.id, homeCityName: null });
+  });
+});

@@ -7,6 +7,7 @@ import { spacing } from "@/lib/theme";
 
 import type { ProfileEditor } from "../hooks/useProfileEditor";
 import { rowValueOf } from "../rowValues";
+import { LanguageRow } from "./LanguageRow";
 import { ProfileSaveError } from "./ProfileSaveError";
 import { ProfileValueRow } from "./ProfileValueRow";
 import { SoonSettingRow } from "./SoonSettingRow";
@@ -16,7 +17,7 @@ export interface SettingsCardProps {
   lang: PlaceLanguage;
 }
 
-/** Notifications and connected accounts are "soon" stubs; the currency row is real (AC-14). */
+/** Notifications and connected accounts are "soon" stubs; the currency and language rows are real (AC-14). */
 export function SettingsCard({ editor, lang }: SettingsCardProps) {
   const { t } = useTranslation("profile");
   const { display, loading, loadError } = editor;
@@ -32,6 +33,7 @@ export function SettingsCard({ editor, lang }: SettingsCardProps) {
           onPress={() => editor.open("homeCurrency")}
           testID="row-homeCurrency"
         />
+        <LanguageRow />
       </GlassSurface>
       {editor.saveError?.card === "settings" ? <ProfileSaveError kind={editor.saveError.kind} testID="save-error-settings" /> : null}
     </View>

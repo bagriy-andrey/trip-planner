@@ -1,3 +1,4 @@
+import { LANGUAGE_STORAGE_KEY } from "@/lib/i18n/languagePreference";
 import { THEME_STORAGE_KEY } from "@/lib/theme/preference";
 
 /**
@@ -16,6 +17,11 @@ export const STORAGE_KEYS = {
   theme: {
     key: THEME_STORAGE_KEY,
     purpose: "Theme preference: light | dark | system (SPEC-01).",
+    secret: false,
+  },
+  language: {
+    key: LANGUAGE_STORAGE_KEY,
+    purpose: "UI language preference: system | en | ru | uk (device-local, like the theme).",
     secret: false,
   },
   session: {

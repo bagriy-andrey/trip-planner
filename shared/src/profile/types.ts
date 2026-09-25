@@ -6,6 +6,8 @@ export type Profile = {
   residence: string | null;
   /** Place-directory city id (`city-…`). */
   homeCityId: string | null;
+  /** The user's own city text when it is not in the directory; never set together with `homeCityId`. */
+  homeCityName: string | null;
   /** IATA code. */
   homeAirport: string | null;
   /** ISO 4217 code. */
@@ -16,6 +18,7 @@ export const EMPTY_PROFILE: Profile = {
   citizenship: null,
   residence: null,
   homeCityId: null,
+  homeCityName: null,
   homeAirport: null,
   homeCurrency: null,
 };

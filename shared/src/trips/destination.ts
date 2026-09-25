@@ -1,19 +1,11 @@
-import { findPlaceById } from "../places/search";
-import type { PlaceLanguage } from "../places/schema";
 import type { Trip } from "./schemas";
 
 /**
- * The name to show for a trip's place in the UI language (Q3): for a `city`/`country` whose
- * `placeId` is in the directory (and of the same kind), the directory name in `lang`; otherwise
- * the stored `destination` as is. An unknown `placeId` is NOT an error — the directory may have
- * changed since the trip was saved, and `destination` is the snapshot kept for exactly that.
+ * The name to show for a trip's place: the stored `destination`, exactly as the user saved it. A user's
+ * own record is never translated into the UI language (2026-09-25): switching the app language changes
+ * the app's own text only. `destination` is the snapshot kept for exactly that; `place` still says
+ * which directory record it came from, for search and the time zone.
  */
-export function resolveDestinationName(
-  trip: Pick<Trip, "destination" | "place">,
-  lang: PlaceLanguage,
-): string {
-  const { place } = trip;
-  if (place.kind === "custom") return trip.destination;
-  const record = findPlaceById(place.placeId);
-  return record !== undefined && record.kind === place.kind ? record[lang] : trip.destination;
+export function resolveDestinationName(trip: Pick<Trip, "destination">): string {
+  return trip.destination;
 }

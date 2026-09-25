@@ -9,7 +9,7 @@ import { HotelBlock, useHotelsQuery } from "@/features/hotels";
 import { TransportBlock, useRouteView, useSegmentsQuery } from "@/features/transport";
 import { toTripCardData } from "@/features/trips";
 import { useToday } from "@/lib/clock";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 import { spacing } from "@/lib/theme";
 
 import { useLeaveToList } from "../hooks/useLeaveToList";
@@ -40,14 +40,14 @@ export function TripDetailContent({ trip, refetch }: TripDetailContentProps) {
   const today = useToday();
   const locale = resolveLocale([i18n.language]);
   const actions = useTripActions(trip, refetch);
-  const card = toTripCardData(trip, { today, language: locale, upcomingId: null });
+  const card = toTripCardData(trip, { today, upcomingId: null });
   const sheetOpen = actions.sheet !== "closed";
 
   // The id is data, not a path: it goes through `params`, which expo-router encodes per segment,
   // so a hostile id can never add path segments (AC-76).
   const params = { tripId: trip.id };
   const title = trip.title?.trim() ?? "";
-  const deleteName = title === "" ? resolveDestinationName(trip, locale) : title;
+  const deleteName = title === "" ? resolveDestinationName(trip) : title;
 
   // The "Транспорт" block (Step 7's `TransportBlock`) replaces the old "Рейс" block. It computes
   // nothing on its own (summary, nearest segment, "not closed" all come from `buildRoute` via

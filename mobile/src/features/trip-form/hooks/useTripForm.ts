@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 
 import { TripApiError, useCreateTrip, useUpdateTrip } from "@/features/trips";
 import { useToday } from "@/lib/clock";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 
 import type { TripFormErrors, TripFormField, TripFormState } from "./formState";
 
@@ -40,7 +40,7 @@ export function useTripForm(target: TripFormMode, initial: TripFormState) {
   const router = useRouter();
   const today = useToday();
   const { i18n } = useTranslation();
-  const lang = resolveLocale([i18n.language]);
+  const lang = placeLanguageOf(resolveLocale([i18n.language]));
   const createTrip = useCreateTrip();
   const updateTrip = useUpdateTrip();
 

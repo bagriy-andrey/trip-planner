@@ -25,6 +25,7 @@ export default (): ExpoConfig => ({
   locales: {
     ru: "./locales/ru.json",
     en: "./locales/en.json",
+    uk: "./locales/uk.json",
   },
   experiments: {
     typedRoutes: true,

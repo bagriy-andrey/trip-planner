@@ -1,10 +1,12 @@
 import { z } from "zod";
+import { isValidCityName } from "./cityName";
 import { EMPTY_PROFILE } from "./types";
 import type { Profile, ProfilePatch } from "./types";
 
 const countryCode = z.string().regex(/^[A-Z]{2}$/).nullable();
 const threeLetters = z.string().regex(/^[A-Z]{3}$/).nullable();
 const cityId = z.string().max(64).regex(/^city-[a-z0-9-]+$/).nullable();
+const cityName = z.string().refine(isValidCityName).nullable();
 
 /** Format-only check of a `profiles` row (AC-27): directory membership is NOT verified on read. */
 export const profileRowSchema = z.object({
@@ -12,6 +14,7 @@ export const profileRowSchema = z.object({
   citizenship_country_code: countryCode,
   residence_country_code: countryCode,
   home_city_place_id: cityId,
+  home_city_name: cityName,
   home_airport_code: threeLetters,
   home_currency: threeLetters,
 });
@@ -25,6 +28,7 @@ export function toProfile(row: ProfileRow | null): Profile {
     citizenship: row.citizenship_country_code,
     residence: row.residence_country_code,
     homeCityId: row.home_city_place_id,
+    homeCityName: row.home_city_name,
     homeAirport: row.home_airport_code,
     homeCurrency: row.home_currency,
   };
@@ -37,6 +41,7 @@ export type ProfileWrite = {
   citizenship_country_code?: string | null;
   residence_country_code?: string | null;
   home_city_place_id?: string | null;
+  home_city_name?: string | null;
   home_airport_code?: string | null;
   home_currency?: string | null;
 };
@@ -47,6 +52,7 @@ export function toProfileWrite(userId: string, patch: ProfilePatch): ProfileWrit
   if (patch.citizenship !== undefined) write.citizenship_country_code = patch.citizenship;
   if (patch.residence !== undefined) write.residence_country_code = patch.residence;
   if (patch.homeCityId !== undefined) write.home_city_place_id = patch.homeCityId;
+  if (patch.homeCityName !== undefined) write.home_city_name = patch.homeCityName;
   if (patch.homeAirport !== undefined) write.home_airport_code = patch.homeAirport;
   if (patch.homeCurrency !== undefined) write.home_currency = patch.homeCurrency;
   return write;

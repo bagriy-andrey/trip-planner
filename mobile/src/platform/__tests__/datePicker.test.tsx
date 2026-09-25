@@ -128,3 +128,39 @@ function localDay(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
+
+describe("DatePicker: the empty field is a button with a sheet (iOS)", () => {
+  it.each(["en", "ru", "uk"] as const)("opens from one tap on the icon and reports the day on Done (%s)", async (locale) => {
+    const onChange = jest.fn();
+    await renderWithProviders(
+      <DatePicker
+        value={null}
+        startDate="2026-10-05"
+        onChange={onChange}
+        emptyContent={<></>}
+        accessibilityLabel="Departure date"
+        testID="picker"
+      />,
+      { locale },
+    );
+    // The WHOLE face is a plain button (not a native control that only reacts inside its own pill).
+    expect(screen.getByRole("button", { name: "Departure date" })).toBeOnTheScreen();
+    expect(onChange).not.toHaveBeenCalled();
+
+    await userEvent.press(screen.getByTestId("picker"));
+    await userEvent.press(screen.getByTestId("picker-sheet-picker"));
+    expect(onChange).not.toHaveBeenCalled(); // the wheel only changes the draft
+    await userEvent.press(screen.getByTestId("picker-sheet-done"));
+    expect(onChange).toHaveBeenCalledWith("2026-10-05");
+  });
+
+  it("changes nothing on Cancel", async () => {
+    const onChange = jest.fn();
+    await renderWithProviders(
+      <DatePicker value={null} onChange={onChange} emptyContent={<></>} accessibilityLabel="d" testID="picker" />,
+    );
+    await userEvent.press(screen.getByTestId("picker"));
+    await userEvent.press(screen.getByTestId("picker-sheet-cancel"));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});

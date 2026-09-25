@@ -52,7 +52,13 @@ export function SegmentedControl<T extends string>({
             testID={testID === undefined ? undefined : `${testID}-${option.value}`}
             style={[styles.option, selected && { backgroundColor: tokens.accent }]}
           >
-            <AppText variant="button" color={selected ? "onAccent" : "text"}>
+            <AppText
+              variant="button"
+              color={selected ? "onAccent" : "text"}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={layout.minFontScale}
+            >
               {option.label}
             </AppText>
           </Pressable>
@@ -75,7 +81,7 @@ const styles = StyleSheet.create({
     minHeight: layout.minTouch,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderRadius: radius.field,
   },
 });

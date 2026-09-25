@@ -16,6 +16,7 @@ const row = {
   citizenship_country_code: "PT",
   residence_country_code: "PT",
   home_city_place_id: "city-lisbon",
+  home_city_name: null,
   home_airport_code: "LIS",
   home_currency: "EUR",
 };
@@ -65,6 +66,7 @@ describe("getProfile", () => {
         citizenship: "PT",
         residence: "PT",
         homeCityId: "city-lisbon",
+        homeCityName: null,
         homeAirport: "LIS",
         homeCurrency: "EUR",
       },

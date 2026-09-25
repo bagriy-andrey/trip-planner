@@ -1,8 +1,9 @@
-import { applyProfileChoice, EMPTY_PROFILE } from "@tripplanner/shared";
+import { applyCustomCity, applyProfileChoice, EMPTY_PROFILE } from "@tripplanner/shared";
 import type { Profile, ProfileField } from "@tripplanner/shared";
 import { useCallback, useMemo, useState } from "react";
 
 import type { TripErrorKind } from "../api";
+import { customNameOf } from "../pickerItems";
 import { overlay } from "./pendingPatches";
 import { useProfileQuery } from "./useProfileQuery";
 import { useProfileSave } from "./useProfileSave";
@@ -41,7 +42,9 @@ export function useProfileEditor(): ProfileEditor {
   const choose = useCallback(
     (value: string | null) => {
       if (activeField === null) return;
-      const patch = applyProfileChoice(display, activeField, value);
+      // A key of an own city (typed text) is not a directory id: it goes through its own rule.
+      const own = activeField === "homeCity" && value !== null ? customNameOf(value) : null;
+      const patch = own !== null ? applyCustomCity(display, own) : applyProfileChoice(display, activeField, value);
       setActiveField(null);
       if (patch === null) return;
       clearError();

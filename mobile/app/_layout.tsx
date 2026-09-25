@@ -7,7 +7,7 @@ import { I18nextProvider } from "react-i18next";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { useAppFonts } from "@/lib/fonts";
-import { i18n, useDeviceLocaleSync } from "@/lib/i18n";
+import { i18n, LanguageProvider, useLanguagePreference } from "@/lib/i18n";
 import { QueryCacheGuard, QueryProvider } from "@/lib/query";
 import { SessionProvider, useSession } from "@/lib/session";
 import { ThemeProvider, useTheme } from "@/lib/theme";
@@ -21,7 +21,7 @@ function AppShell() {
   const [fontsLoaded, fontsError] = useAppFonts();
   const { tokens, scheme, isReady: themeReady } = useTheme();
   const { status, isRoutedAsSignedIn } = useSession();
-  useDeviceLocaleSync();
+  const { isReady: languageReady } = useLanguagePreference();
 
   // Root view colour follows the theme so overscroll / transitions never flash the other one.
   useEffect(() => {
@@ -29,7 +29,7 @@ function AppShell() {
   }, [tokens.bg]);
 
   // A font error still releases the splash: system fonts beat a stuck launch screen.
-  const ready = (fontsLoaded || fontsError !== null) && themeReady && status !== "restoring";
+  const ready = (fontsLoaded || fontsError !== null) && themeReady && languageReady && status !== "restoring";
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
   }, [ready]);
@@ -82,13 +82,15 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <I18nextProvider i18n={i18n}>
-          <SessionProvider>
-            <QueryProvider>
-              {/* Drops the cached server data when the account ends or changes (["trips"] has no user id). */}
-              <QueryCacheGuard />
-              <AppShell />
-            </QueryProvider>
-          </SessionProvider>
+          <LanguageProvider>
+            <SessionProvider>
+              <QueryProvider>
+                {/* Drops the cached server data when the account ends or changes (["trips"] has no user id). */}
+                <QueryCacheGuard />
+                <AppShell />
+              </QueryProvider>
+            </SessionProvider>
+          </LanguageProvider>
         </I18nextProvider>
       </ThemeProvider>
     </SafeAreaProvider>

@@ -22,7 +22,7 @@ import { useRef, useState } from "react";
 import { useHomeDefaults } from "@/features/profile";
 import { useCreateHotel, useUpdateHotel } from "@/features/hotels";
 import { useToday } from "@/lib/clock";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 
 import { cityDisplayText, hotelDateFloor, hotelFormEquals, nightsOf, toHotelFormInput, withDates } from "./formState";
 import type { HotelFormState } from "./formState";
@@ -52,7 +52,7 @@ type Group = "name" | "city" | "dates" | "times" | "address" | "mapsUrl" | "cost
 export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
   const { i18n, t } = useTranslation("hotel");
   const { homeCurrency } = useHomeDefaults();
-  const lang = resolveLocale([i18n.language]);
+  const lang = placeLanguageOf(resolveLocale([i18n.language]));
   const { t: tTrips } = useTranslation("trips");
   const create = useCreateHotel();
   const update = useUpdateHotel();

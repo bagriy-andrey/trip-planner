@@ -79,10 +79,10 @@ describe("ProfileScreen (S6)", () => {
     expect(mockRouter.replace).not.toHaveBeenCalled();
   });
 
-  it.each(["en", "ru"] as const)("has no language-selection row in %s (AC-40)", async (locale) => {
+  it.each(["en", "ru"] as const)("has a language row in %s, and theme keeps exactly its three options", async (locale) => {
     await renderWithProviders(<ProfileScreen />, { locale, session: SESSION });
-    expect(screen.queryByText(/language|язык/i)).not.toBeOnTheScreen();
-    // The only selector is the theme one, with exactly its three options.
+    // The language is a picker row (device-local), not a second segmented control.
+    expect(screen.getByTestId("row-language")).toBeOnTheScreen();
     expect(screen.getAllByLabelText(locale === "en" ? "Appearance" : "Тема оформления")).toHaveLength(1);
     expect(screen.getAllByRole("radio")).toHaveLength(3);
   });

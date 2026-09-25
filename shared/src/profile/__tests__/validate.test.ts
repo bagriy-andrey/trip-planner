@@ -19,7 +19,34 @@ describe("PROFILE_WRITE_ERROR", () => {
       "homeCurrency.unknown",
       "homeCity.countryMismatch",
       "homeCity.residenceMissing",
+      "homeCity.nameInvalid",
+      "homeCity.nameConflict",
     ]);
+  });
+});
+
+describe("validateProfilePatch: own city name", () => {
+  it("accepts a normalised name and clearing it", () => {
+    expect(validateProfilePatch(EMPTY_PROFILE, { homeCityName: "Nowy Sącz" })).toEqual({ ok: true });
+    expect(validateProfilePatch({ ...EMPTY_PROFILE, homeCityName: "Nowy Sącz" }, { homeCityName: null })).toEqual({
+      ok: true,
+    });
+  });
+  it("rejects a name that is too short, too long or not normalised", () => {
+    expect(errorsOf(EMPTY_PROFILE, { homeCityName: "K" })).toEqual(["homeCity.nameInvalid"]);
+    expect(errorsOf(EMPTY_PROFILE, { homeCityName: "a".repeat(81) })).toEqual(["homeCity.nameInvalid"]);
+    expect(errorsOf(EMPTY_PROFILE, { homeCityName: " Krakow" })).toEqual(["homeCity.nameInvalid"]);
+    expect(errorsOf(EMPTY_PROFILE, { homeCityName: "Kra\nkow" })).toEqual(["homeCity.nameInvalid"]);
+  });
+  it("does not check an own name against the residence country", () => {
+    expect(validateProfilePatch({ ...EMPTY_PROFILE, residence: "PL" }, { homeCityName: "Berlin-Mitte" })).toEqual({
+      ok: true,
+    });
+  });
+  it("rejects a directory city and an own name together", () => {
+    const withName = { ...EMPTY_PROFILE, residence: "PL", homeCityName: "Nowy Sącz" };
+    expect(errorsOf(withName, { homeCityId: "city-krakow" })).toEqual(["homeCity.nameConflict"]);
+    expect(validateProfilePatch(withName, { homeCityId: "city-krakow", homeCityName: null })).toEqual({ ok: true });
   });
 });
 

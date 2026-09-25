@@ -11,6 +11,7 @@ function definedOnly(patch: ProfilePatch): ProfilePatch {
   if (patch.citizenship !== undefined) out.citizenship = patch.citizenship;
   if (patch.residence !== undefined) out.residence = patch.residence;
   if (patch.homeCityId !== undefined) out.homeCityId = patch.homeCityId;
+  if (patch.homeCityName !== undefined) out.homeCityName = patch.homeCityName;
   if (patch.homeAirport !== undefined) out.homeAirport = patch.homeAirport;
   if (patch.homeCurrency !== undefined) out.homeCurrency = patch.homeCurrency;
   return out;

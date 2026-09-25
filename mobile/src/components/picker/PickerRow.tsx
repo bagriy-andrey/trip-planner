@@ -35,6 +35,7 @@ export function PickerRow({ item, selected, last, onPress, testID }: PickerRowPr
         selected && { backgroundColor: tokens.surface },
       ]}
     >
+      {item.kind === "add" ? <Icon name="plus" color="accent" /> : null}
       {item.flagCountryCode === undefined ? null : <CountryFlag countryCode={item.flagCountryCode} />}
       <AppText style={styles.name}>{item.name}</AppText>
       <AppText variant="monoSmall" color="textSecondary">

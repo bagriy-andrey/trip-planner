@@ -9,7 +9,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import type { EdgeInsets } from "react-native-safe-area-context";
 
 import { ClockProvider } from "@/lib/clock";
-import { i18n } from "@/lib/i18n";
+import { i18n, LanguageProvider, useLanguagePreference } from "@/lib/i18n";
 import { createQueryClient } from "@/lib/query";
 import type { Locale } from "@/lib/i18n";
 import { SessionContext } from "@/lib/session";
@@ -99,12 +99,13 @@ function ApplyThemePreference({
   children: ReactNode;
 }) {
   const { setPreference, isReady } = useTheme();
+  const { isReady: languageReady } = useLanguagePreference();
   useEffect(() => {
     void setPreference(preference);
   }, [preference, setPreference]);
   useEffect(() => {
-    if (isReady) onReady();
-  }, [isReady, onReady]);
+    if (isReady && languageReady) onReady();
+  }, [isReady, languageReady, onReady]);
   return <>{children}</>;
 }
 
@@ -140,6 +141,7 @@ export async function renderWithProviders(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets }}>
       <I18nextProvider i18n={testI18n}>
         <ThemeProvider>
+          <LanguageProvider>
           <SessionContext.Provider value={sessionValue}>
             <QueryClientProvider client={queryClient}>
               <ClockProvider today={today}>
@@ -149,6 +151,7 @@ export async function renderWithProviders(
               </ClockProvider>
             </QueryClientProvider>
           </SessionContext.Provider>
+          </LanguageProvider>
         </ThemeProvider>
       </I18nextProvider>
     </SafeAreaProvider>,
