@@ -3,12 +3,14 @@ import type { Trip } from "@tripplanner/shared";
 
 import { createHotel } from "@/features/hotels/api";
 import { getTrip } from "@/features/trips/api";
+import { getProfile } from "@/features/profile/api";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
 import { HotelFormScreen } from "../HotelFormScreen";
-import { LISBON_PLACE, SIGNED_IN, makeHotel, makeTrip, pickTime } from "./testKit";
+import { LISBON_PLACE, SIGNED_IN, makeHotel, makeTrip, pickTime, profileResult } from "./testKit";
 
 jest.mock("@/lib/supabase", () => ({ supabase: { from: jest.fn() } }));
+jest.mock("@/features/profile/api", () => ({ ...jest.requireActual("@/features/profile/api"), getProfile: jest.fn() }));
 jest.mock("@/features/trips/api", () => ({ ...jest.requireActual("@/features/trips/api"), getTrip: jest.fn() }));
 jest.mock("@/features/hotels/api", () => ({
   ...jest.requireActual("@/features/hotels/api"),
@@ -28,6 +30,7 @@ const CITY_TRIP = { place: LISBON_PLACE, startDate: "2026-06-15", endDate: "2026
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (getProfile as jest.Mock).mockResolvedValue(profileResult(null));
   createHotelMock.mockResolvedValue({ ok: true, data: makeHotel() });
 });
 

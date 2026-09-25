@@ -265,10 +265,9 @@ export const hotelFormSchema = z
     let cost: { amount: string; currency: CurrencyCode } | null = null;
     const amountText = trimmed(raw.costAmount);
     const currencyText = trimmed(raw.costCurrency).toUpperCase();
-    if (amountText !== "" || currencyText !== "") {
-      if (amountText === "") {
-        report("costAmount", HOTEL_FIELD_ERROR.costAmountMissing);
-      } else if (currencyText === "") {
+    // An empty amount means "no cost" whatever the currency is (AC-39): the currency alone is not an error.
+    if (amountText !== "") {
+      if (currencyText === "") {
         report("costCurrency", HOTEL_FIELD_ERROR.costCurrencyMissing);
       } else {
         const amount = parseMoneyAmount(amountText);

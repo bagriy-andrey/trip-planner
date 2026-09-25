@@ -16,6 +16,8 @@ export interface CostFieldProps {
   onOpenCurrency: () => void;
   /** The amount field lost focus (the screen then reveals a missing currency). */
   onBlurAmount?: () => void;
+  /** Hint shown while no currency is chosen: the home currency or the generic example (AC-40). Never a value. */
+  currencyPlaceholder: string;
   amountError?: string;
   currencyError?: string;
   testID: string;
@@ -28,6 +30,7 @@ export function CostField({
   onChangeAmount,
   onOpenCurrency,
   onBlurAmount,
+  currencyPlaceholder,
   amountError,
   currencyError,
   testID,
@@ -78,7 +81,7 @@ export function CostField({
           ]}
         >
           <AppText variant="mono" color={chosen ? "text" : "textSecondary"} style={styles.buttonText}>
-            {chosen ? currency : t("form.field.currencyPlaceholder")}
+            {chosen ? currency : currencyPlaceholder}
           </AppText>
           <Icon name="chevron" color="textSecondary" />
         </Pressable>

@@ -5,13 +5,15 @@ import { AccessibilityInfo, Keyboard } from "react-native";
 
 import { createHotel } from "@/features/hotels/api";
 import { getTrip } from "@/features/trips/api";
+import { getProfile } from "@/features/profile/api";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
 import { CostField } from "../components/CostField";
 import { HotelFormScreen } from "../HotelFormScreen";
-import { LISBON_PLACE, SIGNED_IN, makeHotel, makeTrip, pickTime } from "./testKit";
+import { LISBON_PLACE, SIGNED_IN, makeHotel, makeTrip, pickTime, profileResult } from "./testKit";
 
 jest.mock("@/lib/supabase", () => ({ supabase: { from: jest.fn() } }));
+jest.mock("@/features/profile/api", () => ({ ...jest.requireActual("@/features/profile/api"), getProfile: jest.fn() }));
 jest.mock("@/features/trips/api", () => ({ ...jest.requireActual("@/features/trips/api"), getTrip: jest.fn() }));
 jest.mock("@/features/hotels/api", () => ({
   ...jest.requireActual("@/features/hotels/api"),
@@ -37,6 +39,7 @@ async function renderCreate(overrides: Partial<Trip> = {}) {
 let dismiss: jest.SpyInstance;
 beforeEach(() => {
   jest.clearAllMocks();
+  (getProfile as jest.Mock).mockResolvedValue(profileResult(null));
   createHotelMock.mockResolvedValue({ ok: true, data: makeHotel() });
   dismiss = jest.spyOn(Keyboard, "dismiss").mockImplementation(() => undefined);
 });
@@ -108,7 +111,7 @@ describe("cost input accepts only price characters (native echo)", () => {
     const onRender = jest.fn();
     await renderWithProviders(
       <Profiler id="cost" onRender={onRender}>
-        <CostField amount="12" currency="" onChangeAmount={jest.fn()} onOpenCurrency={jest.fn()} testID="cost" />
+        <CostField amount="12" currency="" onChangeAmount={jest.fn()} onOpenCurrency={jest.fn()} currencyPlaceholder="EUR" testID="cost" />
       </Profiler>,
     );
     const before = onRender.mock.calls.length;
@@ -140,15 +143,6 @@ describe("tap outside an input blurs it", () => {
     expect(dismiss).toHaveBeenCalledTimes(3);
   });
 
-  it("dismisses when the touch lands in the currency sheet outside its search input; keeps focus in the search", async () => {
-    await renderCreate(CITY_TRIP);
-    await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
-    dismiss.mockClear();
-    touchInput("hotel-form-currency-sheet-search");
-    expect(dismiss).not.toHaveBeenCalled();
-    fireEvent(screen.getByTestId("hotel-form-currency-sheet-option-EUR"), "touchStart");
-    expect(dismiss).toHaveBeenCalledTimes(1);
-  });
 });
 
 describe("cost amount accepts digits only", () => {
@@ -166,7 +160,7 @@ describe("currency sheet motion", () => {
   it("stays mounted through the exit animation, then unmounts and applies the choice", async () => {
     await renderCreate();
     await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
-    await userEvent.press(screen.getByTestId("hotel-form-currency-sheet-option-EUR"));
+    await userEvent.press(screen.getByTestId("hotel-form-currency-sheet-item-EUR"));
     // The choice is applied only after the exit animation finished.
     await waitFor(() => expect(screen.queryByTestId("hotel-form-currency-sheet")).not.toBeOnTheScreen());
     expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: EUR");

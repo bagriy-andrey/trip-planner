@@ -2,6 +2,7 @@ import { clampBreakfastDays, findCityById, nightsBetweenDates } from "@tripplann
 import type {
   CalendarDate,
   CityRecord,
+  CurrencyCode,
   ClockTime,
   Hotel,
   HotelBreakfast,
@@ -77,7 +78,9 @@ export function hotelDateFloor(mode: "create" | "edit", today: CalendarDate, ini
  * empty. A trip that already began must not prefill past days: the start is clamped to today, and a
  * trip that already ended leaves the range empty (the user picks it).
  */
-export function hotelFormFromTrip(trip: Trip, lang: PlaceLanguage, today: CalendarDate): HotelFormState {
+export function hotelFormFromTrip(trip: Trip, lang: PlaceLanguage, today: CalendarDate,
+  homeCurrency: CurrencyCode | null,
+): HotelFormState {
   const city = trip.place.kind === "city" ? findCityById(trip.place.placeId) : undefined;
   const ended = trip.endDate !== null && trip.endDate < today;
   const checkInDate = ended ? null : trip.startDate !== null && trip.startDate < today ? today : trip.startDate;
@@ -87,6 +90,7 @@ export function hotelFormFromTrip(trip: Trip, lang: PlaceLanguage, today: Calend
     cityText: city === undefined ? "" : cityDisplayText(city, lang),
     checkInDate,
     checkOutDate: ended ? null : trip.endDate,
+    costCurrency: homeCurrency ?? "",
   };
 }
 

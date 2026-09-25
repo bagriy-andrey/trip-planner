@@ -2,18 +2,21 @@ import { act, fireEvent, screen, userEvent, waitFor } from "@testing-library/rea
 import type { Trip } from "@tripplanner/shared";
 import { Linking } from "react-native";
 
-import { createHotel } from "@/features/hotels/api";
+import { createHotel, getHotel } from "@/features/hotels/api";
 import { getTrip } from "@/features/trips/api";
+import { getProfile } from "@/features/profile/api";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
 import { HotelFormScreen } from "../HotelFormScreen";
-import { LISBON_PLACE, SIGNED_IN, makeHotel, makeTrip, pickTime } from "./testKit";
+import { HOTEL_ID, LISBON_PLACE, SIGNED_IN, makeHotel, makeTrip, pickTime, profileResult } from "./testKit";
 
 jest.mock("@/lib/supabase", () => ({ supabase: { from: jest.fn() } }));
+jest.mock("@/features/profile/api", () => ({ ...jest.requireActual("@/features/profile/api"), getProfile: jest.fn() }));
 jest.mock("@/features/trips/api", () => ({ ...jest.requireActual("@/features/trips/api"), getTrip: jest.fn() }));
 jest.mock("@/features/hotels/api", () => ({
   ...jest.requireActual("@/features/hotels/api"),
   createHotel: jest.fn(),
+  getHotel: jest.fn(),
 }));
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), navigate: jest.fn(), back: jest.fn(), dismissAll: jest.fn() };
@@ -24,11 +27,13 @@ jest.mock("expo-router", () => ({
 
 const getTripMock = getTrip as jest.Mock;
 const createHotelMock = createHotel as jest.Mock;
+const getHotelMock = getHotel as jest.Mock;
 
 const MAPS = "https://www.google.com/maps/place/Casa";
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (getProfile as jest.Mock).mockResolvedValue(profileResult(null));
   createHotelMock.mockResolvedValue({ ok: true, data: makeHotel() });
 });
 
@@ -82,10 +87,11 @@ describe("HotelFormScreen breakfast (AC-22, AC-23, AC-44)", () => {
 
 describe("HotelFormScreen cost (AC-19, currency dropdown)", () => {
   const sheet = "hotel-form-currency-sheet";
+  const field = () => screen.getByTestId("hotel-form-cost-currency");
 
-  it("never defaults the currency: the field shows the placeholder and a missing pair is reported", async () => {
+  it("without a profile the currency stays empty, the placeholder is EUR and a missing pair is reported (AC-38, AC-40)", async () => {
     await renderCreate();
-    await waitFor(() => expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: not chosen"));
+    await waitFor(() => expect(field().props.accessibilityLabel).toBe("Currency: not chosen"));
     await userEvent.type(screen.getByTestId("hotel-form-cost-amount"), "120.50");
     await userEvent.press(screen.getByRole("button", { name: "Save" }));
     // Only the error reads "Choose a currency"; the placeholder is the muted hint EUR.
@@ -93,45 +99,83 @@ describe("HotelFormScreen cost (AC-19, currency dropdown)", () => {
     expect(screen.getByText("EUR")).toBeOnTheScreen();
   });
 
-  it("opens a bottom sheet with the full list; tapping a row selects it and closes", async () => {
+  it("prefills the home currency on create (US-3) and hints it as placeholder (AC-40)", async () => {
+    (getProfile as jest.Mock).mockResolvedValue(profileResult("PLN"));
     await renderCreate();
-    await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
+    await waitFor(() => expect(field().props.accessibilityLabel).toBe("Currency: PLN"));
+  });
+
+  it("ignores a home currency that is not in the list (AC-38)", async () => {
+    (getProfile as jest.Mock).mockResolvedValue(profileResult("ZZZ"));
+    await renderCreate();
+    expect(field().props.accessibilityLabel).toBe("Currency: not chosen");
+    expect(screen.getByText("EUR")).toBeOnTheScreen();
+  });
+
+  it("does not prefill the home currency when editing a hotel without a cost (AC-38)", async () => {
+    (getProfile as jest.Mock).mockResolvedValue(profileResult("PLN"));
+    getHotelMock.mockResolvedValue({ ok: true, data: makeHotel({ cost: null }) });
+    await renderWithProviders(<HotelFormScreen tripId="trip-1" hotelId={HOTEL_ID} />, SIGNED_IN);
+    await screen.findByTestId("hotel-form-name");
+    expect(field().props.accessibilityLabel).toBe("Currency: not chosen");
+  });
+
+  it("saves a currency without an amount as no cost, without an error (AC-39)", async () => {
+    (getProfile as jest.Mock).mockResolvedValue(profileResult("PLN"));
+    await renderCreate({ startDate: "2026-06-15", endDate: "2026-06-18" });
+    await waitFor(() => expect(field().props.accessibilityLabel).toBe("Currency: PLN"));
+    await userEvent.type(screen.getByTestId("hotel-form-name"), "Casa");
+    await userEvent.press(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(createHotelMock).toHaveBeenCalledTimes(1));
+    expect(createHotelMock.mock.calls[0][1]).toMatchObject({ cost: null });
+    expect(screen.queryByText("Enter an amount")).not.toBeOnTheScreen();
+  });
+
+  it("opens the shared sheet with the full list; tapping a row selects it and closes", async () => {
+    await renderCreate();
+    await userEvent.press(field());
     expect(screen.getByTestId(sheet)).toBeOnTheScreen();
-    expect(screen.getByTestId(`${sheet}-option-EUR`)).toBeOnTheScreen();
-    expect(screen.getByTestId(`${sheet}-option-ARS`)).toBeOnTheScreen();
-    await userEvent.press(screen.getByTestId(`${sheet}-option-EUR`));
+    expect(screen.getByTestId(`${sheet}-item-EUR`)).toBeOnTheScreen();
+    await userEvent.press(screen.getByTestId(`${sheet}-item-EUR`));
     await waitFor(() => expect(screen.queryByTestId(sheet)).not.toBeOnTheScreen());
-    await waitFor(() => expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: EUR"));
+    await waitFor(() => expect(field().props.accessibilityLabel).toBe("Currency: EUR"));
   });
 
   it("searches by code or by localized name, case-insensitively", async () => {
     await renderCreate();
-    await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
-    await userEvent.type(screen.getByTestId(`${sheet}-search`), "zlo");
-    expect(screen.getByTestId(`${sheet}-option-PLN`)).toBeOnTheScreen();
-    expect(screen.queryByTestId(`${sheet}-option-EUR`)).not.toBeOnTheScreen();
+    await userEvent.press(field());
+    await userEvent.type(screen.getByTestId(`${sheet}-search`), "pol");
+    expect(screen.getByTestId(`${sheet}-item-PLN`)).toBeOnTheScreen();
+    expect(screen.queryByTestId(`${sheet}-item-EUR`)).not.toBeOnTheScreen();
     await userEvent.clear(screen.getByTestId(`${sheet}-search`));
-    await userEvent.type(screen.getByTestId(`${sheet}-search`), "usd");
-    expect(screen.getByTestId(`${sheet}-option-USD`)).toBeOnTheScreen();
-    await userEvent.clear(screen.getByTestId(`${sheet}-search`));
-    await userEvent.type(screen.getByTestId(`${sheet}-search`), "qqq");
-    expect(screen.getByTestId(`${sheet}-empty`)).toBeOnTheScreen();
+    await userEvent.type(screen.getByTestId(`${sheet}-search`), "pln");
+    expect(screen.getByTestId(`${sheet}-item-PLN`)).toBeOnTheScreen();
   });
 
-  it("offers a 'None' row once a currency is chosen, which unsets it", async () => {
+  it("shows 'Check the spelling.' for an empty result when an amount is entered (AC-18, AC-41)", async () => {
     await renderCreate();
-    await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
+    await userEvent.type(screen.getByTestId("hotel-form-cost-amount"), "10");
+    await userEvent.press(field());
+    await userEvent.type(screen.getByTestId(`${sheet}-search`), "qqq");
+    expect(screen.getByTestId(`${sheet}-empty`)).toBeOnTheScreen();
+    expect(screen.getByText("Check the spelling.")).toBeOnTheScreen();
+  });
+
+  it("offers 'Not specified' once a currency is chosen, which unsets it", async () => {
+    await renderCreate();
+    await userEvent.press(field());
     expect(screen.queryByTestId(`${sheet}-none`)).not.toBeOnTheScreen();
-    await userEvent.press(screen.getByTestId(`${sheet}-option-GBP`));
+    await userEvent.press(screen.getByTestId(`${sheet}-item-GBP`));
     await waitFor(() => expect(screen.queryByTestId(sheet)).not.toBeOnTheScreen());
-    await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
+    await userEvent.press(field());
+    expect(screen.getByText("Not specified")).toBeOnTheScreen();
     await userEvent.press(screen.getByTestId(`${sheet}-none`));
-    await waitFor(() => expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: not chosen"));
+    await waitFor(() => expect(field().props.accessibilityLabel).toBe("Currency: not chosen"));
   });
 
   it("closes from the scrim without changing the choice", async () => {
     await renderCreate();
-    await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
+    await userEvent.press(field());
     await userEvent.press(screen.getByTestId(`${sheet}-backdrop`));
     await waitFor(() => expect(screen.queryByTestId(sheet)).not.toBeOnTheScreen());
   });

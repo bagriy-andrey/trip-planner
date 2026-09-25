@@ -42,7 +42,6 @@ describe("error id contract", () => {
       "breakfast.invalid",
       "breakfastDays.range",
       "cost.amountFormat",
-      "cost.amountMissing",
       "cost.currencyMissing",
       "cost.currencyUnknown",
       "bookingRef.tooLong",
@@ -173,7 +172,8 @@ describe("parseHotelForm", () => {
       currency: "EUR",
     });
     expect(errors({ ...valid, costAmount: "12" }).costCurrency).toBe("cost.currencyMissing");
-    expect(errors({ ...valid, costCurrency: "EUR" }).costAmount).toBe("cost.amountMissing");
+    // Currency alone is not an error: no amount means no cost (AC-39).
+    expect(value({ ...valid, costCurrency: "EUR" }).cost).toBeNull();
     expect(errors({ ...valid, costAmount: "1e3", costCurrency: "EUR" }).costAmount).toBe("cost.amountFormat");
     expect(errors({ ...valid, costAmount: "5", costCurrency: "XXX" }).costCurrency).toBe("cost.currencyUnknown");
     expect(value({ ...valid, costAmount: " ", costCurrency: " " }).cost).toBeNull();
