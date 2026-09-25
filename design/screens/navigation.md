@@ -24,7 +24,8 @@
 | `trips/[tripId]/documents` | `documents.md` | нет |
 | `trips/[tripId]/flights/new`, `trips/[tripId]/flights/[flightId]` | `add-flight.md` | нет, модальная шторка; маршрут под защитой |
 | `trips/[tripId]/hotels/new`, `trips/[tripId]/hotels/[hotelId]` | `add-hotel.md` | нет, модальная шторка; маршрут под защитой |
-| `trips/[tripId]/cars/new` | `add-car.md` | нет, модальная шторка; маршрут под защитой |
+| `trips/[tripId]/cars/new`, `trips/[tripId]/cars/[carId]` | `add-car.md` | нет, модальная шторка; маршрут под защитой |
+| `trips/[tripId]/cars/[carId]/view` | `add-car.md` (S17) | нет; маршрут под защитой |
 | `legal/terms`, `legal/privacy` | — | нет |
 
 ## Переходы
@@ -45,14 +46,14 @@
 - История: карточка → Детали поездки, тот же экран, без режима «только чтение»
 
 Маршруты `trips/[tripId]/edit`, `trips/[tripId]/route`, `trips/[tripId]/flights/…`,
-`trips/[tripId]/hotels/…` и `trips/[tripId]/cars/new` объявлены в корневом
+`trips/[tripId]/hotels/…` и `trips/[tripId]/cars/…` объявлены в корневом
 лейауте внутри защищённой группы (как `trips/new`): без входа они недоступны,
 ссылка на любой из них уводит на онбординг. Таблица выше приведена
 в соответствие с файлами `app/` (SPEC-04 / PLAN-04, шаги 7–9): формы
 бронирований и «Маршрут» лежат под префиксом поездки `trips/[tripId]/…`,
 а не отдельными корневыми группами `flights/`, `hotels/`, `cars/`.
-Маршрут правки отеля `hotels/[hotelId]` реализован (SPEC-05). У авто пока только
-`new`, формы редактирования `cars/[carId]` в коде нет — она остаётся заглушкой.
+Маршрут правки отеля `hotels/[hotelId]` реализован (SPEC-05). Для авто (SPEC-07) реализованы
+`cars/new`, `cars/[carId]` (модальная форма правки) и `cars/[carId]/view` (S17).
 
 ## Формы редактирования
 
