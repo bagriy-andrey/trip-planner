@@ -1,0 +1,1 @@
+- [Spec format preferences](feedback_spec_format.md) — Russian, SPEC-05 shape, defaulted non-blocking open questions, "Что заменяется"

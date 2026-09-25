@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { LANGUAGE_STORAGE_KEY } from "@/lib/i18n";
 import { THEME_STORAGE_KEY } from "@/lib/theme/preference";
 
 import { STORAGE_KEYS } from "../keys";
@@ -12,8 +13,8 @@ beforeEach(async () => {
 });
 
 describe("settingsStorage (AC-33)", () => {
-  it("allows exactly one key: the theme key", () => {
-    expect([...ALLOWED_SETTING_KEYS]).toEqual([THEME_STORAGE_KEY]);
+  it("allows exactly two keys: the theme and the language", () => {
+    expect([...ALLOWED_SETTING_KEYS]).toEqual([THEME_STORAGE_KEY, LANGUAGE_STORAGE_KEY]);
   });
 
   it("takes its keys from the registry and never lists a secret one", () => {

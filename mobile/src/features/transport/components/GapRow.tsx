@@ -3,7 +3,7 @@ import { findPlaceById } from "@tripplanner/shared";
 import type { RouteGap } from "@tripplanner/shared";
 
 import { AppText, Icon } from "@/components";
-import { useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, useTranslation } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 // `formatDuration`/`formatStopoverDays` are not re-exported by `lib/i18n`'s barrel (a step-4 gap
 // found while building this component) — imported straight from their module, same file they live
@@ -30,7 +30,7 @@ export interface GapRowProps {
 export function GapRow({ gap, locale, testID }: GapRowProps) {
   const { t } = useTranslation("transport");
   const { tokens } = useTheme();
-  const cityName = gap.cityId === undefined ? "" : (findPlaceById(gap.cityId)?.[locale] ?? gap.cityId);
+  const cityName = gap.cityId === undefined ? "" : (findPlaceById(gap.cityId)?.[placeLanguageOf(locale)] ?? gap.cityId);
 
   if (gap.kind === "stopover") {
     const text =

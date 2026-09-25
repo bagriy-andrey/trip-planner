@@ -19,9 +19,10 @@ import type {
 } from "@tripplanner/shared";
 import { useRef, useState } from "react";
 
+import { useHomeDefaults } from "@/features/profile";
 import { useCreateHotel, useUpdateHotel } from "@/features/hotels";
 import { useToday } from "@/lib/clock";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 
 import { cityDisplayText, hotelDateFloor, hotelFormEquals, nightsOf, toHotelFormInput, withDates } from "./formState";
 import type { HotelFormState } from "./formState";
@@ -49,8 +50,9 @@ type Group = "name" | "city" | "dates" | "times" | "address" | "mapsUrl" | "cost
  * Errors are computed live from the ONE shared schema and merely hidden until a field is "touched".
  */
 export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
-  const { i18n } = useTranslation();
-  const lang = resolveLocale([i18n.language]);
+  const { i18n, t } = useTranslation("hotel");
+  const { homeCurrency } = useHomeDefaults();
+  const lang = placeLanguageOf(resolveLocale([i18n.language]));
   const { t: tTrips } = useTranslation("trips");
   const create = useCreateHotel();
   const update = useUpdateHotel();
@@ -232,6 +234,7 @@ export function useHotelForm(target: HotelFormTarget, initial: HotelFormState) {
       openCurrency: () => setCurrencyOpen(true),
       closeCurrency: () => setCurrencyOpen(false),
       selectCurrency,
+      currencyPlaceholder: homeCurrency ?? t("form.field.currencyPlaceholder"),
     },
     bookingRef: { change: (bookingRef: string) => apply({ bookingRef }), blur: () => touch("bookingRef") },
     notes: { change: (notes: string) => apply({ notes }), blur: () => touch("notes") },

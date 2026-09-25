@@ -1,8 +1,10 @@
 import { APP_NAME } from "../../../../app.constants";
 import enMeta from "../../../../locales/en.json";
 import ruMeta from "../../../../locales/ru.json";
+import ukMeta from "../../../../locales/uk.json";
 import { en } from "../locales/en";
 import { ru } from "../locales/ru";
+import { uk } from "../locales/uk";
 
 const PLURAL_SUFFIX = /_(zero|one|two|few|many|other)$/;
 
@@ -21,6 +23,7 @@ function flatten(node: unknown, prefix: string[] = []): Entry[] {
 
 const ruEntries = flatten(ru);
 const enEntries = flatten(en);
+const ukEntries = flatten(uk);
 
 const withoutPluralSuffix = (path: string) => path.replace(PLURAL_SUFFIX, "");
 const pluralGroups = (entries: Entry[]) => {
@@ -38,6 +41,7 @@ const placeholders = (value: string) =>
 describe.each([
   ["ru", ruEntries],
   ["en", enEntries],
+  ["uk", ukEntries],
 ] as const)("%s strings", (_locale, entries) => {
   it("has no empty values", () => {
     expect(entries.filter(({ value }) => value.trim() === "").map(({ path }) => path)).toEqual([]);
@@ -59,6 +63,11 @@ describe("ru/en parity (AC-34)", () => {
     expect(keySet(enEntries)).toEqual(keySet(ruEntries));
   });
 
+  it("has the same key sets in uk as in ru", () => {
+    expect(Object.keys(uk).sort()).toEqual(Object.keys(ru).sort());
+    expect(keySet(ukEntries)).toEqual(keySet(ruEntries));
+  });
+
   it("uses the same interpolation variables for each key", () => {
     const vars = (entries: Entry[]) => {
       const byKey = new Map<string, string[]>();
@@ -69,11 +78,13 @@ describe("ru/en parity (AC-34)", () => {
       return byKey;
     };
     expect(vars(enEntries)).toEqual(vars(ruEntries));
+    expect(vars(ukEntries)).toEqual(vars(ruEntries));
   });
 
   it.each([
     ["ru", ruEntries],
     ["en", enEntries],
+    ["uk", ukEntries],
   ] as const)("%s defines every CLDR plural category its language needs", (locale, entries) => {
     const required = new Intl.PluralRules(locale).resolvedOptions().pluralCategories;
     for (const [base, categories] of pluralGroups(entries)) {
@@ -86,6 +97,7 @@ describe("ru/en parity (AC-34)", () => {
 
   it("marks the same keys as plural in both locales", () => {
     expect([...pluralGroups(enEntries).keys()].sort()).toEqual([...pluralGroups(ruEntries).keys()].sort());
+    expect([...pluralGroups(ukEntries).keys()].sort()).toEqual([...pluralGroups(ruEntries).keys()].sort());
   });
 });
 
@@ -93,6 +105,7 @@ describe("mock-era city names (SPEC-03 AC-66)", () => {
   it.each([
     ["ru", ru, ruEntries],
     ["en", en, enEntries],
+    ["uk", uk, ukEntries],
   ] as const)("%s has no `trips.cities` block and no `cities.*` key anywhere", (_locale, locale, entries) => {
     expect(Object.keys(locale.trips)).not.toContain("cities");
     expect(entries.filter(({ path }) => /(^|\.)cities(\.|$)/.test(path)).map(({ path }) => path)).toEqual([]);
@@ -100,8 +113,9 @@ describe("mock-era city names (SPEC-03 AC-66)", () => {
 });
 
 describe("iOS metadata locales", () => {
-  it("shows the single-source app name in both locales", () => {
+  it("shows the single-source app name in every locale", () => {
     expect(ruMeta.CFBundleDisplayName).toBe(APP_NAME);
     expect(enMeta.CFBundleDisplayName).toBe(APP_NAME);
+    expect(ukMeta.CFBundleDisplayName).toBe(APP_NAME);
   });
 });

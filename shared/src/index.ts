@@ -4,6 +4,7 @@ export * from "./auth";
 export * from "./hotels";
 export * from "./money";
 export * from "./places";
+export * from "./profile";
 export * from "./segments";
 export * from "./trips";
 export { parseForm } from "./forms/parse";

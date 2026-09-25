@@ -64,10 +64,10 @@ function segmentFormFromAirports(
 
 /** Prefill for the very FIRST segment of a trip (AC-38, `firstSegmentPrefill` from `shared`). */
 export function segmentFormFromFirstPrefill(
-  prefill: { fromAirport: AirportRecord | null; departureDate: CalendarDate | null },
+  prefill: { fromAirport: AirportRecord | null; toAirport: AirportRecord | null; departureDate: CalendarDate | null },
   lang: PlaceLanguage,
 ): SegmentFormState {
-  return segmentFormFromAirports(prefill.fromAirport, null, prefill.departureDate, lang);
+  return segmentFormFromAirports(prefill.fromAirport, prefill.toAirport, prefill.departureDate, lang);
 }
 
 /** Prefill after "Save and add next" (AC-41..AC-43, `nextSegmentPrefill` from `shared`). */

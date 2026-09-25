@@ -42,7 +42,7 @@ export function AirportSuggestions({ airports, lang, onSelect, testID }: Airport
             <AppText style={styles.name} numberOfLines={1} testID={`airport-suggestion-${airport.id}-name`}>
               {name}
             </AppText>
-            <AppText variant="monoSmall" color="textSecondary" testID={`airport-suggestion-${airport.id}-code`}>
+            <AppText variant="monoSmall" color="textSecondary" style={styles.code} testID={`airport-suggestion-${airport.id}-code`}>
               {airport.iata}
             </AppText>
           </PressableRow>
@@ -64,5 +64,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     justifyContent: "space-between",
   },
-  name: { flex: 1 },
+  name: { flex: 1, flexShrink: 1 },
+  // The code never wraps or shrinks: the name gives way (one row in every language).
+  code: { flexShrink: 0 },
 });

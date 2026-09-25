@@ -55,6 +55,12 @@ jest.mock("@/features/trips/api", () => ({
   updateTrip: jest.fn(),
 }));
 
+jest.mock("@/features/profile/api", () => ({
+  ...jest.requireActual("@/features/profile/api"),
+  getProfile: jest.fn(async () => ({ ok: true, data: jest.requireActual("@tripplanner/shared").EMPTY_PROFILE })),
+  saveProfile: jest.fn(),
+}));
+
 const auth = (jest.requireMock("@/lib/supabase") as { __auth: AuthMock }).__auth;
 const listTripsMock = listTrips as jest.Mock;
 const getTripMock = getTrip as jest.Mock;

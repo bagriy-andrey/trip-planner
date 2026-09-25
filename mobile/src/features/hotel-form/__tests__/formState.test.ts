@@ -19,6 +19,7 @@ describe("hotelFormFromTrip", () => {
       makeTrip({ place: LISBON_PLACE, startDate: "2026-06-15", endDate: "2026-06-20" }),
       "en",
       "2026-06-01",
+      null,
     );
     expect(state.city?.id).toBe("city-lisbon");
     expect(state.cityText).toBe("Lisbon");
@@ -26,13 +27,13 @@ describe("hotelFormFromTrip", () => {
   });
 
   it("leaves the city empty for a country or free-text trip (AC-11)", () => {
-    expect(hotelFormFromTrip(makeTrip(), "en", "2026-06-01").city).toBeNull();
+    expect(hotelFormFromTrip(makeTrip(), "en", "2026-06-01", null).city).toBeNull();
     const country = makeTrip({ place: { kind: "country", placeId: "country-pt", countryCode: "PT" } });
-    expect(hotelFormFromTrip(country, "en", "2026-06-01").cityText).toBe("");
+    expect(hotelFormFromTrip(country, "en", "2026-06-01", null).cityText).toBe("");
   });
 
   it("leaves dates empty for a trip without dates", () => {
-    const state = hotelFormFromTrip(makeTrip({ place: LISBON_PLACE }), "ru", "2026-06-01");
+    const state = hotelFormFromTrip(makeTrip({ place: LISBON_PLACE }), "ru", "2026-06-01", null);
     expect(state).toMatchObject({ checkInDate: null, checkOutDate: null, cityText: "Лиссабон" });
     expect(nightsOf(state)).toBeNull();
   });
@@ -42,21 +43,21 @@ describe("hotelFormFromTrip past-date clamp", () => {
   const trip = (startDate: CalendarDate | null, endDate: CalendarDate | null) => makeTrip({ place: LISBON_PLACE, startDate, endDate });
 
   it("clamps a start in the past to today and keeps the end", () => {
-    expect(hotelFormFromTrip(trip("2026-06-01", "2026-06-20"), "en", "2026-06-10")).toMatchObject({
+    expect(hotelFormFromTrip(trip("2026-06-01", "2026-06-20"), "en", "2026-06-10", null)).toMatchObject({
       checkInDate: "2026-06-10",
       checkOutDate: "2026-06-20",
     });
   });
 
   it("leaves the range empty for a trip that already ended", () => {
-    expect(hotelFormFromTrip(trip("2026-05-01", "2026-05-09"), "en", "2026-06-10")).toMatchObject({
+    expect(hotelFormFromTrip(trip("2026-05-01", "2026-05-09"), "en", "2026-06-10", null)).toMatchObject({
       checkInDate: null,
       checkOutDate: null,
     });
   });
 
   it("keeps a future or current range as is", () => {
-    expect(hotelFormFromTrip(trip("2026-06-10", "2026-06-12"), "en", "2026-06-10")).toMatchObject({
+    expect(hotelFormFromTrip(trip("2026-06-10", "2026-06-12"), "en", "2026-06-10", null)).toMatchObject({
       checkInDate: "2026-06-10",
       checkOutDate: "2026-06-12",
     });

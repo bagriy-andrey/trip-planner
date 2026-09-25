@@ -499,11 +499,11 @@ describe("edit mode", () => {
     expect(screen.getByRole("checkbox", { name: "No dates yet" })).toBeChecked();
   });
 
-  it("shows a directory place's name in the UI language", async () => {
+  it("shows a directory place as the user saved it, not translated", async () => {
     getTripMock.mockResolvedValue({ ok: true, data: makeTrip({ ...LISBON, destination: "Lisbon" }) });
     await renderWithProviders(<TripFormScreen mode="edit" tripId="trip-1" />, { ...SIGNED_IN, locale: "ru" });
     const input = await screen.findByTestId("trip-form-destination");
-    expect(input.props.value).toBe("Лиссабон");
+    expect(input.props.value).toBe("Lisbon");
   });
 
   it("treats a place id the directory does not know as free text", async () => {

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import { AppText, Icon, IconButton, Screen } from "@/components";
 import { useTripQuery } from "@/features/trips";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 import { layout, spacing, useTheme } from "@/lib/theme";
 
 import { NotClosedCard } from "./components/NotClosedCard";
@@ -36,7 +36,7 @@ export function RouteScreen({ tripId, onBack }: RouteScreenProps) {
   const segmentsQuery = useSegmentsQuery(tripId);
   const route = useRouteView(segmentsQuery.segments, tripQuery.trip);
 
-  const cityName = tripQuery.trip === undefined ? "" : resolveDestinationName(tripQuery.trip, locale);
+  const cityName = tripQuery.trip === undefined ? "" : resolveDestinationName(tripQuery.trip);
 
   let body: ReactNode;
   if (tripQuery.isError && tripQuery.error?.kind === "notFound") {

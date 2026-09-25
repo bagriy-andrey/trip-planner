@@ -1,4 +1,4 @@
-import { primaryAirportOfCity } from "../places/airportSearch";
+import { findAirportByCode, primaryAirportOfCity } from "../places/airportSearch";
 import type { AirportRecord } from "../places/schema";
 import type { CalendarDate } from "../trips/calendarDate";
 import type { Trip } from "../trips/schemas";
@@ -7,22 +7,30 @@ import type { Segment } from "./schemas";
 import { instantToZonedParts } from "./time";
 
 export type FirstSegmentPrefill = {
-  /** The trip's own city's main airport; `null` for a country/free-text trip (AC-38). */
+  /** The traveller's home airport; `null` when unset or absent from the directory. */
   fromAirport: AirportRecord | null;
+  /** The trip city's main airport; `null` for a country/free-text trip or when it equals home (AC-34). */
+  toAirport: AirportRecord | null;
   /** The trip's start date; `null` when the trip has no dates (never guessed). */
   departureDate: CalendarDate | null;
 };
 
 /**
- * What S9 pre-fills for the FIRST segment of a trip, before any segment exists (AC-38): a city trip
- * with its own airport pre-fills the departure airport field; a country trip or free-text
- * destination pre-fills nothing (there is no single airport to guess); a trip with no dates
- * pre-fills no date either.
+ * What S9 pre-fills for the FIRST segment of a trip, before any segment exists (AC-33): the
+ * departure side is the traveller's home airport, the arrival side is the trip city's main airport.
+ * A country or free-text trip has no single airport to guess, so the arrival side stays empty; so
+ * does it when it would equal home (AC-34). An unknown home code pre-fills nothing; a trip with
+ * no dates pre-fills no date either.
  */
-export function firstSegmentPrefill(trip: Pick<Trip, "place" | "startDate">): FirstSegmentPrefill {
+export function firstSegmentPrefill(
+  trip: Pick<Trip, "place" | "startDate">,
+  homeAirportCode: string | null,
+): FirstSegmentPrefill {
   const { place } = trip;
-  const fromAirport = place.kind === "city" ? (primaryAirportOfCity(place.placeId) ?? null) : null;
-  return { fromAirport, departureDate: trip.startDate };
+  const fromAirport = homeAirportCode === null ? null : (findAirportByCode(homeAirportCode) ?? null);
+  const destination = place.kind === "city" ? (primaryAirportOfCity(place.placeId) ?? null) : null;
+  const toAirport = destination !== null && destination.iata === fromAirport?.iata ? null : destination;
+  return { fromAirport, toAirport, departureDate: trip.startDate };
 }
 
 export type NextSegmentPrefill = {

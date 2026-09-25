@@ -159,11 +159,11 @@ describe("TripDetailScreen (S7) — header", () => {
     expect(within(screen.getByTestId("trip-hero")).getByText("plan")).toBeOnTheScreen();
   });
 
-  it("resolves the place in the UI language", async () => {
+  it("shows the place as the user saved it, whatever the UI language (2026-09-25)", async () => {
     getTripMock.mockResolvedValue({ ok: true, data: makeTrip() });
     const result = await renderWithProviders(<TripDetailScreen tripId="trip-1" />, { ...SIGNED_IN, locale: "ru" });
     await waitFor(() => expect(result.queryClient.isFetching()).toBe(0));
-    expect(within(screen.getByTestId("trip-hero")).getByRole("header", { name: "Лиссабон" })).toBeOnTheScreen();
+    expect(within(screen.getByTestId("trip-hero")).getByRole("header", { name: "Lisbon" })).toBeOnTheScreen();
   });
 
   it("shows a chip per archive state: archived trips read \"archived\"", async () => {

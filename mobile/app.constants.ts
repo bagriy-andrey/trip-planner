@@ -4,5 +4,5 @@ export const APP_NAME = "TripPlanner";
 export const APP_SCHEME = "tripplanner";
 export const APP_SLUG = "tripplanner";
 
-export const SUPPORTED_LOCALES = ["ru", "en"] as const;
+export const SUPPORTED_LOCALES = ["ru", "en", "uk"] as const;
 export const DEFAULT_LOCALE = "en";

@@ -7,7 +7,7 @@ import { STORAGE_KEYS } from "./keys";
 // folder (`sessionSecureStorage` for the encrypted session, `freshInstall` for the launch flag).
 // Adding a key is a deliberate, reviewed decision — AsyncStorage is unencrypted — and secret
 // keys must never be listed here (`guardrails.test.ts` checks it against `keys.ts`).
-export const ALLOWED_SETTING_KEYS = [STORAGE_KEYS.theme.key] as const;
+export const ALLOWED_SETTING_KEYS = [STORAGE_KEYS.theme.key, STORAGE_KEYS.language.key] as const;
 
 export type SettingKey = (typeof ALLOWED_SETTING_KEYS)[number];
 

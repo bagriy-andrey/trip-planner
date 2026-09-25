@@ -15,11 +15,12 @@ import {
   Screen,
   SecondaryButton,
 } from "@/components";
+import { useHomeDefaults } from "@/features/profile";
 import { useSegmentQuery, useSegmentsQuery } from "@/features/transport";
 import { useTripQuery } from "@/features/trips";
 import type { TripErrorKind } from "@/features/trips";
 import { useToday } from "@/lib/clock";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 import { layout, radius, spacing, typography, useTheme } from "@/lib/theme";
 
 import { AirportField } from "./components/AirportField";
@@ -55,10 +56,11 @@ export function SegmentFormScreen({ tripId, segmentId }: SegmentFormScreenProps)
  */
 function CreateSegmentLoader({ tripId }: { tripId: string }) {
   const { i18n } = useTranslation();
-  const lang = resolveLocale([i18n.language]);
+  const lang = placeLanguageOf(resolveLocale([i18n.language]));
   const router = useRouter();
   const tripQuery = useTripQuery(tripId);
   const segmentsQuery = useSegmentsQuery(tripId);
+  const { homeAirport } = useHomeDefaults();
 
   if (tripQuery.isError && tripQuery.error?.kind === "notFound") {
     return <SegmentNotFound onBack={() => router.back()} />;
@@ -82,7 +84,7 @@ function CreateSegmentLoader({ tripId }: { tripId: string }) {
 
   const initial: SegmentFormState =
     segmentsQuery.segments.length === 0
-      ? segmentFormFromFirstPrefill(firstSegmentPrefill(tripQuery.trip), lang)
+      ? segmentFormFromFirstPrefill(firstSegmentPrefill(tripQuery.trip, homeAirport), lang)
       : EMPTY_SEGMENT_FORM;
 
   return <SegmentFormBody key="create" target={{ mode: "create", tripId }} initial={initial} />;
@@ -92,7 +94,7 @@ function CreateSegmentLoader({ tripId }: { tripId: string }) {
  * (AC-80/81) — same convention as S7/S8b's "trip not found". */
 function EditSegmentLoader({ tripId, segmentId }: { tripId: string; segmentId: string }) {
   const { i18n } = useTranslation();
-  const lang = resolveLocale([i18n.language]);
+  const lang = placeLanguageOf(resolveLocale([i18n.language]));
   const router = useRouter();
   const segmentQuery = useSegmentQuery(tripId, segmentId);
 

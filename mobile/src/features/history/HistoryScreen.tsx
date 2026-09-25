@@ -15,7 +15,7 @@ import {
 } from "@/features/trips";
 import type { TripCardData } from "@/features/trips";
 import { useToday } from "@/lib/clock";
-import { resolveLocale, useTranslation } from "@/lib/i18n";
+import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 import { displayNameOf, initialOf, useSession } from "@/lib/session";
 import { spacing } from "@/lib/theme";
 
@@ -41,7 +41,7 @@ export function HistoryScreen() {
 
   // Nothing here is "upcoming": the accent chip belongs to the active list.
   const cards = useMemo(
-    () => history.map((trip) => toTripCardData(trip, { today, language: locale, upcomingId: null })),
+    () => history.map((trip) => toTripCardData(trip, { today, upcomingId: null })),
     [history, today, locale],
   );
   const status = useTripListStatus("history", { trips, isError }, cards.length);

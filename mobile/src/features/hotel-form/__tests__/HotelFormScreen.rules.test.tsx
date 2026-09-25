@@ -3,14 +3,16 @@ import type { CalendarDate, Trip } from "@tripplanner/shared";
 
 import { createHotel, getHotel, updateHotel } from "@/features/hotels/api";
 import { getTrip } from "@/features/trips/api";
+import { getProfile } from "@/features/profile/api";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
 import { HotelFormScreen } from "../HotelFormScreen";
 import { HotelFormBody } from "../components/HotelFormBody";
 import { hotelFormFromTrip } from "../hooks/formState";
-import { HOTEL_ID, LISBON_PLACE, SIGNED_IN, makeHotel, makeTrip } from "./testKit";
+import { HOTEL_ID, LISBON_PLACE, SIGNED_IN, makeHotel, makeTrip, profileResult } from "./testKit";
 
 jest.mock("@/lib/supabase", () => ({ supabase: { from: jest.fn() } }));
+jest.mock("@/features/profile/api", () => ({ ...jest.requireActual("@/features/profile/api"), getProfile: jest.fn() }));
 jest.mock("@/features/trips/api", () => ({ ...jest.requireActual("@/features/trips/api"), getTrip: jest.fn() }));
 jest.mock("@/features/hotels/api", () => ({
   ...jest.requireActual("@/features/hotels/api"),
@@ -34,6 +36,7 @@ const TODAY: CalendarDate = "2026-06-10";
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (getProfile as jest.Mock).mockResolvedValue(profileResult(null));
   createHotelMock.mockResolvedValue({ ok: true, data: makeHotel() });
   updateHotelMock.mockResolvedValue({ ok: true, data: makeHotel() });
 });
@@ -123,7 +126,7 @@ describe("edit: an existing past hotel stays editable", () => {
 describe("create: a past check-in can never be submitted", () => {
   it("blocks Save and shows the inPast error when the form state holds a past check-in", async () => {
     const initial = {
-      ...hotelFormFromTrip(makeTrip({ place: LISBON_PLACE }), "en", TODAY),
+      ...hotelFormFromTrip(makeTrip({ place: LISBON_PLACE }), "en", TODAY, null),
       name: "Casa",
       checkInDate: "2026-06-01" as CalendarDate,
       checkOutDate: "2026-06-04" as CalendarDate,
@@ -169,12 +172,13 @@ describe("cost: currency is required once an amount is entered", () => {
     expect(createHotelMock).not.toHaveBeenCalled();
   });
 
-  it("currency without amount: still asks for the amount", async () => {
+  it("currency without amount: no error, the amount stays optional (AC-39)", async () => {
     await renderCreate();
     await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
-    await userEvent.press(screen.getByTestId("hotel-form-currency-sheet-option-EUR"));
+    await userEvent.press(screen.getByTestId("hotel-form-currency-sheet-item-EUR"));
     await waitFor(() => expect(screen.queryByTestId("hotel-form-currency-sheet")).not.toBeOnTheScreen());
-    expect(screen.getByText("Enter an amount")).toBeOnTheScreen();
+    expect(screen.queryByText("Enter an amount")).not.toBeOnTheScreen();
+    expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: EUR");
   });
 });
 

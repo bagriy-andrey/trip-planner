@@ -69,27 +69,15 @@ describe("coverIndexOf (AC-38)", () => {
   });
 });
 
-describe("resolveDestinationName (Q3)", () => {
-  const cityTrip: Pick<Trip, "destination" | "place"> = {
-    destination: "Порту",
-    place: { kind: "city", placeId: "city-porto", countryCode: "PT", timeZone: "Europe/Lisbon", airportCode: "OPO" },
-  };
-
-  it("a known city/country id gives the directory name in the UI language", () => {
-    expect(resolveDestinationName(cityTrip, "ru")).toBe("Порту");
-    expect(resolveDestinationName(cityTrip, "en")).toBe("Porto");
-    const countryTrip: Pick<Trip, "destination" | "place"> = {
-      destination: "Португалия",
-      place: { kind: "country", placeId: "country-pt", countryCode: "PT" },
-    };
-    expect(resolveDestinationName(countryTrip, "en")).toBe("Portugal");
-    expect(resolveDestinationName(countryTrip, "ru")).toBe("Португалия");
+describe("resolveDestinationName (a user's record is never translated)", () => {
+  it("a directory city or country shows the stored text as the user saved it", () => {
+    const cityTrip: Pick<Trip, "destination"> = { destination: "Порту" };
+    expect(resolveDestinationName(cityTrip)).toBe("Порту");
+    expect(resolveDestinationName({ destination: "Portugal" })).toBe("Portugal");
   });
 
-  it("free text shows the stored destination as is, in either language", () => {
-    const custom: Pick<Trip, "destination" | "place"> = { destination: "Тоскана", place: { kind: "custom" } };
-    expect(resolveDestinationName(custom, "en")).toBe("Тоскана");
-    expect(resolveDestinationName(custom, "ru")).toBe("Тоскана");
+  it("free text shows the stored destination as is", () => {
+    expect(resolveDestinationName({ destination: "Тоскана" })).toBe("Тоскана");
   });
 
   it("an UNKNOWN place id is not an error: the stored destination is the fallback", () => {
@@ -97,7 +85,7 @@ describe("resolveDestinationName (Q3)", () => {
       destination: "Атлантида",
       place: { kind: "city", placeId: "city-atlantis", countryCode: "PT", timeZone: "Europe/Lisbon", airportCode: null },
     };
-    expect(resolveDestinationName(stale, "en")).toBe("Атлантида");
+    expect(resolveDestinationName(stale)).toBe("Атлантида");
   });
 
   it("a place id whose directory record has another kind falls back to the stored destination", () => {
@@ -105,6 +93,6 @@ describe("resolveDestinationName (Q3)", () => {
       destination: "Порту",
       place: { kind: "country", placeId: "city-porto", countryCode: "PT" },
     };
-    expect(resolveDestinationName(mismatched, "en")).toBe("Порту");
+    expect(resolveDestinationName(mismatched)).toBe("Порту");
   });
 });

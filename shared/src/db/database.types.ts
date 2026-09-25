@@ -34,6 +34,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          citizenship_country_code: string | null
+          created_at: string
+          home_airport_code: string | null
+          home_city_name: string | null
+          home_city_place_id: string | null
+          home_currency: string | null
+          residence_country_code: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          citizenship_country_code?: string | null
+          created_at?: string
+          home_airport_code?: string | null
+          home_city_name?: string | null
+          home_city_place_id?: string | null
+          home_currency?: string | null
+          residence_country_code?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          citizenship_country_code?: string | null
+          created_at?: string
+          home_airport_code?: string | null
+          home_city_name?: string | null
+          home_city_place_id?: string | null
+          home_currency?: string | null
+          residence_country_code?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       trip_hotels: {
         Row: {
           address: string | null

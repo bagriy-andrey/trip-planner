@@ -14,6 +14,10 @@ export interface AnimatedSheetOverlayProps {
   closing: boolean;
   onExited: () => void;
   children: ReactNode;
+  /** Panel runs from this offset to the bottom of the window; unset = as tall as its content. */
+  topInset?: number;
+  /** Decorative grabber at the top of the panel (no gesture). */
+  handle?: boolean;
   testID?: string;
 }
 
@@ -28,6 +32,8 @@ export function AnimatedSheetOverlay({
   closing,
   onExited,
   children,
+  topInset,
+  handle = false,
   testID,
 }: AnimatedSheetOverlayProps) {
   const { tokens } = useTheme();
@@ -86,6 +92,7 @@ export function AnimatedSheetOverlay({
         testID={testID === undefined ? undefined : `${testID}-panel`}
         style={[
           styles.panel,
+          topInset === undefined ? null : { position: "absolute", top: topInset, bottom: 0, left: 0, right: 0 },
           {
             backgroundColor: tokens.bg,
             borderColor: tokens.surfaceBorder,
@@ -94,6 +101,13 @@ export function AnimatedSheetOverlay({
           },
         ]}
       >
+        {handle ? (
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={[styles.handle, { backgroundColor: tokens.divider }]}
+          />
+        ) : null}
         {children}
       </Animated.View>
     </View>
@@ -102,6 +116,12 @@ export function AnimatedSheetOverlay({
 
 const styles = StyleSheet.create({
   root: { justifyContent: "flex-end" },
+  handle: {
+    alignSelf: "center",
+    width: layout.sheetHandleW,
+    height: layout.sheetHandleH,
+    borderRadius: layout.sheetHandleH / 2,
+  },
   panel: {
     gap: spacing.sm,
     padding: spacing.lg,

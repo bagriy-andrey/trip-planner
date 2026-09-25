@@ -1,9 +1,11 @@
 import { act, screen, userEvent, waitFor } from "@testing-library/react-native";
+import { EMPTY_PROFILE } from "@tripplanner/shared";
 import type { Segment, Trip } from "@tripplanner/shared";
 import { Alert } from "react-native";
 
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
+import { getProfile } from "@/features/profile/api";
 import { createSegment, deleteSegment, getSegment, listSegments, updateSegment } from "@/features/transport/api";
 import { getTrip } from "@/features/trips/api";
 import { SegmentFormScreen } from "../SegmentFormScreen";
@@ -28,6 +30,13 @@ jest.mock("expo-router", () => ({
   useNavigation: () => ({ addListener: () => () => undefined }),
 }));
 
+jest.mock("@/features/profile/api", () => ({
+  ...jest.requireActual("@/features/profile/api"),
+  getProfile: jest.fn(),
+  saveProfile: jest.fn(),
+}));
+
+const getProfileMock = getProfile as jest.Mock;
 const getTripMock = getTrip as jest.Mock;
 const listSegmentsMock = listSegments as jest.Mock;
 const getSegmentMock = getSegment as jest.Mock;
@@ -83,12 +92,20 @@ function makeSegment(overrides: Partial<Segment> = {}): Segment {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  getProfileMock.mockResolvedValue({ ok: true, data: EMPTY_PROFILE });
   getTripMock.mockResolvedValue({ ok: true, data: makeTrip() });
   listSegmentsMock.mockResolvedValue({ ok: true, data: [] });
   createSegmentMock.mockResolvedValue({ ok: true, data: makeSegment({ id: "segment-new" }) });
   updateSegmentMock.mockResolvedValue({ ok: true, data: makeSegment() });
   deleteSegmentMock.mockResolvedValue({ ok: true, data: { id: "segment-1" } });
 });
+
+/** An EMPTY date/time field is a button that opens a sheet: press it, confirm the wheel's value, press Done. */
+async function pickEmpty(testID: string) {
+  await userEvent.press(screen.getByTestId(testID));
+  await userEvent.press(screen.getByTestId(`${testID}-sheet-picker`));
+  await userEvent.press(screen.getByTestId(`${testID}-sheet-done`));
+}
 
 async function renderCreate(tripOverrides: Partial<Trip> = {}, segments: Segment[] = []) {
   getTripMock.mockResolvedValue({ ok: true, data: makeTrip(tripOverrides) });
@@ -144,10 +161,10 @@ describe("SegmentFormScreen — save button gating (AC-26)", () => {
     await userEvent.press(await screen.findByTestId("airport-suggestion-airport-opo"));
     expect(saveButton()).toBeDisabled();
 
-    await userEvent.press(screen.getByTestId("segment-form-departure-date"));
+    await pickEmpty("segment-form-departure-date");
     expect(saveButton()).toBeDisabled();
 
-    await userEvent.press(screen.getByTestId("segment-form-departure-time"));
+    await pickEmpty("segment-form-departure-time");
     expect(saveButton()).toBeEnabled();
   });
 });
@@ -169,20 +186,80 @@ describe("SegmentFormScreen — airport field (AC-33, AC-34)", () => {
   });
 });
 
-describe("SegmentFormScreen — first-segment prefill (AC-38)", () => {
-  it("prefills the departure airport and date for a city trip with no segments yet", async () => {
-    await renderCreate({ place: KRAKOW_PLACE, startDate: "2026-06-15", endDate: "2026-06-20" });
-    expect(screen.getByTestId("segment-form-from").props.value).toBe("Krakow Airport · KRK");
+describe("SegmentFormScreen — first-segment prefill (AC-33..AC-37)", () => {
+  const cityTrip = { place: KRAKOW_PLACE, startDate: "2026-06-15", endDate: "2026-06-20" } as const;
+  const lisbonTrip = {
+    place: { kind: "city" as const, placeId: "city-lisbon", countryCode: "PT", timeZone: "Europe/Lisbon", airportCode: "LIS" },
+    startDate: "2026-06-15" as const,
+    endDate: "2026-06-20" as const,
+  };
+
+  it("puts the city's airport in 'To' for a city trip when there is no profile", async () => {
+    await renderCreate(cityTrip);
+    expect(screen.getByTestId("segment-form-from").props.value).toBe("");
+    expect(screen.getByTestId("segment-form-to").props.value).toBe("Krakow Airport · KRK");
   });
 
   it("prefills nothing for a custom/free-text trip", async () => {
     await renderCreate();
     expect(screen.getByTestId("segment-form-from").props.value).toBe("");
+    expect(screen.getByTestId("segment-form-to").props.value).toBe("");
   });
 
-  it("does not prefill once the trip already has a segment", async () => {
-    await renderCreate({ place: KRAKOW_PLACE, startDate: "2026-06-15", endDate: "2026-06-20" }, [makeSegment()]);
+  it("home KRK + Lisbon trip: From is KRK, To is LIS (US-2)", async () => {
+    getProfileMock.mockResolvedValue({ ok: true, data: { ...EMPTY_PROFILE, homeAirport: "KRK" } });
+    getTripMock.mockResolvedValue({ ok: true, data: makeTrip(lisbonTrip) });
+    await renderWithProviders(<SegmentFormScreen tripId="trip-1" />, SIGNED_IN);
+    await waitFor(() => expect(getProfileMock).toHaveBeenCalled());
+    await screen.findByTestId("segment-form-flight-number");
+    expect(screen.getByTestId("segment-form-from").props.value).toContain("KRK");
+    expect(screen.getByTestId("segment-form-to").props.value).toContain("LIS");
+  });
+
+  it("home equal to the destination airport leaves To empty (AC-34)", async () => {
+    getProfileMock.mockResolvedValue({ ok: true, data: { ...EMPTY_PROFILE, homeAirport: "LIS" } });
+    getTripMock.mockResolvedValue({ ok: true, data: makeTrip(lisbonTrip) });
+    await renderWithProviders(<SegmentFormScreen tripId="trip-1" />, SIGNED_IN);
+    await waitFor(() => expect(getProfileMock).toHaveBeenCalled());
+    await screen.findByTestId("segment-form-flight-number");
+    expect(screen.getByTestId("segment-form-from").props.value).toContain("LIS");
+    expect(screen.getByTestId("segment-form-to").props.value).toBe("");
+  });
+
+  it("a profile error still opens the form, without a home", async () => {
+    getProfileMock.mockResolvedValue({ ok: false, kind: "network" });
+    await renderCreate(cityTrip);
     expect(screen.getByTestId("segment-form-from").props.value).toBe("");
+    expect(screen.getByTestId("segment-form-to").props.value).toBe("Krakow Airport · KRK");
+  });
+
+  it("a profile arriving after the form opened does not change From (AC-36)", async () => {
+    let resolveProfile: (value: unknown) => void = () => undefined;
+    getProfileMock.mockReturnValue(new Promise((resolve) => (resolveProfile = resolve)));
+    await renderCreate(cityTrip);
+    expect(screen.getByTestId("segment-form-from").props.value).toBe("");
+    await act(async () => {
+      resolveProfile({ ok: true, data: { ...EMPTY_PROFILE, homeAirport: "OPO" } });
+    });
+    expect(screen.getByTestId("segment-form-from").props.value).toBe("");
+  });
+
+  it("does not prefill once the trip already has a segment (AC-35)", async () => {
+    getProfileMock.mockResolvedValue({ ok: true, data: { ...EMPTY_PROFILE, homeAirport: "KRK" } });
+    await renderCreate(cityTrip, [makeSegment()]);
+    expect(screen.getByTestId("segment-form-from").props.value).toBe("");
+    expect(screen.getByTestId("segment-form-to").props.value).toBe("");
+  });
+
+  it("closes an untouched prefilled form without asking to discard (AC-37)", async () => {
+    getProfileMock.mockResolvedValue({ ok: true, data: { ...EMPTY_PROFILE, homeAirport: "KRK" } });
+    getTripMock.mockResolvedValue({ ok: true, data: makeTrip(lisbonTrip) });
+    await renderWithProviders(<SegmentFormScreen tripId="trip-1" />, SIGNED_IN);
+    await waitFor(() => expect(getProfileMock).toHaveBeenCalled());
+    await screen.findByTestId("segment-form-flight-number");
+    await userEvent.press(screen.getByRole("button", { name: "Cancel" }));
+    expect(mockRouter.back).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId("segment-form-unsaved")).not.toBeOnTheScreen();
   });
 });
 
@@ -191,8 +268,8 @@ async function fillMinimalSegment() {
   await userEvent.press(await screen.findByTestId("airport-suggestion-airport-krk"));
   await userEvent.type(screen.getByTestId("segment-form-to"), "OPO");
   await userEvent.press(await screen.findByTestId("airport-suggestion-airport-opo"));
-  await userEvent.press(screen.getByTestId("segment-form-departure-date"));
-  await userEvent.press(screen.getByTestId("segment-form-departure-time"));
+  await pickEmpty("segment-form-departure-date");
+  await pickEmpty("segment-form-departure-time");
 }
 
 describe("SegmentFormScreen — Save (AC-45)", () => {
@@ -234,7 +311,7 @@ describe("SegmentFormScreen — departure rules", () => {
 
   it("clears an arrival time again", async () => {
     await renderCreate();
-    await userEvent.press(screen.getByTestId("segment-form-arrival-time"));
+    await pickEmpty("segment-form-arrival-time");
     await userEvent.press(screen.getByTestId("segment-form-arrival-time-clear"));
     expect(screen.queryByTestId("segment-form-arrival-time-clear")).toBeNull();
   });

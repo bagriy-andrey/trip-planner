@@ -1,12 +1,14 @@
 import { act, screen, userEvent, waitFor } from "@testing-library/react-native";
 
 import { deleteHotel, getHotel, updateHotel } from "@/features/hotels/api";
+import { getProfile } from "@/features/profile/api";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
 import { HotelFormScreen } from "../HotelFormScreen";
-import { HOTEL_ID, SIGNED_IN, makeHotel } from "./testKit";
+import { HOTEL_ID, SIGNED_IN, makeHotel, profileResult } from "./testKit";
 
 jest.mock("@/lib/supabase", () => ({ supabase: { from: jest.fn() } }));
+jest.mock("@/features/profile/api", () => ({ ...jest.requireActual("@/features/profile/api"), getProfile: jest.fn() }));
 jest.mock("@/features/hotels/api", () => ({
   ...jest.requireActual("@/features/hotels/api"),
   getHotel: jest.fn(),
@@ -34,6 +36,7 @@ const deleteHotelMock = deleteHotel as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (getProfile as jest.Mock).mockResolvedValue(profileResult(null));
   mockBeforeRemove = null;
   getHotelMock.mockResolvedValue({ ok: true, data: makeHotel() });
   updateHotelMock.mockResolvedValue({ ok: true, data: makeHotel() });

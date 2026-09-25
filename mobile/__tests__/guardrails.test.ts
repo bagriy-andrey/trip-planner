@@ -5,7 +5,7 @@
 // SPEC-02 replaced two SPEC-01 rules deliberately — never by deleting them:
 //   - `no-backend-or-network` (AC-25, "no backend anywhere")  -> `backend-only-behind-the-boundary`
 //   - "exactly one AsyncStorage key, one setItem" (AC-33)     -> a check against the registry
-//     `src/lib/storage/keys.ts` (exactly three declared keys, declared write sites, secret keys
+//     `src/lib/storage/keys.ts` (exactly four declared keys, declared write sites, secret keys
 //     only as ciphertext).
 //
 // Scope: everything under app/ and src/, except test files (`__tests__/`, `*.test.*`,
@@ -94,6 +94,11 @@ const MOCKS_SPECIFIER = new RegExp(
 /** The maps allow-list lives only in shared/src/hotels/mapsUrl.ts (AC-24). */
 const MAPS_HOST_PATTERN = new RegExp(
   [["goo", "gl"].join("\\."), ["google", "com"].join("\\.")].join("|"),
+);
+// PLAN-06 step 6: the `profiles` table is read and written only by src/features/profile/api/**.
+const PROFILE_API_DIR = "src/features/profile/api/";
+const PROFILES_TABLE_CALL = new RegExp(
+  ["\\.from\\(\\s*[\"'`]", "prof", "iles[\"'`]"].join(""),
 );
 /** Hotel features never count nights themselves (AC-20). */
 const HOTEL_FEATURE_DIRS = ["src/features/hotels/", "src/features/hotel-form/"];
@@ -494,6 +499,13 @@ const RULES: Rule[] = [
     test: (line) => NIGHTS_ARITHMETIC_NEEDLES.some((needle) => line.includes(needle)),
     allowed: (file) => !HOTEL_FEATURE_DIRS.some((dir) => file.startsWith(dir)),
   },
+  // --- PLAN-06: the profiles table stays behind its own api module ------------------------------
+  {
+    id: "profiles-table-only-in-profile-api",
+    ac: "PLAN-06: the profiles table is addressed only from src/features/profile/api/**",
+    pattern: PROFILES_TABLE_CALL,
+    allowed: (file) => file.startsWith(PROFILE_API_DIR),
+  },
 ];
 
 /** Every violation of `rules` in one file's text. */
@@ -548,6 +560,14 @@ describe("guardrail scanner (self-test)", () => {
       expect(scan("src/features/hotel-form/a.ts", `const n = x ${needle} y;`)).toContain(rule);
       expect(scan("src/features/trips/a.ts", `const n = x ${needle} y;`)).not.toContain(rule);
     }
+  });
+
+  it("flags a profiles table call outside the profile api (PLAN-06 step 6)", () => {
+    const rule = "profiles-table-only-in-profile-api";
+    const call = `const q = supabase.from("${["prof", "iles"].join("")}").select("*");`;
+    expect(scan("src/features/trips/api/tripsApi.ts", call)).toContain(rule);
+    expect(scan("src/features/profile/hooks/x.ts", call)).toContain(rule);
+    expect(scan("src/features/profile/api/profileApi.ts", call)).not.toContain(rule);
   });
 
   it("flags each forbidden construct in feature code", () => {
@@ -991,9 +1011,9 @@ describe("source guardrails", () => {
     const entries = Object.entries(STORAGE_KEYS);
     const secretEntries = entries.filter(([, info]) => info.secret);
 
-    it("declares exactly three AsyncStorage keys: theme, encrypted session, first-launch flag", () => {
-      expect(entries.map(([name]) => name).sort()).toEqual(["firstLaunch", "session", "theme"]);
-      expect(new Set(entries.map(([, info]) => info.key)).size).toBe(3);
+    it("declares exactly four AsyncStorage keys: theme, language, encrypted session, first-launch flag", () => {
+      expect(entries.map(([name]) => name).sort()).toEqual(["firstLaunch", "language", "session", "theme"]);
+      expect(new Set(entries.map(([, info]) => info.key)).size).toBe(4);
       for (const [, info] of entries) expect(info.purpose.length).toBeGreaterThan(10);
     });
 

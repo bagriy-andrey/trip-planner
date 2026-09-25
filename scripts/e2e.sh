@@ -7,6 +7,7 @@
 #   ./scripts/e2e.sh auth-email
 #   ./scripts/e2e.sh trip-crud --locale en
 #   ./scripts/e2e.sh segment-chain --locale en
+#   ./scripts/e2e.sh profile-home-airport --locale en
 #   ./scripts/e2e.sh theme-persistence --metro-url http://localhost:8081
 #
 # The flows contain NO literal UI text: every selector is an env var (LOCALE plus one variable per
@@ -24,7 +25,7 @@ usage() {
   cat <<'EOF'
 Usage: scripts/e2e.sh <flow> [--locale ru|en] [--metro-url <url>]
 
-  <flow>              flow name in e2e/flows/ without .yaml (skeleton-smoke | auth-email | theme-persistence | trip-crud | segment-chain)
+  <flow>              flow name in e2e/flows/ without .yaml (skeleton-smoke | auth-email | theme-persistence | trip-crud | segment-chain | profile-home-airport)
   --locale ru|en      UI language of the run (default: ru). Sent to the app as the launch argument
                       -AppleLanguages "(<locale>)" and used to pick the selector strings.
   --metro-url <url>   dev-client builds only: Metro URL to open after launch, e.g.
@@ -198,6 +199,9 @@ fi
 #                              AirportSuggestions row (shared/src/places/airports.ts data, not a
 #                              locales/ string, but still routed through this table per the "no
 #                              literal in the yaml" rule)
+#   HOME_AIRPORT_LABEL         profile:fields.homeAirport (row label; matched as a substring regex)
+#   PICKER_SEARCH              picker:searchLabel (search field: label and placeholder are the same)
+#   HOME_AIRPORT_SUGGESTION    "<airport name in LOCALE>, KRK" (picker row label, picker:a11y.item)
 #   LOGOUT                     profile:logout
 #   THEME_LIGHT/THEME_DARK     profile:themeOptions.light|dark
 #   FIELD_NAME_PLACEHOLDER     auth:fields.name.placeholder      (fields are typed by placeholder:
@@ -255,6 +259,9 @@ SEGMENT_OUTBOUND_ROUTE=LIS — OPO
 SEGMENT_RETURN_ROUTE=OPO — LIS
 AIRPORT_FROM_SUGGESTION=Аэропорт «Лиссабон», LIS
 AIRPORT_TO_SUGGESTION=Аэропорт «Порту», OPO
+HOME_AIRPORT_LABEL=Домашний аэропорт
+PICKER_SEARCH=Поиск
+HOME_AIRPORT_SUGGESTION=Аэропорт «Краков», KRK
 LOGOUT=Выйти
 THEME_LIGHT=Светлая
 THEME_DARK=Тёмная
@@ -313,6 +320,9 @@ SEGMENT_OUTBOUND_ROUTE=LIS to OPO
 SEGMENT_RETURN_ROUTE=OPO to LIS
 AIRPORT_FROM_SUGGESTION=Lisbon Airport, LIS
 AIRPORT_TO_SUGGESTION=Porto Airport, OPO
+HOME_AIRPORT_LABEL=Home airport
+PICKER_SEARCH=Search
+HOME_AIRPORT_SUGGESTION=Krakow Airport, KRK
 LOGOUT=Sign out
 THEME_LIGHT=Light
 THEME_DARK=Dark
@@ -346,6 +356,8 @@ E2E_PLACE="E2E Place ${RUN_ID}"
 # (those repeat the airport's ru/en NAME, which does vary by locale).
 AIRPORT_FROM_CODE="LIS"
 AIRPORT_TO_CODE="OPO"
+# profile-home-airport.yaml: the home airport typed into the profile picker (directory data).
+HOME_AIRPORT_CODE="KRK"
 
 MAESTRO_ARGS=(
   -e "LOCALE=$LOCALE_ARG"
@@ -357,6 +369,7 @@ MAESTRO_ARGS=(
   -e "E2E_PLACE=$E2E_PLACE"
   -e "AIRPORT_FROM_CODE=$AIRPORT_FROM_CODE"
   -e "AIRPORT_TO_CODE=$AIRPORT_TO_CODE"
+  -e "HOME_AIRPORT_CODE=$HOME_AIRPORT_CODE"
 )
 while IFS= read -r line; do
   [ -n "$line" ] || continue

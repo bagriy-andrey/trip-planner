@@ -13,7 +13,7 @@ import { toTripCardData } from "../types";
 import type { TripCardData } from "../types";
 
 const TODAY = "2026-09-21";
-const CONTEXT = { today: TODAY, language: "en", upcomingId: null } as const;
+const CONTEXT = { today: TODAY, upcomingId: null } as const;
 
 const card: TripCardData = {
   id: "t1",
@@ -37,22 +37,19 @@ describe("toTripCardData", () => {
     expect(toTripCardData(archived, { ...CONTEXT, upcomingId: "d" }).status).toBe("archived");
   });
 
-  it("names the place in the UI language from the directory, or as stored (Q3)", () => {
+  it("shows the place exactly as the user saved it, never translated (2026-09-25)", () => {
     const place = { kind: "city", placeId: "city-lisbon", countryCode: "PT", timeZone: "Europe/Lisbon", airportCode: "LIS" } as const;
-    const trip = makeTrip({ id: "x", destination: "Lisbon", place });
-    expect(toTripCardData(trip, CONTEXT).placeName).toBe("Lisbon");
-    expect(toTripCardData(trip, { ...CONTEXT, language: "ru" }).placeName).toBe("Лиссабон");
-    expect(toTripCardData(makeTrip({ destination: "Somewhere" }), { ...CONTEXT, language: "ru" }).placeName).toBe(
-      "Somewhere",
-    );
+    expect(toTripCardData(makeTrip({ id: "x", destination: "Lisbon", place }), CONTEXT).placeName).toBe("Lisbon");
+    // A trip saved in Russian stays Russian, whatever the app language is.
+    expect(toTripCardData(makeTrip({ id: "y", destination: "Лиссабон", place }), CONTEXT).placeName).toBe("Лиссабон");
+    expect(toTripCardData(makeTrip({ destination: "Somewhere" }), CONTEXT).placeName).toBe("Somewhere");
   });
 
-  it("derives the cover from the immutable id: renames and language changes keep it (AC-38)", () => {
+  it("derives the cover from the immutable id: renames keep it (AC-38)", () => {
     const trip = makeTrip({ id: "stable-id", destination: "Lisbon" });
     const before = toTripCardData(trip, CONTEXT).coverIndex;
     const edited = { ...trip, destination: "Porto", title: "Surf week", updatedAt: "2026-09-20T10:00:00.000Z" };
     expect(toTripCardData(edited, CONTEXT).coverIndex).toBe(before);
-    expect(toTripCardData(edited, { ...CONTEXT, language: "ru" }).coverIndex).toBe(before);
     expect(before).toBe(coverIndexOf("stable-id", coverColors.length));
   });
 
