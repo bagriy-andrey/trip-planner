@@ -1,0 +1,98 @@
+appId: com.anonymous.tripplanner
+name: Profile home airport prefills "From" on a new flight (SPEC-06)
+tags:
+  - profile
+  - transport
+# ./scripts/e2e.sh profile-home-airport [--locale ru|en] [--metro-url http://localhost:8081]
+# Needs the LOCAL Supabase stack (profiles + trips + trip_segments migrations). Written blind:
+# Maestro/simulator were unavailable, see e2e/insights.md. Text/label selectors only, no UI literals.
+# Trip is created WITHOUT dates (like segment-chain): dates need the native date picker.
+---
+- launchApp:
+    clearState: true
+    arguments:
+      "-AppleLanguages": "(${LOCALE})"
+
+- runFlow:
+    when:
+      true: ${DEV_CLIENT_LINK != 'none'}
+    commands:
+      - openLink: ${DEV_CLIENT_LINK}
+      - tapOn:
+          text: "Open|Открыть"
+          optional: true
+      - tapOn:
+          text: "Continue|Продолжить"
+          optional: true
+
+# --- Sign up ---------------------------------------------------------------------------------
+- extendedWaitUntil:
+    visible: "${ONBOARDING_TITLE}"
+    timeout: 60000
+- tapOn: "${ONBOARDING_START}"
+- assertVisible: "${SIGNUP_TITLE}"
+- tapOn: "${FIELD_NAME_PLACEHOLDER}"
+- inputText: "${E2E_NAME}"
+- tapOn: "${FIELD_EMAIL_PLACEHOLDER}"
+- inputText: "${E2E_EMAIL}"
+- tapOn: "${FIELD_PASSWORD_PLACEHOLDER}"
+- inputText: "${E2E_PASSWORD}"
+- hideKeyboard
+- tapOn: "${SIGNUP_SUBMIT}"
+- tapOn:
+    text: "${SYSTEM_NOT_NOW}"
+    optional: true
+- extendedWaitUntil:
+    visible: "${TAB_TRIPS}"
+    timeout: 30000
+
+# --- Profile: pick the home airport ----------------------------------------------------------
+- tapOn: "${TAB_PROFILE}"
+- extendedWaitUntil:
+    visible: ".*${HOME_AIRPORT_LABEL}.*"
+    timeout: 15000
+- tapOn: ".*${HOME_AIRPORT_LABEL}.*"
+- extendedWaitUntil:
+    visible: "${PICKER_SEARCH}"
+    timeout: 10000
+# The search field autofocuses; tap anyway so the input is not order-dependent.
+- tapOn: "${PICKER_SEARCH}"
+- inputText: "${HOME_AIRPORT_CODE}"
+- extendedWaitUntil:
+    visible: "${HOME_AIRPORT_SUGGESTION}"
+    timeout: 10000
+- tapOn: "${HOME_AIRPORT_SUGGESTION}"
+# Picker closes; the row now shows the code.
+- extendedWaitUntil:
+    visible: ".*${HOME_AIRPORT_CODE}.*"
+    timeout: 15000
+
+# --- New trip (no dates) -> add flight -> "From" is prefilled --------------------------------
+- tapOn: "${TAB_TRIPS}"
+- tapOn: "${NEW_TRIP_A11Y}"
+- extendedWaitUntil:
+    visible: "${FORM_DESTINATION_PLACEHOLDER}"
+    timeout: 10000
+- tapOn: "${FORM_DESTINATION_PLACEHOLDER}"
+- inputText: "${E2E_PLACE}"
+- hideKeyboard
+- tapOn: "${FORM_NO_DATES}"
+- tapOn: "${FORM_CREATE}"
+- extendedWaitUntil:
+    visible: "${ADD_FLIGHT}"
+    timeout: 30000
+- tapOn: "${ADD_FLIGHT}"
+- extendedWaitUntil:
+    visible: ".*${HOME_AIRPORT_CODE}.*"
+    timeout: 15000
+- tapOn:
+    text: "${FLIGHT_FORM_TO}"
+    index: 1
+- inputText: "${AIRPORT_FROM_CODE}"
+- extendedWaitUntil:
+    visible: "${AIRPORT_FROM_SUGGESTION}"
+    timeout: 10000
+- hideKeyboard
+- tapOn: "${AIRPORT_FROM_SUGGESTION}"
+- assertVisible: ".*${HOME_AIRPORT_CODE}.*"
+- assertVisible: ".*${AIRPORT_FROM_CODE}.*"
