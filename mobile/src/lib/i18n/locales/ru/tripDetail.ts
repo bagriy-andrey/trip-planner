@@ -20,11 +20,6 @@ export const tripDetail = {
     passengers_many: "{{count}} пассажиров",
     passengers_other: "{{count}} пассажира",
   },
-  car: {
-    emptyTitle: "Автомобиль не добавлен",
-    emptyText: "Добавьте аренду авто, чтобы держать бронь рядом с поездкой.",
-    addAction: "Добавить автомобиль",
-  },
   menu: {
     edit: "Изменить",
     archive: "Отправить в архив",
