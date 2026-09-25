@@ -20,7 +20,6 @@ export const HOTEL_FIELD_ERROR = {
   breakfastInvalid: "breakfast.invalid",
   breakfastDaysRange: "breakfastDays.range",
   costAmountFormat: "cost.amountFormat",
-  costAmountMissing: "cost.amountMissing",
   costCurrencyMissing: "cost.currencyMissing",
   costCurrencyUnknown: "cost.currencyUnknown",
   bookingRefTooLong: "bookingRef.tooLong",
