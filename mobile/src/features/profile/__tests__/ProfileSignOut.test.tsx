@@ -31,6 +31,12 @@ jest.mock("@/lib/supabase", () => {
   return { __esModule: true, supabase: { auth }, __auth: auth };
 });
 
+jest.mock("@/features/profile/api", () => ({
+  ...jest.requireActual("@/features/profile/api"),
+  getProfile: jest.fn(async () => ({ ok: true, data: jest.requireActual("@tripplanner/shared").EMPTY_PROFILE })),
+  saveProfile: jest.fn(),
+}));
+
 const auth = (jest.requireMock("@/lib/supabase") as { __auth: AuthMock }).__auth;
 
 const SESSION: Session = {
