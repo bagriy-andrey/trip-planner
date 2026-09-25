@@ -53,15 +53,22 @@ describe("airportDisplayText", () => {
 
 describe("segmentFormFromFirstPrefill (AC-38)", () => {
   it("fills the departure airport and date for a city trip", () => {
-    const state = segmentFormFromFirstPrefill({ fromAirport: KRK, departureDate: "2026-06-10" }, "en");
+    const state = segmentFormFromFirstPrefill({ fromAirport: KRK, toAirport: null, departureDate: "2026-06-10" }, "en");
     expect(state.fromAirport).toBe(KRK);
     expect(state.fromText).toBe(airportDisplayText(KRK, "en"));
     expect(state.departureDate).toBe("2026-06-10");
     expect(state.toAirport).toBeNull();
   });
 
+  it("fills both sides when home and destination are known", () => {
+    const state = segmentFormFromFirstPrefill({ fromAirport: KRK, toAirport: OPO, departureDate: null }, "en");
+    expect(state.fromAirport).toBe(KRK);
+    expect(state.toAirport).toBe(OPO);
+    expect(state.toText).toBe(airportDisplayText(OPO, "en"));
+  });
+
   it("prefills nothing for a country/free-text trip with no dates", () => {
-    const state = segmentFormFromFirstPrefill({ fromAirport: null, departureDate: null }, "en");
+    const state = segmentFormFromFirstPrefill({ fromAirport: null, toAirport: null, departureDate: null }, "en");
     expect(state).toEqual(EMPTY_SEGMENT_FORM);
   });
 });
@@ -124,7 +131,7 @@ describe("segmentFormFromSegment (AC-76)", () => {
 
 describe("segmentFormEquals (AC-40)", () => {
   it("is true for two states with the same values even with different AirportRecord identities", () => {
-    const a = segmentFormFromFirstPrefill({ fromAirport: KRK, departureDate: "2026-06-10" }, "en");
+    const a = segmentFormFromFirstPrefill({ fromAirport: KRK, toAirport: null, departureDate: "2026-06-10" }, "en");
     const b = { ...a, fromAirport: { ...KRK } };
     expect(segmentFormEquals(a, b)).toBe(true);
   });
