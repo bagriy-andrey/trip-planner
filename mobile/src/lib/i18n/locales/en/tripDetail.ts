@@ -18,11 +18,6 @@ export const tripDetail = {
     passengers_one: "{{count}} passenger",
     passengers_other: "{{count}} passengers",
   },
-  car: {
-    emptyTitle: "No car added",
-    emptyText: "Add a car rental to keep the booking next to your trip.",
-    addAction: "Add car",
-  },
   menu: {
     edit: "Edit",
     archive: "Move to archive",

@@ -100,6 +100,13 @@ const PROFILE_API_DIR = "src/features/profile/api/";
 const PROFILES_TABLE_CALL = new RegExp(
   ["\\.from\\(\\s*[\"'`]", "prof", "iles[\"'`]"].join(""),
 );
+// PLAN-07 step 10: clipboard, `tel:` and the `trip_cars` table each have exactly one home.
+const CLIPBOARD_MODULE = new RegExp(["expo", "clip", "board"].join("[-]?"));
+const TEL_SCHEME_LITERAL = new RegExp(["[\"'`]", "te", "l:"].join(""));
+const CARS_API_DIR = "src/features/cars/api/";
+const TRIP_CARS_TABLE_CALL = new RegExp(
+  ["\\.from\\(\\s*[\"'`]", "trip", "_cars[\"'`]"].join(""),
+);
 /** Hotel features never count nights themselves (AC-20). */
 const HOTEL_FEATURE_DIRS = ["src/features/hotels/", "src/features/hotel-form/"];
 const NIGHTS_ARITHMETIC_NEEDLES = [
@@ -506,6 +513,24 @@ const RULES: Rule[] = [
     pattern: PROFILES_TABLE_CALL,
     allowed: (file) => file.startsWith(PROFILE_API_DIR),
   },
+  // --- PLAN-07: clipboard / tel: / trip_cars ------------------------------------------------------
+  {
+    id: "clipboard-only-in-platform",
+    ac: "AC-55: the clipboard module is imported only from src/platform/**",
+    pattern: CLIPBOARD_MODULE,
+    allowed: (file) => file.startsWith(PLATFORM_DIR),
+  },
+  {
+    id: "tel-scheme-only-in-shared",
+    ac: "AC-47: a tel: link is built only by telHref in shared/",
+    pattern: TEL_SCHEME_LITERAL,
+  },
+  {
+    id: "trip-cars-table-only-in-cars-api",
+    ac: "AC-49: the trip_cars table is addressed only from src/features/cars/api/**",
+    pattern: TRIP_CARS_TABLE_CALL,
+    allowed: (file) => file.startsWith(CARS_API_DIR),
+  },
 ];
 
 /** Every violation of `rules` in one file's text. */
@@ -568,6 +593,25 @@ describe("guardrail scanner (self-test)", () => {
     expect(scan("src/features/trips/api/tripsApi.ts", call)).toContain(rule);
     expect(scan("src/features/profile/hooks/x.ts", call)).toContain(rule);
     expect(scan("src/features/profile/api/profileApi.ts", call)).not.toContain(rule);
+  });
+
+  it("flags clipboard, tel: and trip_cars outside their homes (PLAN-07 step 10)", () => {
+    const clip = ["expo", "clipboard"].join("-");
+    const tel = ["te", "l:"].join("");
+    const table = ["trip", "cars"].join("_");
+    const rule = "clipboard-only-in-platform";
+    expect(scan("src/features/car-view/X.tsx", `import * as C from "${clip}";`)).toContain(rule);
+    expect(scan("app/x.tsx", `const C = require("${clip}");`)).toContain(rule);
+    expect(scan("src/platform/clipboard.ts", `await import("${clip}");`)).not.toContain(rule);
+    const telRule = "tel-scheme-only-in-shared";
+    expect(scan("src/features/car-view/X.tsx", `Linking.openURL("${tel}" + n);`)).toContain(telRule);
+    expect(scan("src/features/car-view/X.tsx", `const u = \`${tel}\${n}\`;`)).toContain(telRule);
+    expect(scan("src/features/car-view/X.tsx", `const u = telHref(n); const h = "hotel: x";`)).not.toContain(telRule);
+    const tableRule = "trip-cars-table-only-in-cars-api";
+    const call = `const q = supabase.from("${table}").select("*");`;
+    expect(scan("src/features/trips/api/tripsApi.ts", call)).toContain(tableRule);
+    expect(scan("src/features/cars/hooks/x.ts", call)).toContain(tableRule);
+    expect(scan("src/features/cars/api/carsApi.ts", call)).not.toContain(tableRule);
   });
 
   it("flags each forbidden construct in feature code", () => {
@@ -1101,6 +1145,12 @@ describe("source guardrails", () => {
     expect(fs.existsSync(path.join(MOBILE_ROOT, "src", MOCKS_DIR_NAME))).toBe(false);
     expect(mobileFiles.filter((file) => file.split("/").includes(MOCKS_DIR_NAME))).toEqual([]);
     expect(violationsOf("no-mocks-directory")).toEqual([]);
+  });
+
+  it("PLAN-07: clipboard only in platform, tel: only in shared, trip_cars only in the cars api", () => {
+    expect(violationsOf("clipboard-only-in-platform")).toEqual([]);
+    expect(violationsOf("tel-scheme-only-in-shared")).toEqual([]);
+    expect(violationsOf("trip-cars-table-only-in-cars-api")).toEqual([]);
   });
 
   it("AC-62: no layover-threshold literal or airport-code equality outside shared/ (PLAN-04)", () => {
