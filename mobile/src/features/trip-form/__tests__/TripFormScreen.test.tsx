@@ -23,7 +23,10 @@ const mockRouter = {
   back: jest.fn(),
   dismissAll: jest.fn(),
 };
-jest.mock("expo-router", () => ({ useRouter: () => mockRouter }));
+jest.mock("expo-router", () => ({
+  useRouter: () => mockRouter,
+  useNavigation: () => ({ addListener: () => () => undefined }),
+}));
 
 const createMock = createTrip as jest.Mock;
 const updateMock = updateTrip as jest.Mock;
@@ -122,8 +125,10 @@ describe.each(HARNESSES)("trip form — shared rules ($name mode, AC-49)", (harn
 
   const pickRange = async (start: string, end: string) => {
     await userEvent.press(screen.getByTestId("trip-form-dates-field"));
-    await userEvent.press(screen.getByTestId(`trip-form-calendar-day-${start}`));
-    await userEvent.press(screen.getByTestId(`trip-form-calendar-day-${end}`));
+    await userEvent.press(screen.getByTestId(`trip-form-dates-sheet-calendar-day-${start}`));
+    await userEvent.press(screen.getByTestId(`trip-form-dates-sheet-calendar-day-${end}`));
+    await userEvent.press(screen.getByTestId("trip-form-dates-sheet-done"));
+    await waitFor(() => expect(screen.queryByTestId("trip-form-dates-sheet")).not.toBeOnTheScreen());
   };
 
   it("has the mode's title and button, Cancel and no Done (AC-33)", async () => {
@@ -134,15 +139,25 @@ describe.each(HARNESSES)("trip form — shared rules ($name mode, AC-49)", (harn
     expect(screen.queryByRole("button", { name: "Done" })).not.toBeOnTheScreen();
   });
 
-  it("Cancel closes without saving and without a dialog (AC-33)", async () => {
-    const alert = jest.spyOn(Alert, "alert");
+  it("Cancel on an untouched form closes without a dialog (AC-33)", async () => {
     await harness.render();
-    await type("Rome");
     await userEvent.press(screen.getByRole("button", { name: "Cancel" }));
     expect(mockRouter.back).toHaveBeenCalledTimes(1);
     expect(harness.write).not.toHaveBeenCalled();
-    expect(alert).not.toHaveBeenCalled();
-    alert.mockRestore();
+  });
+
+  it("Cancel after typing asks first; keeping the form leaves it open, discarding closes it", async () => {
+    await harness.render();
+    await type("Rome");
+    await userEvent.press(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByText("Discard changes?")).toBeOnTheScreen();
+    expect(mockRouter.back).not.toHaveBeenCalled();
+    await userEvent.press(screen.getByTestId("trip-form-unsaved-cancel"));
+    expect(screen.queryByText("Discard changes?")).not.toBeOnTheScreen();
+    await userEvent.press(screen.getByRole("button", { name: "Cancel" }));
+    await userEvent.press(screen.getByTestId("trip-form-unsaved-discard"));
+    expect(mockRouter.back).toHaveBeenCalledTimes(1);
+    expect(harness.write).not.toHaveBeenCalled();
   });
 
   it("draws the button inactive with divider background and tertiary text, no opacity (AC-29)", async () => {
@@ -280,8 +295,8 @@ describe.each(HARNESSES)("trip form — shared rules ($name mode, AC-49)", (harn
     await type("Rome");
     await showDates();
     await userEvent.press(screen.getByTestId("trip-form-dates-field"));
-    await userEvent.press(screen.getByTestId("trip-form-calendar-day-2026-09-21"));
-    expect(screen.getByText("Choose dates")).toBeOnTheScreen();
+    await userEvent.press(screen.getByTestId("trip-form-dates-sheet-calendar-day-2026-09-21"));
+    expect(screen.getByText("Choose dates", { includeHiddenElements: true })).toBeOnTheScreen();
   });
 
   it("a name longer than 80 characters is reported at the title field and nothing is sent (AC-26)", async () => {
@@ -383,9 +398,9 @@ describe.each(HARNESSES)("trip form — shared rules ($name mode, AC-49)", (harn
 });
 
 describe("create mode", () => {
-  it("puts focus in the destination field on open (AC-28)", async () => {
+  it("does not focus any field on open, so the keyboard stays down", async () => {
     await CREATE.render();
-    expect(destinationInput().props.autoFocus).toBe(true);
+    expect(destinationInput().props.autoFocus).toBeFalsy();
   });
 
   it("replaces the sheet with the details of the created trip, not push (AC-30)", async () => {

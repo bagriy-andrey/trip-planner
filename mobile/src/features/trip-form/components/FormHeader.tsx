@@ -5,27 +5,32 @@ import { layout, spacing } from "@/lib/theme";
 
 export interface FormHeaderProps {
   title: string;
-  cancelLabel: string;
-  onCancel: () => void;
+  /** Only the loading / error states of the edit sheet show Cancel up here; the form itself has it at the bottom. */
+  cancelLabel?: string;
+  onCancel?: () => void;
 }
 
 /**
- * The sheet's top bar: "Cancel" on the left, the title in the middle, and an empty slot of the
- * same width on the right so the title stays centred. There is deliberately no "Done" (AC-33):
+ * The sheet's top bar: the title in the middle between two empty slots so it stays centred
+ * ("Cancel" on the left only while there is no form to leave from the bottom). There is deliberately no "Done" (AC-33):
  * saving is the bottom button. `ModalHeader` always draws "Done", hence this local bar.
  */
 export function FormHeader({ title, cancelLabel, onCancel }: FormHeaderProps) {
   return (
     <View style={styles.bar}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={cancelLabel}
-        onPress={onCancel}
-        testID="trip-form-cancel"
-        style={styles.side}
-      >
-        <AppText color="textSecondary">{cancelLabel}</AppText>
-      </Pressable>
+      {onCancel === undefined ? (
+        <View style={styles.side} />
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={cancelLabel}
+          onPress={onCancel}
+          testID="trip-form-cancel"
+          style={styles.side}
+        >
+          <AppText color="textSecondary">{cancelLabel}</AppText>
+        </Pressable>
+      )}
       <AppText variant="h2" accessibilityRole="header" numberOfLines={1} style={styles.title}>
         {title}
       </AppText>

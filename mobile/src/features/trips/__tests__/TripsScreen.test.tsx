@@ -77,11 +77,11 @@ describe("TripsScreen (S4) — list", () => {
     expect(listTripsMock).toHaveBeenCalledTimes(1);
   });
 
-  it("renders the title, the avatar, the cards and the add button", async () => {
+  it("renders the title, the cards and the add button in the header", async () => {
     await renderTrips(MIXED);
     await screen.findByTestId("trip-card-soon");
     expect(screen.getByRole("header", { name: "Trips" })).toBeOnTheScreen();
-    expect(screen.getByTestId("trips-avatar")).toBeOnTheScreen();
+    expect(screen.queryByTestId("trips-avatar")).not.toBeOnTheScreen();
     expect(screen.getByTestId("trips-add")).toBeOnTheScreen();
   });
 
@@ -200,7 +200,7 @@ describe("TripsScreen (S4) — states", () => {
     await renderTrips([past, archived]);
     const empty = await screen.findByTestId("trips-empty");
     expect(within(empty).getByText("No trips yet")).toBeOnTheScreen();
-    expect(within(empty).getByText("Add your first one with the button at the bottom right")).toBeOnTheScreen();
+    expect(within(empty).getByText("Add your first one with the plus button at the top right")).toBeOnTheScreen();
     expect(within(empty).queryByRole("button")).not.toBeOnTheScreen();
     expect(within(empty).queryByRole("image")).not.toBeOnTheScreen();
     expect(screen.getByTestId("trips-add")).toBeOnTheScreen();
@@ -293,11 +293,11 @@ describe("TripsScreen (S4) — interaction", () => {
     await renderTrips([soon, undated]);
     await screen.findByTestId("trip-card-soon");
     const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(4);
+    expect(buttons).toHaveLength(3);
     for (const button of buttons) {
       expect(String(button.props.accessibilityLabel ?? "").length).toBeGreaterThan(0);
     }
-    expect(screen.getByRole("button", { name: "Open profile" })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Open profile" })).not.toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "New trip" })).toBeOnTheScreen();
     // One phrase per card: place, status, dates (ICU pads ranges with thin spaces).
     const labelOf = (id: string) =>
@@ -317,28 +317,7 @@ describe("TripsScreen (S4) — interaction", () => {
     expect(StyleSheet.flatten(retry.props.style).minHeight).toBeGreaterThanOrEqual(layout.minTouch);
   });
 
-  it("switches to the profile tab (navigate, not push) from the avatar (Q1)", async () => {
-    const user = userEvent.setup();
-    await renderTrips([soon]);
-    await user.press(screen.getByRole("button", { name: "Open profile" }));
-    expect(mockRouter.navigate).toHaveBeenCalledTimes(1);
-    expect(mockRouter.navigate).toHaveBeenCalledWith("/profile");
-    expect(mockRouter.push).not.toHaveBeenCalled();
-  });
-
-  it("takes the avatar initial from the session's display name, upper-cased (AC-27)", async () => {
-    await renderTrips([], { session: { user: { displayName: "  zoe Adler " } } });
-    const avatar = screen.getByTestId("trips-avatar");
-    expect(within(avatar).getByText("Z", { includeHiddenElements: true })).toBeOnTheScreen();
-  });
-
-  it("falls back to the email's local part for the initial (AC-26)", async () => {
-    await renderTrips([], { session: { user: { email: "bruno.k@example.com", displayName: null } } });
-    const avatar = screen.getByTestId("trips-avatar");
-    expect(within(avatar).getByText("B", { includeHiddenElements: true })).toBeOnTheScreen();
-  });
-
-  it("opens the new-trip modal from the floating button", async () => {
+  it("opens the new-trip modal from the header plus", async () => {
     const user = userEvent.setup();
     await renderTrips([soon]);
     await user.press(screen.getByRole("button", { name: "New trip" }));

@@ -46,3 +46,18 @@ export function formStateFromTrip(trip: Trip, lang: PlaceLanguage): TripFormStat
     noDates: trip.startDate === null && trip.endDate === null,
   };
 }
+
+/** Whether nothing was changed since `initial` (dates only count while "no dates" is off). */
+export function tripFormEquals(a: TripFormState, b: TripFormState): boolean {
+  const dates = (f: TripFormState) => (f.noDates ? [null, null] : [f.startDate, f.endDate]);
+  const [aStart, aEnd] = dates(a);
+  const [bStart, bEnd] = dates(b);
+  return (
+    a.destination === b.destination &&
+    a.placeId === b.placeId &&
+    a.title === b.title &&
+    a.noDates === b.noDates &&
+    aStart === bStart &&
+    aEnd === bEnd
+  );
+}

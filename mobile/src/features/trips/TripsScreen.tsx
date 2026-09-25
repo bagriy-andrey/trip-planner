@@ -5,13 +5,11 @@ import { FlatList, StyleSheet, View } from "react-native";
 import type { ListRenderItem } from "react-native";
 import type { Edge } from "react-native-safe-area-context";
 
-import { AppText, AvatarButton, Screen } from "@/components";
+import { AppText, Icon, IconButton, Screen } from "@/components";
 import { useToday } from "@/lib/clock";
 import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
-import { displayNameOf, initialOf, useSession } from "@/lib/session";
 import { spacing } from "@/lib/theme";
 
-import { FloatingAddButton } from "./components/FloatingAddButton";
 import { TripCard } from "./components/TripCard";
 import { TRIP_LIST_WINDOW, TripListStates, useTripListStatus } from "./components/TripListStates";
 import { useTripsQuery } from "./hooks/useTripsQuery";
@@ -24,19 +22,14 @@ const TAB_EDGES: readonly Edge[] = ["top", "left", "right"];
 const keyOf = (card: TripCardData) => card.id;
 
 /**
- * S4 — trips tab: the user's active trips (nearest first, undated last), avatar -> profile tab,
- * "+" -> new-trip modal. One `FlatList`; the header is its `ListHeaderComponent` and the
+ * S4 — trips tab: the user's active trips (nearest first, undated last), "+" in the header -> new-trip modal. One `FlatList`; the header is its `ListHeaderComponent` and the
  * loading / error / empty states are its `ListEmptyComponent`.
  */
 export function TripsScreen() {
   const { t, i18n } = useTranslation("trips");
-  const { t: tCommon } = useTranslation("common");
   const router = useRouter();
   const locale = resolveLocale([i18n.language]);
   const today = useToday();
-  const { user } = useSession();
-  // The same name, hence the same initial, as on the profile (AC-27).
-  const initial = initialOf(displayNameOf(user));
   const { trips, active, isError, error, refetch } = useTripsQuery();
 
   // "Upcoming" is a property of the LIST: exactly one trip of it gets the accent chip (AC-23).
@@ -65,54 +58,44 @@ export function TripsScreen() {
       <AppText variant="h1" accessibilityRole="header" style={styles.title}>
         {t("title")}
       </AppText>
-      <AvatarButton
-        initials={initial}
-        accessibilityLabel={tCommon("a11y.openProfile")}
-        // A tab switch, not a push: Profile keeps a single instance (Q1).
-        onPress={() => router.navigate("/profile")}
-        testID="trips-avatar"
-      />
+      <IconButton
+        accessibilityLabel={t("a11y.newTrip")}
+        onPress={() => router.push("/trips/new")}
+        testID="trips-add"
+      >
+        <Icon name="plus" color="accent" />
+      </IconButton>
     </View>
   );
 
   return (
-    <View style={styles.root}>
-      <Screen scroll={false} edges={TAB_EDGES} testID="trips-screen">
-        <FlatList
-          testID="trips-list"
-          data={cards}
-          keyExtractor={keyOf}
-          renderItem={renderItem}
-          ListHeaderComponent={header}
-          ListEmptyComponent={
-            status === "ready" ? null : (
-              <TripListStates
-                variant="trips"
-                status={status}
-                errorKind={error?.kind}
-                onRetry={() => void refetch()}
-              />
-            )
-          }
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-          {...TRIP_LIST_WINDOW}
-        />
-      </Screen>
-      <FloatingAddButton
-        accessibilityLabel={t("a11y.newTrip")}
-        onPress={() => router.push("/trips/new")}
-        style={styles.fab}
-        testID="trips-add"
+    <Screen scroll={false} edges={TAB_EDGES} testID="trips-screen">
+      <FlatList
+        testID="trips-list"
+        data={cards}
+        keyExtractor={keyOf}
+        renderItem={renderItem}
+        ListHeaderComponent={header}
+        ListEmptyComponent={
+          status === "ready" ? null : (
+            <TripListStates
+              variant="trips"
+              status={status}
+              errorKind={error?.kind}
+              onRetry={() => void refetch()}
+            />
+          )
+        }
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        {...TRIP_LIST_WINDOW}
       />
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  // Bottom padding keeps the last card clear of the floating button.
-  content: { gap: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xxl * 3 },
+  content: { gap: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xl },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -120,5 +103,4 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   title: { flexShrink: 1 },
-  fab: { position: "absolute", right: spacing.screenX, bottom: spacing.xl },
 });

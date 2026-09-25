@@ -28,6 +28,10 @@ export function useLeaveGuard(dirty: boolean) {
 
   return {
     leave,
+    /** Lets the next removal through without navigating (the caller navigates itself, e.g. `replace`). */
+    allowExit: () => {
+      leaving.current = true;
+    },
     confirmOpen,
     requestClose: () => (dirty ? setConfirmOpen(true) : leave()),
     confirmDiscard: () => {

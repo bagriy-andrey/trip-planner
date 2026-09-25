@@ -5,8 +5,10 @@ import { useRef, useState } from "react";
 
 import { TripApiError, useCreateTrip, useUpdateTrip } from "@/features/trips";
 import { useToday } from "@/lib/clock";
+import { useLeaveGuard } from "@/lib/forms";
 import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 
+import { tripFormEquals } from "./formState";
 import type { TripFormErrors, TripFormField, TripFormState } from "./formState";
 
 export type TripFormMode = { mode: "create" } | { mode: "edit"; tripId: string };
@@ -50,6 +52,8 @@ export function useTripForm(target: TripFormMode, initial: TripFormState) {
   const [submitting, setSubmitting] = useState(false);
   // Suggestions appear only once the user types: a prefilled value must not open the list.
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  // Once anything differs from the initial values, every way out (button, swipe, back) asks first.
+  const guard = useLeaveGuard(!tripFormEquals(initial, state));
   // A ref, not the state: two taps in the same frame both see `submitting === false`.
   const inFlight = useRef(false);
 
@@ -102,11 +106,12 @@ export function useTripForm(target: TripFormMode, initial: TripFormState) {
     try {
       if (target.mode === "create") {
         const trip = await createTrip.mutateAsync(parsed.value);
+        guard.allowExit();
         // Replace, not push: the back gesture from the details must not reopen the sheet (AC-30).
         router.replace({ pathname: "/trips/[tripId]", params: { tripId: trip.id } });
       } else {
         await updateTrip.mutateAsync({ id: target.tripId, form: parsed.value });
-        router.back();
+        guard.leave();
       }
       // Success keeps the guard set: the sheet is closing and a late tap must not save twice.
     } catch (error) {
@@ -137,7 +142,8 @@ export function useTripForm(target: TripFormMode, initial: TripFormState) {
     changeRange: (start: CalendarDate, end: CalendarDate) => patch({ startDate: start, endDate: end }, ["dates"]),
     changeNoDates: (noDates: boolean) => patch({ noDates }, ["dates"]),
     submit,
-    cancel: () => router.back(),
+    guard,
+    cancel: guard.requestClose,
   };
 }
 

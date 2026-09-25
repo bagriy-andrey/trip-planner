@@ -4,7 +4,7 @@ import { FlatList, StyleSheet, View } from "react-native";
 import type { ListRenderItem } from "react-native";
 import type { Edge } from "react-native-safe-area-context";
 
-import { AppText, AvatarButton, Screen } from "@/components";
+import { AppText, Screen } from "@/components";
 import {
   TRIP_LIST_WINDOW,
   TripCard,
@@ -16,7 +16,6 @@ import {
 import type { TripCardData } from "@/features/trips";
 import { useToday } from "@/lib/clock";
 import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
-import { displayNameOf, initialOf, useSession } from "@/lib/session";
 import { spacing } from "@/lib/theme";
 
 // The tab bar owns the bottom inset.
@@ -30,13 +29,9 @@ const keyOf = (card: TripCardData) => card.id;
  */
 export function HistoryScreen() {
   const { t, i18n } = useTranslation("history");
-  const { t: tCommon } = useTranslation("common");
   const router = useRouter();
   const locale = resolveLocale([i18n.language]);
   const today = useToday();
-  const { user } = useSession();
-  // The same name, hence the same initial, as on the profile (AC-27).
-  const initial = initialOf(displayNameOf(user));
   const { trips, history, isError, error, refetch } = useTripsQuery();
 
   // Nothing here is "upcoming": the accent chip belongs to the active list.
@@ -66,13 +61,6 @@ export function HistoryScreen() {
       <AppText variant="h1" accessibilityRole="header" style={styles.title}>
         {t("title")}
       </AppText>
-      <AvatarButton
-        initials={initial}
-        accessibilityLabel={tCommon("a11y.openProfile")}
-        // A tab switch, not a push: Profile keeps a single instance (Q1).
-        onPress={() => router.navigate("/profile")}
-        testID="history-avatar"
-      />
     </View>
   );
 
