@@ -160,4 +160,36 @@ describe("ProfileScreen (S6)", () => {
     await renderWithProviders(<ProfileScreen />, { session: SESSION });
     expect(screen.queryByText(/delete account|удалить аккаунт/i)).not.toBeOnTheScreen();
   });
+
+  it("an empty profile shows five \"Not specified\" values and the footnote (AC-12)", async () => {
+    await renderWithProviders(<ProfileScreen />, { session: SESSION });
+    expect(await screen.findAllByText("Not specified")).toHaveLength(5);
+    expect(screen.getByText("All fields are optional.")).toBeOnTheScreen();
+  });
+
+  it("shows flag+name for countries, mono code for the airport, hints only on airport and currency (AC-10, AC-11)", async () => {
+    load({ citizenship: "PT", homeAirport: "LIS", homeCurrency: "EUR" });
+    await renderWithProviders(<ProfileScreen />, { session: SESSION });
+    expect(await screen.findByText("Portugal")).toBeOnTheScreen();
+    expect(screen.getByText("LIS")).toBeOnTheScreen();
+    expect(screen.getByText("EUR")).toBeOnTheScreen();
+    expect(screen.getAllByText(/Prefilled in/)).toHaveLength(2);
+  });
+
+  it("a city missing from the directory says so (AC-27)", async () => {
+    load({ homeCityId: "no-such-city" });
+    await renderWithProviders(<ProfileScreen />, { session: SESSION });
+    expect(await screen.findByText("Not in the list")).toBeOnTheScreen();
+  });
+
+  it("a load error offers Retry and keeps theme and sign-out working (AC-28)", async () => {
+    mockGetProfile.mockResolvedValueOnce({ ok: false, kind: "offline" });
+    const user = userEvent.setup();
+    await renderWithProviders(<ProfileScreen />, { session: SESSION });
+    await user.press(await screen.findByRole("button", { name: "Retry" }));
+    expect(mockGetProfile).toHaveBeenCalledTimes(2);
+    expect(screen.getAllByRole("radio")).toHaveLength(3);
+    await user.press(screen.getByRole("button", { name: "Sign out" }));
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+  });
 });
