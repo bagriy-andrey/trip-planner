@@ -23,6 +23,8 @@ export interface TimePickRequest {
   value: string | null;
   /** Where the picker opens while `value` is null, "HH:MM". */
   startTime: string;
+  /** A 24-hour wheel on every locale (a duration, not a clock time: no AM/PM). */
+  hour24?: boolean;
   /** Called only when the user confirms a time (never on cancel / dismiss). */
   onPick: (time: string) => void;
 }
@@ -105,7 +107,7 @@ export function useTimeSheetPicker(labels: TimePickerLabels): TimeSheetPicker {
           onChange={(_event: DateTimePickerEvent, picked?: Date) => {
             if (picked !== undefined) setDraft(picked);
           }}
-          locale={locale}
+          locale={request.hour24 === true ? "en-GB" : locale}
           themeVariant={scheme}
           textColor={tokens.text}
           accessibilityLabel={request.title}

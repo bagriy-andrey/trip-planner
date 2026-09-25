@@ -12,9 +12,8 @@ export const transport = {
     from: "From",
     to: "To",
     departureDate: "Departure date",
-    departureTime: "Departure",
-    arrivalDate: "Arrival date",
-    arrivalTime: "Arrival",
+    departureTime: "Departure time",
+    duration: "Flight duration",
     baggageIncluded: "Baggage included",
     passengers: "Passengers",
     seat: "Seat",
@@ -24,7 +23,7 @@ export const transport = {
     flightNumberPlaceholder: "LO 1234",
   },
   caption: {
-    arrivalOptional: "Optional, only needed to work out layovers",
+    durationOptional: "Optional, only needed to work out layovers",
     flightNumber: "Airline code and number, e.g. LO 1234",
     perPassenger: "One per passenger, comma-separated",
     airportFromDirectory: "Choose an airport from the list; you can search by code",
@@ -88,6 +87,12 @@ export const transport = {
   // the form needs (labels, captions, carrier line, delete label, not-found title) already exists
   // above or in `common`/`bookingForm`/`trips` and is reused as-is.
   form: {
+    dateSheet: {
+      title: "Departure date",
+      prevMonth: "Previous month",
+      nextMonth: "Next month",
+    },
+    durationSheetTitle: "Flight duration (hours:minutes)",
     clear: "Clear",
     save: "Save",
     saveAndNext: "Save and add next",

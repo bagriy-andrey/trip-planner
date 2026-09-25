@@ -178,6 +178,8 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 
 - 2026-09-25 (trip-form ui fixes 2): the "overlay must be mounted outside the `ScrollView`" rule (see hotel-form notes) was broken again by trip-form (`ConfirmOverlay` and the dates sheet rendered inside `Screen`): all 1610 jest tests passed, and only a simulator screenshot showed the dialog mid-screen, because jest does not lay out `absoluteFill`. For any new sheet/confirm, mount it in the screen body next to `Screen` (a `flex: 1` root `View`), and let the field only call `onOpen`. Also: `autoFocus` on the first field pops the keyboard over a modal form; leave it off unless a spec asks.
 
+- 2026-09-25 (flight form: arrival -> duration): the shared `parseSegmentForm` still takes arrival as a WALL-CLOCK date+time in the ARRIVAL airport's zone, so a form that asks for a duration must derive it via instants: `zonedDateTimeToInstant(depDate, depTime, from.timeZone)` + minutes -> `instantToZonedParts(instant, to.timeZone)` (`arrivalPartsOf` in `segment-form/hooks/formState.ts`). Adding minutes to the wall-clock fields is wrong across zones and DST (KRK 10:00 + 3 h is 12:00 in Porto). Edit goes back the other way (`arrivalAt - departureAt`), so the schema, DB and layover logic stay untouched. A duration field reuses `useTimeSheetPicker` with `hour24` (iOS spinner `locale="en-GB"`, otherwise it shows AM/PM); "00:00" means cleared, and the wheel cannot show >= 24 h.
+
 ## Open Questions
 - 2026-09-22: PLAN-04 step 5 contrast recheck of `warnBg`/`warnBorder`/`danger` (`design/tokens.md`)
   found the LIGHT theme's `danger` (`#C0503C`) at only ≈4.2:1 on `bg` — below the 4.5:1 rule for

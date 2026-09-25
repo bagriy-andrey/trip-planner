@@ -12,9 +12,8 @@ export const transport = {
     from: "Звідки",
     to: "Куди",
     departureDate: "Дата вильоту",
-    departureTime: "Виліт",
-    arrivalDate: "Дата прильоту",
-    arrivalTime: "Приліт",
+    departureTime: "Час вильоту",
+    duration: "Тривалість польоту",
     baggageIncluded: "Багаж включено",
     passengers: "Пасажири",
     seat: "Місце",
@@ -24,7 +23,7 @@ export const transport = {
     flightNumberPlaceholder: "LO 1234",
   },
   caption: {
-    arrivalOptional: "Необов’язково, потрібно лише для розрахунку пересадок",
+    durationOptional: "Необов’язково, потрібно лише для розрахунку пересадок",
     flightNumber: "Код авіакомпанії та номер, наприклад LO 1234",
     perPassenger: "По одному на пасажира, через кому",
     airportFromDirectory: "Оберіть аеропорт зі списку, можна шукати за кодом",
@@ -94,6 +93,12 @@ export const transport = {
   // the form needs (labels, captions, carrier line, delete label, not-found title) already exists
   // above or in `common`/`bookingForm`/`trips` and is reused as-is.
   form: {
+    dateSheet: {
+      title: "Дата вильоту",
+      prevMonth: "Попередній місяць",
+      nextMonth: "Наступний місяць",
+    },
+    durationSheetTitle: "Тривалість польоту (години:хвилини)",
     clear: "Очистити",
     save: "Зберегти",
     saveAndNext: "Зберегти й додати наступний",

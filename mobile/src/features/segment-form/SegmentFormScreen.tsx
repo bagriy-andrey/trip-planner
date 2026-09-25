@@ -1,6 +1,6 @@
-import { firstSegmentPrefill } from "@tripplanner/shared";
+import { firstSegmentPrefill, isClockTime } from "@tripplanner/shared";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,15 +22,22 @@ import type { TripErrorKind } from "@/features/trips";
 import { useToday } from "@/lib/clock";
 import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 import { layout, radius, spacing, typography, useTheme } from "@/lib/theme";
+import { useTimeSheetPicker } from "@/platform/timeSheetPicker";
 
 import { AirportField } from "./components/AirportField";
 import { AirportSuggestions } from "./components/AirportSuggestions";
-import { ArrivalBlock } from "./components/ArrivalBlock";
 import { BaggageToggle } from "./components/BaggageToggle";
-import { DepartureBlock } from "./components/DepartureBlock";
+import { FlightDateField } from "./components/FlightDateField";
+import { FlightDateSheet } from "./components/FlightDateSheet";
+import { FlightTimeField } from "./components/FlightTimeField";
 import { FlightNumberField } from "./components/FlightNumberField";
 import { PassengerStepper } from "./components/PassengerStepper";
-import { EMPTY_SEGMENT_FORM, segmentFormFromFirstPrefill, segmentFormFromSegment } from "./hooks/formState";
+import {
+  EMPTY_SEGMENT_FORM,
+  durationToClock,
+  segmentFormFromFirstPrefill,
+  segmentFormFromSegment,
+} from "./hooks/formState";
 import type { SegmentFormState } from "./hooks/formState";
 import { useSegmentForm } from "./hooks/useSegmentForm";
 import type { SegmentFormTarget } from "./hooks/useSegmentForm";
@@ -132,6 +139,12 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
   const { tokens } = useTheme();
   const today = useToday();
   const form = useSegmentForm(target, initial);
+  const [dateOpen, setDateOpen] = useState(false);
+  const timePicker = useTimeSheetPicker({
+    done: tCommon("actions.done"),
+    cancel: tCommon("actions.cancel"),
+    close: tCommon("actions.cancel"),
+  });
 
   const submitMessage = form.submitError ?? undefined;
   useEffect(() => {
@@ -146,13 +159,7 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
   return (
     <View style={styles.root}>
     <Screen testID="segment-form-screen" contentStyle={styles.content}>
-      <ModalHeader
-        title={tBookingForm("titles.flight")}
-        cancelLabel={tCommon("actions.cancel")}
-        onCancel={form.requestClose}
-        cancelAsIcon
-        hideDone
-      />
+      <ModalHeader title={tBookingForm("titles.flight")} hideCancel hideDone />
       <View style={styles.fields}>
         <FlightNumberField
           label={t("field.flightNumber")}
@@ -212,41 +219,54 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
             />
           ) : null}
         </View>
-        <DepartureBlock
-          dateLabel={t("field.departureDate")}
-          timeLabel={t("field.departureTime")}
-          date={form.state.departureDate}
-          time={form.state.departureTime}
-          onChangeDate={form.changeDepartureDate}
-          onChangeTime={form.changeDepartureTime}
-          onClearDate={form.clearDepartureDate}
-          onClearTime={form.clearDepartureTime}
-          minimumDate={form.departureMinDate}
-          clearLabel={t("form.clear")}
-          dateFallback={form.departureMinDate ?? today}
-          errorText={
-            (form.departureRuleError === undefined ? undefined : t(`form.validation.${form.departureRuleError}`)) ??
-            fieldError("departureDate") ??
-            fieldError("departureTime")
-          }
-          testID="segment-form-departure"
-        />
-        <ArrivalBlock
-          dateLabel={t("field.arrivalDate")}
-          timeLabel={t("field.arrivalTime")}
-          caption={t("caption.arrivalOptional")}
-          date={form.state.arrivalDate}
-          time={form.state.arrivalTime}
-          onChangeDate={form.changeArrivalDate}
-          onChangeTime={form.changeArrivalTime}
-          onClearDate={() => form.changeArrivalDate(null)}
-          onClearTime={() => form.changeArrivalTime(null)}
-          minimumDate={form.state.departureDate ?? undefined}
-          clearLabel={t("form.clear")}
-          dateFallback={form.state.departureDate ?? today}
-          errorText={fieldError("arrival")}
-          testID="segment-form-arrival"
-        />
+        <View style={styles.airport}>
+          <FlightDateField
+            label={t("field.departureDate")}
+            date={form.state.departureDate}
+            onOpen={() => setDateOpen(true)}
+            errorText={
+              (form.departureRuleError === undefined ? undefined : t(`form.validation.${form.departureRuleError}`)) ??
+              fieldError("departureDate")
+            }
+            testID="segment-form-departure-date"
+          />
+          <View style={styles.times}>
+            <FlightTimeField
+              label={t("field.departureTime")}
+              time={form.state.departureTime}
+              onOpen={() =>
+                timePicker.open({
+                  title: t("field.departureTime"),
+                  value: form.state.departureTime,
+                  startTime: "12:00",
+                  onPick: (picked) => isClockTime(picked) && form.changeDepartureTime(picked),
+                })
+              }
+              errorText={fieldError("departureTime")}
+              testID="segment-form-departure-time"
+            />
+            <FlightTimeField
+              label={t("field.duration")}
+              time={form.state.durationMinutes === null ? null : durationToClock(form.state.durationMinutes)}
+              onOpen={() =>
+                timePicker.open({
+                  title: t("form.durationSheetTitle"),
+                  value: form.state.durationMinutes === null ? null : durationToClock(form.state.durationMinutes),
+                  startTime: "02:00",
+                  hour24: true,
+                  onPick: (picked) => isClockTime(picked) && form.changeDuration(picked),
+                })
+              }
+              onClear={form.clearDuration}
+              clearLabel={`${t("form.clear")}: ${t("field.duration")}`}
+              errorText={fieldError("arrival")}
+              testID="segment-form-duration"
+            />
+          </View>
+          <AppText variant="small" color="textSecondary">
+            {t("caption.durationOptional")}
+          </AppText>
+        </View>
         <BaggageToggle
           label={t("field.baggageIncluded")}
           value={form.state.baggageIncluded}
@@ -301,6 +321,12 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
           testID="segment-form-save-next"
         />
       )}
+      <SecondaryButton
+        label={tCommon("actions.cancel")}
+        accessibilityLabel={tCommon("actions.cancel")}
+        onPress={form.requestClose}
+        testID="segment-form-cancel"
+      />
       {form.canDelete ? (
         <Pressable
           accessibilityRole="button"
@@ -315,6 +341,20 @@ function SegmentFormBody({ target, initial }: SegmentFormBodyProps) {
 
     </Screen>
 
+      {timePicker.element}
+      {dateOpen ? (
+        <FlightDateSheet
+          value={form.state.departureDate}
+          floor={form.departureMinDate}
+          initialMonthOf={form.departureMinDate ?? today}
+          onDone={(date) => {
+            form.changeDepartureDate(date);
+            setDateOpen(false);
+          }}
+          onClose={() => setDateOpen(false)}
+          testID="segment-form-date-sheet"
+        />
+      ) : null}
       {form.closeConfirmOpen ? (
         <ConfirmOverlay closeLabel={tCommon("actions.cancel")} onClose={form.cancelCloseConfirm} testID="segment-form-unsaved">
           <AppText variant="h2" accessibilityRole="header">
@@ -548,6 +588,7 @@ const styles = StyleSheet.create({
   content: { gap: spacing.xl, paddingBottom: spacing.xl },
   fields: { gap: spacing.block },
   airport: { gap: spacing.sm },
+  times: { flexDirection: "row", gap: spacing.gap, alignItems: "flex-start" },
   wrapper: { gap: spacing.xs },
   monoInput: {
     minHeight: layout.minTouch,

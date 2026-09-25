@@ -6,6 +6,7 @@ import {
   AppText,
   ConfirmOverlay,
   EmptyState,
+  ModalHeader,
   PrimaryButton,
   Screen,
   SecondaryButton,
@@ -16,7 +17,6 @@ import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 import { spacing, useTheme } from "@/lib/theme";
 
 import { DatesBlock } from "./components/DatesBlock";
-import { FormHeader } from "./components/FormHeader";
 import { PlaceField } from "./components/PlaceField";
 import { TripDatesSheet } from "./components/TripDatesSheet";
 import { PlaceSuggestions } from "./components/PlaceSuggestions";
@@ -57,10 +57,11 @@ function EditTripLoader({ tripId }: { tripId: string }) {
   }
 
   const header = (
-    <FormHeader
+    <ModalHeader
       title={t("form.editTitle")}
       cancelLabel={tCommon("actions.cancel")}
       onCancel={() => router.back()}
+      hideDone
     />
   );
 
@@ -151,7 +152,7 @@ function TripFormBody({ target, initial }: TripFormBodyProps) {
   return (
     <View style={styles.root}>
       <Screen testID="trip-form-screen" contentStyle={styles.content}>
-        <FormHeader title={isCreate ? t("form.createTitle") : t("form.editTitle")} />
+        <ModalHeader title={isCreate ? t("form.createTitle") : t("form.editTitle")} hideCancel hideDone />
         <View style={styles.fields}>
           <View style={styles.place}>
             <PlaceField

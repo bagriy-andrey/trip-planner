@@ -8,6 +8,7 @@ import {
   segmentFormFromFirstPrefill,
   segmentFormFromNextPrefill,
   segmentFormFromSegment,
+  arrivalPartsOf,
 } from "../hooks/formState";
 
 function knownAirport(code: string) {
@@ -41,7 +42,34 @@ describe("EMPTY_SEGMENT_FORM", () => {
   it("starts with SEGMENT_PASSENGERS_MIN passengers and no invented constant", () => {
     expect(EMPTY_SEGMENT_FORM.passengers).toBe(1);
     expect(EMPTY_SEGMENT_FORM.fromAirport).toBeNull();
-    expect(EMPTY_SEGMENT_FORM.arrivalDate).toBeNull();
+    expect(EMPTY_SEGMENT_FORM.durationMinutes).toBeNull();
+  });
+});
+
+describe("arrivalPartsOf", () => {
+  const base = { ...EMPTY_SEGMENT_FORM, fromAirport: KRK, toAirport: OPO, departureDate: "2026-06-15", departureTime: "10:00" } as const;
+
+  it("is departure + duration, on the wall clock of the arrival airport", () => {
+    // KRK is UTC+2 in June, OPO UTC+1: 10:00 + 3 h is 13:00 in Krakow, 12:00 in Porto.
+    expect(arrivalPartsOf({ ...base, durationMinutes: 180 })).toEqual({ date: "2026-06-15", time: "12:00" });
+  });
+
+  it("rolls over midnight", () => {
+    expect(arrivalPartsOf({ ...base, departureTime: "23:00", durationMinutes: 300 })).toEqual({
+      date: "2026-06-16",
+      time: "03:00",
+    });
+  });
+
+  it("is null while the duration or any other input is missing", () => {
+    expect(arrivalPartsOf({ ...base, durationMinutes: null })).toBeNull();
+    expect(arrivalPartsOf({ ...base, durationMinutes: 60, departureTime: null })).toBeNull();
+  });
+
+  it("round-trips through a stored segment", () => {
+    const state = segmentFormFromSegment(makeSegment(), "en");
+    expect(state.durationMinutes).toBe(240);
+    expect(arrivalPartsOf(state)).toEqual({ date: "2026-06-15", time: "13:00" });
   });
 });
 
@@ -103,8 +131,7 @@ describe("segmentFormFromSegment (AC-76)", () => {
       toAirport: OPO,
       departureDate: "2026-06-15",
       departureTime: "10:00",
-      arrivalDate: "2026-06-15",
-      arrivalTime: "13:00",
+      durationMinutes: 240,
       baggageIncluded: true,
       passengers: 2,
       seat: "12A",
@@ -114,8 +141,7 @@ describe("segmentFormFromSegment (AC-76)", () => {
 
   it("prefills a deliberately empty arrival as null, not a guessed value", () => {
     const state = segmentFormFromSegment(makeSegment({ arrivalAt: null }), "en");
-    expect(state.arrivalDate).toBeNull();
-    expect(state.arrivalTime).toBeNull();
+    expect(state.durationMinutes).toBeNull();
   });
 
   it("prefills null flight number / seat / ticket as empty strings", () => {
