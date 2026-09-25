@@ -14,3 +14,7 @@ coverage/
 .claude/settings.local.json
 .idea/
 .maestro/
+
+# design-sync output (rebuilt by .design-sync/build.mjs)
+ds-bundle/
+.design-sync/mockups-src/

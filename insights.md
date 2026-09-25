@@ -33,4 +33,23 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
   steps should be read as owning that file for the WHOLE feature's later additions too, not just its
   own step's immediate needs — a future plan can make this explicit rather than relying on each
   later step to notice and fill the gap without permission to touch a file outside its own list.
+- 2026-09-25: Claude Design sync for this React Native repo (project "TripPlanner", id pinned in
+  `.design-sync/config.json`). `/design-sync` assumes a web `dist/` and has no RN path, so the
+  working route is a hand-built tokens-only bundle: `node .design-sync/build.mjs` reads the theme
+  from `mobile/src/lib/theme/{tokens,typography,metrics}.ts` (evaluating the `export const … = {…}`
+  literals, so the theme stays the single source) plus `design/`, and writes gitignored `ds-bundle/`
+  (`styles.css`, `tokens/*.css`, fonts, README = `.design-sync/conventions.md` + token index,
+  `guidelines/`). Facts that aren't obvious: `DesignSync` needs a one-off `/design-login`, sees ONLY
+  design-system projects (mockups made as Artifacts are not there — read them with `Artifact read`);
+  `metrics.ts` imports `react-native`, so it can't be imported in Node, hence the literal extraction.
+  Re-sync = rebuild + `write_files` under one `finalize_plan`; no `_ds_sync.json` is written.
+- 2026-09-25: Reading Claude Design artifacts from the repo side: a plain `Artifact read` of a Design
+  canvas returns only the type's instructions, NOT the screens — they live in `project/*.dc.html` +
+  `project/canvas.json`, fetched with `list` `scope: "files"` then `read` with `paths`. An artifact that
+  looks like a mockup can be a Claude Docs document (needs the Docs connector). The earlier mockups
+  predate the current design rules (emoji, weight 600, gradients, text-glyph icons, raw hex), so the
+  design-system project ships them as `guidelines/mockups/` with a "layout/flow only, not styling"
+  README, and specs only as digests (`guidelines/specs/`, ACs stripped: 491 KB → 74 KB) so they fit a
+  design agent's context. The mockup copy is a manual snapshot and goes stale (refresh steps in
+  `.design-sync/NOTES.md`).
 ## Open Questions
