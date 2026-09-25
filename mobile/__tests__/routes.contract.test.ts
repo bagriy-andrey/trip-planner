@@ -42,6 +42,8 @@ const SPEC_ROUTES = [
   "/trips/[tripId]/hotels/new",
   "/trips/[tripId]/hotels/[hotelId]",
   "/trips/[tripId]/cars/new",
+  "/trips/[tripId]/cars/[carId]",
+  "/trips/[tripId]/cars/[carId]/view",
 ];
 const SERVICE_ROUTES = ["/", "/+not-found"];
 const LAYOUT_FILES = ["(tabs)/_layout.tsx", "_layout.tsx"];

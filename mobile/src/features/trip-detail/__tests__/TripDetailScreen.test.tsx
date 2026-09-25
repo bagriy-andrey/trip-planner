@@ -14,6 +14,8 @@ import { listSegments } from "@/features/transport/api";
 import { hotelKeys } from "@/features/hotels";
 import { listHotels } from "@/features/hotels/api";
 import { makeHotel } from "@/features/hotels/hooks/__tests__/testKit";
+import { listCars } from "@/features/cars/api";
+import { makeCar } from "@/features/cars/hooks/__tests__/testKit";
 import { TripDetailScreen } from "../TripDetailScreen";
 
 jest.mock("@/lib/supabase", () => ({ supabase: { from: jest.fn() } }));
@@ -33,6 +35,10 @@ jest.mock("@/features/hotels/api", () => ({
   ...jest.requireActual("@/features/hotels/api"),
   listHotels: jest.fn(),
 }));
+jest.mock("@/features/cars/api", () => ({
+  ...jest.requireActual("@/features/cars/api"),
+  listCars: jest.fn(),
+}));
 
 const mockRouter = {
   push: jest.fn(),
@@ -50,6 +56,7 @@ const unarchiveMock = unarchiveTrip as jest.Mock;
 const deleteMock = deleteTrip as jest.Mock;
 const listSegmentsMock = listSegments as jest.Mock;
 const listHotelsMock = listHotels as jest.Mock;
+const listCarsMock = listCars as jest.Mock;
 
 const SIGNED_IN: RenderWithProvidersOptions = { session: { user: {} } };
 
@@ -108,7 +115,8 @@ let alertSpy: jest.SpyInstance;
 
 beforeEach(() => {
   jest.clearAllMocks();
-  for (const mock of [getTripMock, archiveMock, unarchiveMock, deleteMock, listSegmentsMock, listHotelsMock]) mock.mockReset();
+  for (const mock of [getTripMock, archiveMock, unarchiveMock, deleteMock, listSegmentsMock, listHotelsMock, listCarsMock]) mock.mockReset();
+  listCarsMock.mockResolvedValue({ ok: true, data: [] });
   listHotelsMock.mockResolvedValue({ ok: true, data: [] });
   // Default: no segments, so every test not about the transport block keeps seeing the old
   // dashed empty state (AC-74) without opting in explicitly.
@@ -682,5 +690,47 @@ describe("TripDetailScreen (S7) — delete permanently", () => {
     });
     await user.press(within(sheet).getByRole("button", { name: "Delete permanently" }));
     expect(deleteMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("TripDetailScreen (S7) — Car block (SPEC-07 AC-39..41)", () => {
+  const first = makeCar({ id: "c-1", company: "Hertz", pickupDate: "2026-08-10" });
+  const second = makeCar({ id: "c-2", company: "Avis", pickupDate: "2026-08-20" });
+
+  it("zero rentals: empty state, no header plus (AC-39)", async () => {
+    await renderDetail(makeTrip());
+    expect(screen.getByTestId("empty-car")).toBeOnTheScreen();
+    expect(screen.queryByTestId("add-car")).toBeNull();
+    expect(screen.queryByTestId("car-block")).toBeNull();
+  });
+
+  it("a failing list keeps the empty state and the screen alive", async () => {
+    listCarsMock.mockResolvedValue({ ok: false, kind: "network" });
+    await renderDetail(makeTrip());
+    expect(screen.getByTestId("empty-car")).toBeOnTheScreen();
+    expect(screen.getByTestId("trip-detail-screen")).toBeOnTheScreen();
+  });
+
+  it("two rentals: two cards in api order, header plus visible, no empty state (AC-39, AC-40)", async () => {
+    listCarsMock.mockResolvedValue({ ok: true, data: [first, second] });
+    const user = userEvent.setup();
+    await renderDetail(makeTrip());
+    await screen.findByTestId("car-block");
+    expect(screen.getByTestId("car-block-car-c-1")).toBeOnTheScreen();
+    expect(screen.getByTestId("car-block-car-c-2")).toBeOnTheScreen();
+    expect(screen.queryByTestId("empty-car")).toBeNull();
+    await user.press(screen.getByTestId("add-car"));
+    expect(mockRouter.push).toHaveBeenLastCalledWith({ pathname: "/trips/[tripId]/cars/new", params: { tripId: "trip-1" } });
+  });
+
+  it("a tap on a card opens the view route with the raw id in params (AC-41)", async () => {
+    listCarsMock.mockResolvedValue({ ok: true, data: [first] });
+    const user = userEvent.setup();
+    await renderDetail(makeTrip());
+    await user.press(await screen.findByTestId("car-block-car-c-1"));
+    expect(mockRouter.push).toHaveBeenLastCalledWith({
+      pathname: "/trips/[tripId]/cars/[carId]/view",
+      params: { tripId: "trip-1", carId: "c-1" },
+    });
   });
 });
