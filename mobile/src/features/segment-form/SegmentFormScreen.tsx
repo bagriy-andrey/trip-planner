@@ -15,6 +15,7 @@ import {
   Screen,
   SecondaryButton,
 } from "@/components";
+import { useHomeDefaults } from "@/features/profile";
 import { useSegmentQuery, useSegmentsQuery } from "@/features/transport";
 import { useTripQuery } from "@/features/trips";
 import type { TripErrorKind } from "@/features/trips";
@@ -59,6 +60,7 @@ function CreateSegmentLoader({ tripId }: { tripId: string }) {
   const router = useRouter();
   const tripQuery = useTripQuery(tripId);
   const segmentsQuery = useSegmentsQuery(tripId);
+  const { homeAirport } = useHomeDefaults();
 
   if (tripQuery.isError && tripQuery.error?.kind === "notFound") {
     return <SegmentNotFound onBack={() => router.back()} />;
@@ -82,7 +84,7 @@ function CreateSegmentLoader({ tripId }: { tripId: string }) {
 
   const initial: SegmentFormState =
     segmentsQuery.segments.length === 0
-      ? segmentFormFromFirstPrefill(firstSegmentPrefill(tripQuery.trip), lang)
+      ? segmentFormFromFirstPrefill(firstSegmentPrefill(tripQuery.trip, homeAirport), lang)
       : EMPTY_SEGMENT_FORM;
 
   return <SegmentFormBody key="create" target={{ mode: "create", tripId }} initial={initial} />;
