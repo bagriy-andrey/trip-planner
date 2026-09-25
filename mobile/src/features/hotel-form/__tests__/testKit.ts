@@ -73,3 +73,11 @@ describe("hotel-form testKit", () => {
     expect(makeHotel().city.id).toBe("city-lisbon");
   });
 });
+
+/** A `getProfile` result: no profile yet (the default fixture), or one with the given home currency. */
+export function profileResult(homeCurrency: string | null) {
+  return {
+    ok: true as const,
+    data: { citizenship: null, residence: null, homeCityId: null, homeAirport: null, homeCurrency },
+  };
+}

@@ -132,6 +132,7 @@ export function HotelFormFields({ form, timePicker }: { form: HotelFormControlle
         onChangeAmount={form.cost.changeAmount}
         onBlurAmount={form.cost.blurAmount}
         onOpenCurrency={form.cost.openCurrency}
+        currencyPlaceholder={form.cost.currencyPlaceholder}
         amountError={text(errors.costAmount)}
         currencyError={text(errors.costCurrency)}
         testID="hotel-form-cost"

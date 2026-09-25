@@ -1,9 +1,10 @@
+import { isCurrencyCode } from "@tripplanner/shared";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
 import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, DismissKeyboardView, ModalHeader, PrimaryButton, Screen, SecondaryButton } from "@/components";
+import { AppText, CurrencyPickerSheet, DismissKeyboardView, ModalHeader, PrimaryButton, Screen, SecondaryButton } from "@/components";
 import { useTranslation } from "@/lib/i18n";
 import { layout, radius, spacing, useTheme } from "@/lib/theme";
 import { useTimeSheetPicker } from "@/platform/timeSheetPicker";
@@ -12,7 +13,6 @@ import { useHotelForm } from "../hooks/useHotelForm";
 import type { HotelFormTarget } from "../hooks/useHotelForm";
 import type { HotelFormState } from "../hooks/formState";
 import { ConfirmOverlay } from "./ConfirmOverlay";
-import { CurrencySheet } from "./CurrencySheet";
 import { HotelFormFields } from "./HotelFormFields";
 import { HotelNotFound } from "./HotelFormStates";
 
@@ -99,8 +99,10 @@ export function HotelFormBody({ target, initial, hotelName }: HotelFormBodyProps
       </View>
 
       {form.cost.currencyOpen ? (
-        <CurrencySheet
-          selected={form.state.costCurrency}
+        <CurrencyPickerSheet
+          title={t("form.field.currency")}
+          selected={isCurrencyCode(form.state.costCurrency) ? form.state.costCurrency : null}
+          required={form.state.costAmount !== ""}
           onSelect={form.cost.selectCurrency}
           onClose={form.cost.closeCurrency}
           testID="hotel-form-currency-sheet"

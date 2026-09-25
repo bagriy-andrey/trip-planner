@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 
+import { useHomeDefaults } from "@/features/profile";
 import { useHotelQuery } from "@/features/hotels";
 import { useTripQuery } from "@/features/trips";
 import { useToday } from "@/lib/clock";
@@ -30,11 +31,13 @@ function CreateHotelLoader({ tripId }: { tripId: string }) {
   const lang = resolveLocale([i18n.language]);
   const router = useRouter();
   const today = useToday();
+  const { homeCurrency } = useHomeDefaults();
   const query = useTripQuery(tripId);
   const back = () => router.back();
 
   if (query.trip !== undefined) {
-    return <HotelFormBody key="create" target={{ mode: "create", tripId }} initial={hotelFormFromTrip(query.trip, lang, today)} />;
+    return <HotelFormBody key="create" target={{ mode: "create", tripId }} initial={hotelFormFromTrip(query.trip, lang, today, homeCurrency)}
+      />;
   }
   if (query.isError && query.error?.kind === "notFound") return <HotelNotFound onBack={back} />;
   if (query.isError) {
