@@ -30,6 +30,11 @@ type IosPrivacyManifests = NonNullable<
 // sources (ios/*.m, ios/fabric/*.mm/.cpp) reference no required-reason API, so the
 // union above is unchanged. @tanstack/react-query 5.103.1 is pure JS. No
 // NS*UsageDescription.
+//
+// Re-audit 2026-09-25 (SPEC-07 / PLAN-07 step 5): expo-clipboard 57.0.2 ships NO
+// PrivacyInfo.xcprivacy and its iOS sources (ios/*.swift) reference no required-reason
+// API (UIPasteboard is not on Apple's list), so the union above is unchanged. The app
+// only WRITES to the pasteboard (no read, no paste button). No NS*UsageDescription.
 export const iosPrivacyManifests: IosPrivacyManifests = {
   NSPrivacyAccessedAPITypes: [
     {

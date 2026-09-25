@@ -1,4 +1,4 @@
-import { filterMoneyInput } from "../hooks/moneyInput";
+import { filterMoneyInput } from "../moneyInput";
 
 describe("filterMoneyInput", () => {
   it("keeps digits and one separator with two fraction digits", () => {

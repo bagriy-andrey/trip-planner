@@ -37,6 +37,12 @@ describe("icon registry", () => {
       .sort();
     expect(foreign).toEqual(["bed", "car", "plane"]);
   });
+
+  it("knows the four SPEC-07 names, all Feather", () => {
+    for (const name of ["copy", "navigation", "chevronLeft", "chevronDown"] as const) {
+      expect(ICONS[name].set).toBe("feather");
+    }
+  });
 });
 
 describe("Icon", () => {

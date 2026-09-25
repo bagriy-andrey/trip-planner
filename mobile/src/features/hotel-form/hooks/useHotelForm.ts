@@ -19,19 +19,18 @@ import type {
 } from "@tripplanner/shared";
 import { useRef, useState } from "react";
 
+import { filterMoneyInput, useMapsLink } from "@/components";
 import { useHomeDefaults } from "@/features/profile";
 import { useCreateHotel, useUpdateHotel } from "@/features/hotels";
 import { useToday } from "@/lib/clock";
+import { useLeaveGuard } from "@/lib/forms";
 import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 
 import { cityDisplayText, hotelDateFloor, hotelFormEquals, nightsOf, toHotelFormInput, withDates } from "./formState";
 import type { HotelFormState } from "./formState";
-import { filterMoneyInput } from "./moneyInput";
 import { isNotFound, submitErrorKind } from "./submitError";
 import type { SubmitErrorKind } from "./submitError";
 import { useHotelDelete } from "./useHotelDelete";
-import { useLeaveGuard } from "./useLeaveGuard";
-import { useMapsLink } from "./useMapsLink";
 
 export type HotelFormTarget =
   | { mode: "create"; tripId: string }

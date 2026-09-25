@@ -26,6 +26,32 @@ describe("SegmentedControl", () => {
   });
 });
 
+describe("SegmentedControl null and allowDeselect", () => {
+  it("checks no option for value=null", async () => {
+    await renderWithProviders(
+      <SegmentedControl label="Kind" options={OPTIONS} value={null} allowDeselect onChange={jest.fn()} testID="seg" />,
+    );
+    expect(screen.getByRole("radio", { name: "Alpha" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "Beta" })).not.toBeChecked();
+  });
+
+  it("a second tap on the selected option calls onChange(null) with allowDeselect", async () => {
+    const onChange = jest.fn();
+    await renderWithProviders(
+      <SegmentedControl label="Kind" options={OPTIONS} value="a" allowDeselect onChange={onChange} testID="seg" />,
+    );
+    await userEvent.setup().press(screen.getByRole("radio", { name: "Alpha" }));
+    expect(onChange).toHaveBeenCalledWith(null);
+  });
+
+  it("without the prop a tap on the selected option reports it again", async () => {
+    const onChange = jest.fn();
+    await renderWithProviders(<SegmentedControl label="Kind" options={OPTIONS} value="a" onChange={onChange} testID="seg" />);
+    await userEvent.setup().press(screen.getByRole("radio", { name: "Alpha" }));
+    expect(onChange).toHaveBeenCalledWith("a");
+  });
+});
+
 describe("Stepper bounds", () => {
   const base = {
     accessibilityLabel: "Guests",

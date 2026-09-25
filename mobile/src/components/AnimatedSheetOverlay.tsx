@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
-import { AccessibilityInfo, Animated, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { AccessibilityInfo, Animated, PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { easing, layout, motion, radius, spacing, useTheme } from "@/lib/theme";
@@ -18,6 +18,8 @@ export interface AnimatedSheetOverlayProps {
   topInset?: number;
   /** Decorative grabber at the top of the panel (no gesture). */
   handle?: boolean;
+  /** A downward drag on the panel longer than one minimum touch target calls `onRequestClose`. */
+  swipeToClose?: boolean;
   testID?: string;
 }
 
@@ -34,6 +36,7 @@ export function AnimatedSheetOverlay({
   children,
   topInset,
   handle = false,
+  swipeToClose = false,
   testID,
 }: AnimatedSheetOverlayProps) {
   const { tokens } = useTheme();
@@ -75,6 +78,17 @@ export function AnimatedSheetOverlay({
     if (closing) run(0, () => onExitedRef.current());
   }, [closing, run]);
 
+  const onRequestCloseRef = useRef(onRequestClose);
+  onRequestCloseRef.current = onRequestClose;
+  const swipe = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_event, gesture) => gesture.dy > 0 && gesture.dy > Math.abs(gesture.dx),
+      onPanResponderRelease: (_event, gesture) => {
+        if (gesture.dy > layout.minTouch) onRequestCloseRef.current();
+      },
+    }),
+  ).current;
+
   const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [height, 0] });
 
   return (
@@ -90,6 +104,7 @@ export function AnimatedSheetOverlay({
       </Animated.View>
       <Animated.View
         testID={testID === undefined ? undefined : `${testID}-panel`}
+        {...(swipeToClose ? swipe.panHandlers : {})}
         style={[
           styles.panel,
           topInset === undefined ? null : { position: "absolute", top: topInset, bottom: 0, left: 0, right: 0 },

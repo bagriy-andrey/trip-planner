@@ -106,6 +106,7 @@ describe("sizes (design/tokens.md, «Размеры и отступы»)", () =>
       switchW: 44,
       switchH: 24,
       switchKnob: 20,
+      calendarDayCircle: 40,
       chainLine: 2,
       chainNode: 8,
       chainGapNode: 10,

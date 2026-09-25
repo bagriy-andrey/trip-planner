@@ -61,6 +61,8 @@ export const layout = {
   switchW: 44,
   switchH: 24,
   switchKnob: 20,
+  /** Round day cell of the range calendar sheet. */
+  calendarDayCircle: 40,
   /** Vertical line of the route chain (S13). */
   chainLine: 2,
   /** Filled node marking a segment card on the chain line. */
