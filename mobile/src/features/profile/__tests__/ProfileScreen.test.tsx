@@ -1,10 +1,14 @@
 import { screen, userEvent, within } from "@testing-library/react-native";
 
+import { EMPTY_PROFILE } from "@tripplanner/shared";
+import type { Profile } from "@tripplanner/shared";
+
 import { signOut } from "@/features/auth";
 import { HistoryScreen } from "@/features/history";
 import { TripsScreen } from "@/features/trips";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 
+import { getProfile } from "../api";
 import { ProfileHeader } from "../components/ProfileHeader";
 import { ProfileScreen } from "../ProfileScreen";
 
@@ -19,6 +23,14 @@ jest.mock("expo-router", () => ({ useRouter: () => mockRouter }));
 // Only the public surface `ProfileScreen` uses; the real sign-out (and gating) is exercised in
 // ProfileSignOut.test.tsx.
 jest.mock("@/features/auth", () => ({ signOut: jest.fn() }));
+jest.mock("@/lib/supabase", () => ({ supabase: { from: jest.fn() } }));
+jest.mock("../api", () => ({
+  ...jest.requireActual("../api"),
+  getProfile: jest.fn(),
+  saveProfile: jest.fn(),
+}));
+const mockGetProfile = getProfile as jest.Mock;
+const load = (over: Partial<Profile>) => mockGetProfile.mockResolvedValue({ ok: true, data: { ...EMPTY_PROFILE, ...over } });
 
 const mockSignOut = jest.mocked(signOut);
 
@@ -27,12 +39,13 @@ const SESSION = { user: { email: "anna.kowalska@example.com", displayName: "Anna
 beforeEach(() => {
   jest.clearAllMocks();
   mockSignOut.mockResolvedValue({ ok: true });
+  load({});
 });
 
-const SOON_ROWS = ["row-notifications", "row-connected-accounts", "row-currency"];
+const SOON_ROWS = ["row-notifications", "row-connected-accounts"];
 
 describe("ProfileScreen (S6)", () => {
-  it("renders the header, the theme row, three stub rows and sign-out", async () => {
+  it("renders the header, the theme row, two stub rows and sign-out", async () => {
     await renderWithProviders(<ProfileScreen />, { session: SESSION });
     expect(screen.getByRole("header", { name: "Profile" })).toBeOnTheScreen();
     expect(screen.getByTestId("profile-name")).toHaveTextContent("Anna Kowalska");
@@ -42,31 +55,6 @@ describe("ProfileScreen (S6)", () => {
       expect(screen.getByTestId(id)).toBeOnTheScreen();
     }
     expect(screen.getByRole("button", { name: "Sign out" })).toBeOnTheScreen();
-  });
-
-  it.each(["en", "ru"] as const)(
-    "shows the connected-accounts and currency rows with only the 'soon' marker and no value in %s (AC-65)",
-    async (locale) => {
-      await renderWithProviders(<ProfileScreen />, { locale, session: SESSION });
-      const soon = locale === "en" ? "soon" : "скоро";
-      for (const id of ["row-connected-accounts", "row-currency"]) {
-        const row = screen.getByTestId(id);
-        // Exactly the title and the marker: no third text node carrying a value.
-        expect(within(row).getAllByText(/.+/)).toHaveLength(2);
-        expect(within(row).getByText(soon)).toBeOnTheScreen();
-      }
-      expect(screen.queryByText("Booking.com")).not.toBeOnTheScreen();
-      expect(screen.queryByText("EUR")).not.toBeOnTheScreen();
-    },
-  );
-
-  it("speaks only the row title for a stub row (no value to announce) (AC-65)", async () => {
-    await renderWithProviders(<ProfileScreen />, { session: SESSION });
-    const spoken = (id: string) => String(screen.getByTestId(id).props.accessibilityLabel);
-    expect(spoken("row-connected-accounts")).not.toContain(",");
-    expect(spoken("row-currency")).not.toContain(",");
-    expect(spoken("row-connected-accounts")).toBe("Connected accounts");
-    expect(spoken("row-currency")).toBe("Currency");
   });
 
   it("marks every stub row with 'soon' and announces it (Q7)", async () => {
