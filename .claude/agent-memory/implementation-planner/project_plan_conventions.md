@@ -15,4 +15,7 @@ names the plan path (`Implementation Plan: specs/plans/PLAN-NN-…`).
 **How to apply:** default execution mode "single-agent по порядку, тир 1 параллелим — вопрос владельцу"
 (planner runs as a subagent and can't ask interactively). Pin cross-step contracts (error-id list ↔
 i18n keys) in the plan itself, and give the step that creates a namespace/hooks dir ownership of ALL
-its later leaf needs (root insights.md 2026-09-23 lesson).
+its later leaf needs (root insights.md 2026-09-23 lesson). PLAN-06 added two more ordering
+rules worth reusing: a `shared` contract change goes in the SAME step as its mobile consumer (else
+tests go red between steps), and an i18n key is deleted by the step that deletes its last consumer
+(typed i18n breaks typecheck otherwise).
