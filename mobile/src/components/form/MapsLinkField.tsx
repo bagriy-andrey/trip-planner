@@ -1,10 +1,25 @@
 import { StyleSheet, View } from "react-native";
 
-import { AppText, Icon, IconButton, SecondaryButton, TextField } from "@/components";
-import { useTranslation } from "@/lib/i18n";
+import { AppText } from "../AppText";
+import { Icon } from "../Icon";
+import { IconButton } from "../IconButton";
+import { SecondaryButton } from "../SecondaryButton";
+import { TextField } from "../TextField";
 import { spacing } from "@/lib/theme";
 
+export interface MapsLinkLabels {
+  field: string;
+  placeholder: string;
+  added: string;
+  source: string;
+  open: string;
+  remove: string;
+  openFailed: string;
+}
+
 export interface MapsLinkFieldProps {
+  /** Already translated strings: the component knows no feature namespace. */
+  labels: MapsLinkLabels;
   /** The accepted, normalized link; `null` while the field is still an input. */
   acceptedUrl: string | null;
   text: string;
@@ -33,13 +48,13 @@ export function MapsLinkField({
   errorText,
   openFailed,
   testID,
+  labels,
 }: MapsLinkFieldProps) {
-  const { t } = useTranslation("hotel");
   if (acceptedUrl === null) {
     return (
       <TextField
-        label={t("form.field.mapsUrl")}
-        placeholder={t("form.field.mapsUrlPlaceholder")}
+        label={labels.field}
+        placeholder={labels.placeholder}
         value={text}
         onChangeText={onChangeText}
         onBlur={onBlur}
@@ -54,25 +69,25 @@ export function MapsLinkField({
   return (
     <View testID={testID} style={styles.block}>
       <AppText variant="small" color="textSecondary">
-        {t("form.field.mapsUrl")}
+        {labels.field}
       </AppText>
       <View style={styles.row}>
         <Icon name="pin" color="accent" />
         <View style={styles.text}>
-          <AppText>{t("form.mapsLink.added")}</AppText>
+          <AppText>{labels.added}</AppText>
           <AppText variant="small" color="textSecondary">
-            {t("form.mapsLink.source")}
+            {labels.source}
           </AppText>
         </View>
         <SecondaryButton
-          label={t("form.mapsLink.open")}
-          accessibilityLabel={t("form.mapsLink.open")}
+          label={labels.open}
+          accessibilityLabel={labels.open}
           onPress={onOpen}
           testID={`${testID}-open`}
         />
         <IconButton
           filled={false}
-          accessibilityLabel={t("form.mapsLink.remove")}
+          accessibilityLabel={labels.remove}
           onPress={onRemove}
           testID={`${testID}-remove`}
         >
@@ -81,7 +96,7 @@ export function MapsLinkField({
       </View>
       {openFailed ? (
         <AppText variant="small" color="danger" accessibilityRole="alert" testID={`${testID}-open-error`}>
-          {t("form.mapsLink.openFailed")}
+          {labels.openFailed}
         </AppText>
       ) : null}
     </View>

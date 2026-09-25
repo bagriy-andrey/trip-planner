@@ -10,15 +10,29 @@ export interface SegmentedOption<T extends string> {
   label: string;
 }
 
-export interface SegmentedControlProps<T extends string> {
+interface SegmentedControlBase<T extends string> {
   /** Spoken name of the group (already translated). */
   label: string;
   options: readonly SegmentedOption<T>[];
-  value: T;
-  onChange: (value: T) => void;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
+
+/** Default: a value is always selected and a tap on it changes nothing. */
+interface SegmentedRequired<T extends string> extends SegmentedControlBase<T> {
+  value: T;
+  allowDeselect?: false;
+  onChange: (value: T) => void;
+}
+
+/** `allowDeselect`: `null` = nothing selected; tapping the selected option calls `onChange(null)`. */
+interface SegmentedDeselectable<T extends string> extends SegmentedControlBase<T> {
+  value: T | null;
+  allowDeselect: true;
+  onChange: (value: T | null) => void;
+}
+
+export type SegmentedControlProps<T extends string> = SegmentedRequired<T> | SegmentedDeselectable<T>;
 
 /**
  * Single-choice segments. The container is a radiogroup but NOT accessible itself, otherwise
@@ -29,6 +43,7 @@ export function SegmentedControl<T extends string>({
   options,
   value,
   onChange,
+  allowDeselect,
   style,
   testID,
 }: SegmentedControlProps<T>) {
@@ -48,7 +63,7 @@ export function SegmentedControl<T extends string>({
             accessibilityRole="radio"
             accessibilityLabel={option.label}
             accessibilityState={{ checked: selected }}
-            onPress={() => onChange(option.value)}
+            onPress={() => (allowDeselect === true && selected ? onChange(null) : onChange(option.value))}
             testID={testID === undefined ? undefined : `${testID}-${option.value}`}
             style={[styles.option, selected && { backgroundColor: tokens.accent }]}
           >

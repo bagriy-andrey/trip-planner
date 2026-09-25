@@ -2,9 +2,11 @@ import { parseMapsUrl } from "@tripplanner/shared";
 import { useState } from "react";
 import { Linking } from "react-native";
 
-import type { HotelFormState } from "./formState";
 
-type MapsFields = Pick<HotelFormState, "mapsUrl" | "mapsUrlText">;
+
+
+/** The two fields a form must expose for the maps link (any feature's state). */
+type MapsFields = { mapsUrl: string | null; mapsUrlText: string };
 
 /**
  * The maps-link field (AC-24..AC-27). Typing keeps the raw text; the link is ACCEPTED (and shown as

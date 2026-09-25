@@ -2,7 +2,7 @@ import { isClockTime } from "@tripplanner/shared";
 import type { ClockTime, HotelFieldErrorId } from "@tripplanner/shared";
 import { StyleSheet, View } from "react-native";
 
-import { TextField } from "@/components";
+import { MapsLinkField, TextField } from "@/components";
 import { useToday } from "@/lib/clock";
 import { useTranslation } from "@/lib/i18n";
 import { spacing } from "@/lib/theme";
@@ -14,7 +14,6 @@ import { BreakfastBlock } from "./BreakfastBlock";
 import { CityField } from "./CityField";
 import { CostField } from "./CostField";
 import { GuestsParkingBlock } from "./GuestsParkingBlock";
-import { MapsLinkField } from "./MapsLinkField";
 import { NightsLine } from "./NightsLine";
 import { StayDatesField } from "./StayDatesField";
 import { StayTimeField } from "./StayTimeField";
@@ -65,6 +64,15 @@ export function HotelFormFields({ form, timePicker }: { form: HotelFormControlle
         acceptedUrl={state.mapsUrl}
         text={state.mapsUrlText}
         onChangeText={form.maps.changeText}
+        labels={{
+          field: t("form.field.mapsUrl"),
+          placeholder: t("form.field.mapsUrlPlaceholder"),
+          added: t("form.mapsLink.added"),
+          source: t("form.mapsLink.source"),
+          open: t("form.mapsLink.open"),
+          remove: t("form.mapsLink.remove"),
+          openFailed: t("form.mapsLink.openFailed"),
+        }}
         onBlur={form.maps.blur}
         onRemove={form.maps.remove}
         onOpen={form.maps.open}

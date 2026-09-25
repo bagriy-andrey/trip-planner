@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, CurrencyPickerSheet, DismissKeyboardView, ModalHeader, PrimaryButton, Screen, SecondaryButton } from "@/components";
+import { AppText, ConfirmOverlay, CurrencyPickerSheet, DismissKeyboardView, ModalHeader, PrimaryButton, Screen, SecondaryButton } from "@/components";
 import { useTranslation } from "@/lib/i18n";
 import { layout, radius, spacing, useTheme } from "@/lib/theme";
 import { useTimeSheetPicker } from "@/platform/timeSheetPicker";
@@ -12,7 +12,7 @@ import { useTimeSheetPicker } from "@/platform/timeSheetPicker";
 import { useHotelForm } from "../hooks/useHotelForm";
 import type { HotelFormTarget } from "../hooks/useHotelForm";
 import type { HotelFormState } from "../hooks/formState";
-import { ConfirmOverlay } from "./ConfirmOverlay";
+
 import { HotelFormFields } from "./HotelFormFields";
 import { HotelNotFound } from "./HotelFormStates";
 
