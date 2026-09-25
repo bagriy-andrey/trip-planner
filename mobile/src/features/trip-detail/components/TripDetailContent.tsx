@@ -5,6 +5,7 @@ import { StyleSheet, View } from "react-native";
 import type { Edge } from "react-native-safe-area-context";
 
 import { Screen } from "@/components";
+import { CarBlock, useCarsQuery } from "@/features/cars";
 import { HotelBlock, useHotelsQuery } from "@/features/hotels";
 import { TransportBlock, useRouteView, useSegmentsQuery } from "@/features/transport";
 import { toTripCardData } from "@/features/trips";
@@ -68,6 +69,11 @@ export function TripDetailContent({ trip, refetch }: TripDetailContentProps) {
   const hasHotels = hotelsQuery.hotels !== undefined && hotelsQuery.hotels.length > 0;
   const openHotel = (hotelId: string) =>
     router.push({ pathname: "/trips/[tripId]/hotels/[hotelId]", params: { tripId: trip.id, hotelId } });
+
+  const carsQuery = useCarsQuery(trip.id);
+  const hasCars = carsQuery.cars !== undefined && carsQuery.cars.length > 0;
+  const openCar = (carId: string) =>
+    router.push({ pathname: "/trips/[tripId]/cars/[carId]/view", params: { tripId: trip.id, carId } });
 
   return (
     <View style={styles.root}>
@@ -143,15 +149,19 @@ export function TripDetailContent({ trip, refetch }: TripDetailContentProps) {
               title={t("sections.car")}
               addLabel={t("a11y.addCar")}
               onAdd={() => router.push({ pathname: "/trips/[tripId]/cars/new", params })}
-              hideAdd
+              hideAdd={!hasCars}
               testID="section-car"
               addTestID="add-car"
             >
-              <EmptyBookingSection
-                caption={t("empty.car")}
-                onAdd={() => router.push({ pathname: "/trips/[tripId]/cars/new", params })}
-                testID="empty-car"
-              />
+              {hasCars ? (
+                <CarBlock cars={carsQuery.cars ?? []} locale={locale} onCarPress={openCar} testID="car-block" />
+              ) : (
+                <EmptyBookingSection
+                  caption={t("empty.car")}
+                  onAdd={() => router.push({ pathname: "/trips/[tripId]/cars/new", params })}
+                  testID="empty-car"
+                />
+              )}
             </BookingSection>
           </View>
         </Screen>

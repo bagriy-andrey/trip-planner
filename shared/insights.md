@@ -23,6 +23,8 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
 - 2026-09-25 (PLAN-06): the plan quoted 391 airports but `AIRPORTS` has 388 (matches `shared/AGENTS.md`); assert on the directory, not on a number copied from a plan.
 
 ## Session Notes
+- 2026-09-25 (PLAN-07 cars): known divergence from hotels: in the car form schema, amount filled + currency empty/unknown reports the currency error TOGETHER with amount-format errors (hotels skip the amount check when currency is missing). Keep it in mind when unifying money validation.
+
 ## Open Questions
 - 2026-09-22: `places` city records model exactly ONE `airportCode` per city (the "main" airport). SPEC-04 (flight segments/route) needs multi-airport cities to be distinguishable (e.g. Barcelona El Prat `BCN` vs Girona `GRO`) so the "wrong airport" route warning can compare by airport code, not city — the directory schema/data will need an airport-per-city model before that AC can be implemented.
   - RESOLVED 2026-09-22 (PLAN-04 step 2): added `AirportRecord`/`airports.ts` NEXT TO (not merged into) `placeRecordSchema`/`PLACE_DIRECTORY`, so `searchPlaces`/`trips.place_kind` keep accepting only `city|country|custom`. Constraint discovered while sizing the data: `directory.test.ts` hard-caps `PLACE_DIRECTORY` at 300 total records and countries are fixed at 197, so the city budget for new airport-hub cities is ~103 max — the ≥300-airport requirement had to be met by multiple airports per city (avg ~4), not by adding hundreds of new one-airport cities.

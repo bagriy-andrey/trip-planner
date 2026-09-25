@@ -18,6 +18,7 @@ describe("runtime neutrality of the places / trips / forms modules", () => {
       (path.startsWith("/src/places/") ||
         path.startsWith("/src/trips/") ||
         path.startsWith("/src/forms/") ||
+        path.startsWith("/src/cars/") ||
         path.startsWith("/src/hotels/") ||
         path.startsWith("/src/money/") ||
         path.startsWith("/src/profile/")),

@@ -52,4 +52,21 @@ Append-only. Managed by the `engineering-insights` skill. Add only substantive, 
   README, and specs only as digests (`guidelines/specs/`, ACs stripped: 491 KB → 74 KB) so they fit a
   design agent's context. The mockup copy is a manual snapshot and goes stale (refresh steps in
   `.design-sync/NOTES.md`).
+- 2026-09-25: Newer Claude Design handoffs live INSIDE the design-system project as
+  `templates/<name>/HANDOFF.md` + `<Name>.dc.html` (uploaded via the Design UI, not by build.mjs), so
+  `DesignSync list_files` + `get_file` (256 KiB cap) reads them directly. Do not assume the next free
+  SPEC number from a handoff or the request: SPEC-06 was already taken by the profile spec when the
+  car-rental one was asked for as "SPEC-06" (it became SPEC-07) — `ls specs/` first.
+- 2026-09-25: A spec modelled on the previous one (SPEC-07 on SPEC-05) inherits its STALE rules: a
+  hand-written draft cited SPEC-05 currency ACs that SPEC-06 had already replaced (AC-39/40/41), stored
+  a per-record time zone copied from `trips.iana_timezone` (NULL for `country`/`custom` trips, so it
+  would have blocked rentals there), and gave phone/amounts the mono font (AGENTS.md's mono list is
+  only codes, dates, numbers, places, country/currency codes). Before reusing a sibling spec's rule,
+  grep the LATER specs' "Что заменяется" and the current `mobile/insights.md`; an independent
+  `spec-creator` pass caught these, so run it for any spec that copies from an older one.
+- 2026-09-25: `DesignSync get_file` on a binary (the project's `uploads/*.png`) returns base64 truncated
+  at 192 KB, spilled to a tool-results file, and the cut PNG is rejected by `Read`. Recover it: decode the
+  JSON `content` with python, then Pillow with `ImageFile.LOAD_TRUNCATED_IMAGES = True` and crop to the last
+  non-blank row (pip `--target` into the scratchpad; system python has no PIL). You get the top 58-90% of a
+  tall screenshot, never the bottom, so say so instead of claiming a full read.
 ## Open Questions

@@ -1,5 +1,6 @@
 import { auth } from "./auth";
 import { bookingForm } from "./bookingForm";
+import { car } from "./car";
 import { common } from "./common";
 import { history } from "./history";
 import { hotel } from "./hotel";
@@ -25,4 +26,5 @@ export const ru = {
   bookingForm,
   transport,
   hotel,
+  car,
 };

@@ -1,0 +1,135 @@
+appId: com.anonymous.tripplanner
+name: Car rental - add, card on S7, view S17, edit, delete (SPEC-07)
+tags:
+  - trips
+  - cars
+# Run through the runner (supplies LOCALE, every UI string and the per-run account/ref/place):
+#   ./scripts/e2e.sh car-rental [--locale ru|en] [--metro-url http://localhost:8081]
+#
+# Needs the LOCAL Supabase stack with the trip_cars migration applied (`supabase db reset`).
+#
+# Journey: sign up -> new trip WITHOUT dates (dates need the native picker, as in trip-crud) ->
+# S7 empty "Add car" -> form: booking ref, pick-up place -> dates sheet (next month, days 10 and 12,
+# so the range is always in the future) -> pick-up/return time sheets (tap "Done" WITHOUT touching
+# the wheel: the sheet opens at its 11:00 start time and "Done" confirms it) -> "Save" -> card on S7
+# -> tap -> S17 shows the booking ref -> "Edit" -> "Delete rental" -> confirm -> empty state again.
+#
+# UNVERIFIED (authored blind, Maestro unavailable; see e2e/insights.md): index:1 for caption/input
+# pairs, the calendar day regexes, and where delete lands (assumed back on S7).
+# Text/label selectors only, no testID.
+---
+- launchApp:
+    clearState: true
+    arguments:
+      "-AppleLanguages": "(${LOCALE})"
+
+- runFlow:
+    when:
+      true: ${DEV_CLIENT_LINK != 'none'}
+    commands:
+      - openLink: ${DEV_CLIENT_LINK}
+      - tapOn:
+          text: "Open|Открыть"
+          optional: true
+      - tapOn:
+          text: "Continue|Продолжить"
+          optional: true
+
+# --- Sign up with a fresh account (real server) ---------------------------------------------------
+- extendedWaitUntil:
+    visible: "${ONBOARDING_TITLE}"
+    timeout: 60000
+- tapOn: "${ONBOARDING_START}"
+- assertVisible: "${SIGNUP_TITLE}"
+- tapOn: "${FIELD_NAME_PLACEHOLDER}"
+- inputText: "${E2E_NAME}"
+- tapOn: "${FIELD_EMAIL_PLACEHOLDER}"
+- inputText: "${E2E_EMAIL}"
+- tapOn: "${FIELD_PASSWORD_PLACEHOLDER}"
+- inputText: "${E2E_PASSWORD}"
+- hideKeyboard
+- tapOn: "${SIGNUP_SUBMIT}"
+- tapOn:
+    text: "${SYSTEM_NOT_NOW}"
+    optional: true
+- extendedWaitUntil:
+    visible: "${TAB_TRIPS}"
+    timeout: 30000
+
+# --- Create a trip: "+" -> free-text place, "no dates yet" -> "Create trip" -> lands on S7 --------
+- tapOn: "${NEW_TRIP_A11Y}"
+- extendedWaitUntil:
+    visible: "${FORM_DESTINATION_PLACEHOLDER}"
+    timeout: 10000
+- tapOn: "${FORM_DESTINATION_PLACEHOLDER}"
+- inputText: "${E2E_PLACE}"
+- hideKeyboard
+- tapOn: "${FORM_NO_DATES}"
+- assertVisible: "${FORM_NO_DATES_HINT}"
+- tapOn: "${FORM_CREATE}"
+- extendedWaitUntil:
+    visible: "${ADD_FLIGHT}"
+    timeout: 30000
+
+# --- S7 -> S16: empty "Add car" block ------------------------------------------------------------------
+- tapOn: "${CAR_ADD}"
+- extendedWaitUntil:
+    visible:
+      text: "${CAR_FIELD_BOOKING_REF}"
+      index: 1
+    timeout: 15000
+- tapOn:
+    text: "${CAR_FIELD_BOOKING_REF}"
+    index: 1
+- inputText: "${E2E_CAR_REF}"
+- tapOn:
+    text: "${CAR_FIELD_PICKUP_PLACE}"
+    index: 1
+- inputText: "${E2E_CAR_PLACE}"
+- hideKeyboard
+
+# --- Dates sheet: next month, day 10 -> day 12, Done -------------------------------------------------
+- tapOn: "${CAR_DATES_PLACEHOLDER}"
+- extendedWaitUntil:
+    visible: "${CAR_NEXT_MONTH}"
+    timeout: 10000
+- tapOn: "${CAR_NEXT_MONTH}"
+- tapOn: "${CAR_DAY_PICK_1}"
+- tapOn: "${CAR_DAY_PICK_2}"
+- tapOn: "${CAR_DATES_DONE}"
+
+# --- Times: open each sheet and confirm its default (no wheel interaction) ---------------------------
+- tapOn:
+    text: "${CAR_PICKUP_TIME}"
+    index: 1
+- tapOn: "${TIME_DONE}"
+- extendedWaitUntil:
+    visible:
+      text: "${CAR_RETURN_TIME}"
+      index: 1
+    timeout: 10000
+- tapOn:
+    text: "${CAR_RETURN_TIME}"
+    index: 1
+- tapOn: "${TIME_DONE}"
+- tapOn: "${CAR_SAVE}"
+
+# --- Back on S7: the card is there; open it (S17) -----------------------------------------------------
+- extendedWaitUntil:
+    visible: "${CAR_CARD_UNTITLED}, .*"
+    timeout: 20000
+- tapOn: "${CAR_CARD_UNTITLED}, .*"
+- extendedWaitUntil:
+    visible: "${E2E_CAR_REF}"
+    timeout: 15000
+
+# --- Edit -> delete -> confirm -> empty state --------------------------------------------------------------
+- tapOn: "${CAR_VIEW_EDIT}"
+- scrollUntilVisible:
+    element: "${CAR_DELETE_LINK}"
+- tapOn: "${CAR_DELETE_LINK}"
+- tapOn: "${CAR_DELETE_CONFIRM}"
+- extendedWaitUntil:
+    visible: "${CAR_ADD}"
+    timeout: 20000
+- assertNotVisible: "${CAR_CARD_UNTITLED}, .*"

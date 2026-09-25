@@ -361,6 +361,8 @@ describe("navigation topology", () => {
       "/trips/x/hotels/new",
       "/trips/x/hotels/abc",
       "/trips/x/cars/new",
+      "/trips/x/cars/abc",
+      "/trips/x/cars/abc/view",
     ] as const) {
       act(() => router.push(path));
       await expectPath(path);
@@ -393,12 +395,14 @@ describe("navigation topology", () => {
     ["/trips/[tripId]/hotels/new", "trips/[tripId]/hotels/new"],
     ["/trips/[tripId]/hotels/[hotelId]", "trips/[tripId]/hotels/[hotelId]"],
     ["/trips/[tripId]/cars/new", "trips/[tripId]/cars/new"],
+    ["/trips/[tripId]/cars/[carId]", "trips/[tripId]/cars/[carId]/index"],
+    ["/trips/[tripId]/cars/[carId]/view", "trips/[tripId]/cars/[carId]/view"],
     ["/trips/[tripId]/route", "trips/[tripId]/route"],
   ] as const)(
     "keeps a hostile trip id inside its own path segment: %s (AC-76)",
     async (pathname, routeName) => {
       await renderDetails("trip-lisbon");
-      act(() => router.push({ pathname, params: { tripId: "../../etc", hotelId: "hotel-1" } }));
+      act(() => router.push({ pathname, params: { tripId: "../../etc", hotelId: "hotel-1", carId: "car-1" } }));
       await waitFor(() => {
         expect(topRoute().name).toBe(routeName);
         expect(topRoute().params.tripId).toBe("../../etc");
@@ -569,6 +573,8 @@ describe("gating of the tabs and trips/* without a session (SPEC-02 AC-20)", () 
     "/trips/x/hotels/new",
     "/trips/x/hotels/abc",
     "/trips/x/cars/new",
+    "/trips/x/cars/abc",
+    "/trips/x/cars/abc/view",
     "/trips/x/route",
   ])(
     "opening %s (a tripplanner:// link, i.e. the initial URL) leads to /onboarding",

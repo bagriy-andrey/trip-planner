@@ -4,7 +4,7 @@
 - Scope: Expo SDK 57 skeleton (`mobile/`, PLAN-01 Step 10), iOS.
 - Result: `iosPrivacyManifests` in `mobile/app.privacy.ts` mirrors the union below into `ios.privacyManifests`.
   Apple does not reliably parse manifests of statically linked pods, so the app-level manifest repeats them.
-- Latest entry: 2026-09-21, SPEC-03 trips CRUD (`@react-native-community/datetimepicker` 9.1.0, `@tanstack/react-query`) - see "Audit 2026-09-21 (SPEC-03 ...)" at the end. Union unchanged. Earlier: 2026-09-21, SPEC-02 email auth (`expo-secure-store`, `expo-crypto`, `aes-js`). Union unchanged.
+- Latest entry: 2026-09-25, SPEC-07 car rental (`expo-clipboard`) - see "Audit 2026-09-25 (SPEC-07 ...)" at the end. Earlier: 2026-09-21, SPEC-03 trips CRUD (`@react-native-community/datetimepicker` 9.1.0, `@tanstack/react-query`) - see "Audit 2026-09-21 (SPEC-03 ...)" at the end. Union unchanged. Earlier: 2026-09-21, SPEC-02 email auth (`expo-secure-store`, `expo-crypto`, `aes-js`). Union unchanged.
 - Re-run on every Expo SDK bump and on every new native dependency (a new native module also means a new dev-client build).
 
 ## How it was done
@@ -107,3 +107,11 @@ Scope: the dependencies added by SPEC-03 Step 1. Same procedure as above (pnpm s
 ### Data collection (App Store Connect declaration)
 
 From SPEC-03 the app stores user content: place and trip titles (and the other trip fields) tied to the user's account on the backend. Add a "user content" category (Other User Content, linked to the user's identity, purpose: app functionality) to the App Store Connect data-collection declaration (App Privacy questionnaire; and `NSPrivacyCollectedDataTypes` if declared in the app manifest), alongside the email and name from SPEC-02. This is an obligation of the release spec; `NSPrivacyTracking` stays `false`.
+
+## Audit 2026-09-25 (SPEC-07 car rental, step 5: `expo-clipboard`)
+
+- Package: `expo-clipboard` 57.0.2 (SDK 57 match, installed with `npx expo install`).
+- Manifest: the package ships NO `PrivacyInfo.xcprivacy` (`ios/` holds only Swift sources and the podspec).
+- Sources: `ios/*.swift` checked for file-timestamp, boot-time, disk-space and UserDefaults APIs: none. `UIPasteboard` is not a required-reason API.
+- Result: union in `mobile/app.privacy.ts` unchanged. No `NS*UsageDescription`; the app only writes text to the clipboard (`setStringAsync`), never reads it and does not use the paste button.
+- The module is native: a new dev-client build is required. No config plugin is registered.

@@ -1,11 +1,8 @@
-import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
-import { AppText, Icon, TextField } from "@/components";
-import { layout, radius, spacing, useTheme } from "@/lib/theme";
+import { CurrencyButton, MoneyField } from "@/components";
 import { useTranslation } from "@/lib/i18n";
-
-import { filterMoneyInput } from "../hooks/moneyInput";
+import { spacing } from "@/lib/theme";
 
 export interface CostFieldProps {
   amount: string;
@@ -36,61 +33,32 @@ export function CostField({
   testID,
 }: CostFieldProps) {
   const { t } = useTranslation("hotel");
-  const { tokens } = useTheme();
-  // A controlled native input keeps whatever the user typed unless React re-renders it with a
-  // value: when the filter drops the char ("12" + "a" -> "12") the state does not change, React
-  // bails out, and the native field would keep showing "12a". Bumping this forces the re-render
-  // so the native text is overwritten. The overlaid display (`overlayValue`) means the rejected
-  // character is never visible in the meantime.
-  const [, forceRender] = useState(0);
-  const handleChange = (raw: string) => {
-    const filtered = filterMoneyInput(raw);
-    if (filtered !== raw) forceRender((n) => n + 1);
-    onChangeAmount(filtered);
-  };
   const chosen = currency !== "";
   // The placeholder (EUR) is only a hint: never the value, never spoken as one.
   const required = !chosen && amount !== "";
   return (
     <View testID={testID} style={styles.row}>
-      <TextField
+      <MoneyField
         style={styles.amount}
         label={t("form.field.cost")}
         placeholder={t("form.field.costAmountPlaceholder")}
         value={amount}
-        onChangeText={handleChange}
+        onChangeText={onChangeAmount}
         errorText={amountError}
         onBlur={onBlurAmount}
-        variant="decimal"
         mono
-        overlayValue
         testID={`${testID}-amount`}
       />
-      <View style={styles.currency}>
-        <AppText variant="small" color="textSecondary">
-          {required ? t("form.field.currencyRequired") : t("form.field.currency")}
-        </AppText>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("form.a11y.currencyField", { value: chosen ? currency : t("form.a11y.currencyEmpty") })}
-          onPress={onOpenCurrency}
-          testID={`${testID}-currency`}
-          style={[
-            styles.button,
-            { backgroundColor: tokens.surface, borderColor: currencyError === undefined ? tokens.surfaceBorder : tokens.danger },
-          ]}
-        >
-          <AppText variant="mono" color={chosen ? "text" : "textSecondary"} style={styles.buttonText}>
-            {chosen ? currency : currencyPlaceholder}
-          </AppText>
-          <Icon name="chevron" color="textSecondary" />
-        </Pressable>
-        {currencyError === undefined ? null : (
-          <AppText variant="small" color="danger" accessibilityRole="alert">
-            {currencyError}
-          </AppText>
-        )}
-      </View>
+      <CurrencyButton
+        style={styles.currency}
+        currency={currency}
+        placeholder={currencyPlaceholder}
+        caption={required ? t("form.field.currencyRequired") : t("form.field.currency")}
+        accessibilityLabel={t("form.a11y.currencyField", { value: chosen ? currency : t("form.a11y.currencyEmpty") })}
+        onPress={onOpenCurrency}
+        errorText={currencyError}
+        testID={`${testID}-currency`}
+      />
     </View>
   );
 }
@@ -98,16 +66,5 @@ export function CostField({
 const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: spacing.gap, alignItems: "flex-start" },
   amount: { flex: 2 },
-  currency: { flex: 2, gap: spacing.xs },
-  button: {
-    minHeight: layout.minTouch,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.field,
-    borderWidth: layout.borderWidth,
-  },
-  buttonText: { flexShrink: 1 },
+  currency: { flex: 2 },
 });
