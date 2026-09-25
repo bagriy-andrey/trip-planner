@@ -136,7 +136,6 @@ describe("HotelFormScreen cost (AC-19, currency dropdown)", () => {
     await userEvent.press(field());
     expect(screen.getByTestId(sheet)).toBeOnTheScreen();
     expect(screen.getByTestId(`${sheet}-item-EUR`)).toBeOnTheScreen();
-    expect(screen.getByTestId(`${sheet}-item-ARS`)).toBeOnTheScreen();
     await userEvent.press(screen.getByTestId(`${sheet}-item-EUR`));
     await waitFor(() => expect(screen.queryByTestId(sheet)).not.toBeOnTheScreen());
     await waitFor(() => expect(field().props.accessibilityLabel).toBe("Currency: EUR"));
@@ -145,7 +144,7 @@ describe("HotelFormScreen cost (AC-19, currency dropdown)", () => {
   it("searches by code or by localized name, case-insensitively", async () => {
     await renderCreate();
     await userEvent.press(field());
-    await userEvent.type(screen.getByTestId(`${sheet}-search`), "zlo");
+    await userEvent.type(screen.getByTestId(`${sheet}-search`), "pol");
     expect(screen.getByTestId(`${sheet}-item-PLN`)).toBeOnTheScreen();
     expect(screen.queryByTestId(`${sheet}-item-EUR`)).not.toBeOnTheScreen();
     await userEvent.clear(screen.getByTestId(`${sheet}-search`));

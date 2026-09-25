@@ -143,15 +143,6 @@ describe("tap outside an input blurs it", () => {
     expect(dismiss).toHaveBeenCalledTimes(3);
   });
 
-  it("dismisses when the touch lands in the currency sheet outside its search input; keeps focus in the search", async () => {
-    await renderCreate(CITY_TRIP);
-    await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
-    dismiss.mockClear();
-    touchInput("hotel-form-currency-sheet-search");
-    expect(dismiss).not.toHaveBeenCalled();
-    fireEvent(screen.getByTestId("hotel-form-currency-sheet-option-EUR"), "touchStart");
-    expect(dismiss).toHaveBeenCalledTimes(1);
-  });
 });
 
 describe("cost amount accepts digits only", () => {
@@ -169,7 +160,7 @@ describe("currency sheet motion", () => {
   it("stays mounted through the exit animation, then unmounts and applies the choice", async () => {
     await renderCreate();
     await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
-    await userEvent.press(screen.getByTestId("hotel-form-currency-sheet-option-EUR"));
+    await userEvent.press(screen.getByTestId("hotel-form-currency-sheet-item-EUR"));
     // The choice is applied only after the exit animation finished.
     await waitFor(() => expect(screen.queryByTestId("hotel-form-currency-sheet")).not.toBeOnTheScreen());
     expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: EUR");

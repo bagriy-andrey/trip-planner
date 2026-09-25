@@ -172,12 +172,13 @@ describe("cost: currency is required once an amount is entered", () => {
     expect(createHotelMock).not.toHaveBeenCalled();
   });
 
-  it("currency without amount: still asks for the amount", async () => {
+  it("currency without amount: no error, the amount stays optional (AC-39)", async () => {
     await renderCreate();
     await userEvent.press(screen.getByTestId("hotel-form-cost-currency"));
-    await userEvent.press(screen.getByTestId("hotel-form-currency-sheet-option-EUR"));
+    await userEvent.press(screen.getByTestId("hotel-form-currency-sheet-item-EUR"));
     await waitFor(() => expect(screen.queryByTestId("hotel-form-currency-sheet")).not.toBeOnTheScreen());
-    expect(screen.getByText("Enter an amount")).toBeOnTheScreen();
+    expect(screen.queryByText("Enter an amount")).not.toBeOnTheScreen();
+    expect(screen.getByTestId("hotel-form-cost-currency").props.accessibilityLabel).toBe("Currency: EUR");
   });
 });
 
