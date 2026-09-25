@@ -11,7 +11,7 @@ system prompt), checked into version control.
 | Agent | Description | Tools |
 |-------|--------------|-------|
 | [researcher](researcher.md) | Read-only research agent — codebase and/or web, cited findings. Never modifies anything. | `Read, Grep, Glob, WebSearch, WebFetch` |
-| [spec-creator](spec-creator.md) | Writes `SPEC-NN-<slug>.md` (Problem/Goals/EARS acceptance criteria/Edge cases/Mobile considerations/Contracts). Never writes code or plans. Mobile additions: `Platforms:` line, offline behavior, permissions, App Store impact. | `Read, Grep, Glob, Write, Edit, Agent` (`disallowedTools: Bash`) |
+| [spec-creator](spec-creator.md) | Writes `SPEC-NN-<slug>.md` (Problem/Goals/EARS acceptance criteria/Edge cases/Mobile considerations/Contracts). Never writes code or plans. Mobile additions: `Platforms:` line, offline behavior, permissions, App Store impact. | `Read, Grep, Glob, Write, Edit, Agent, Artifact (read-only)` (`disallowedTools: Bash`) |
 | [implementation-planner](implementation-planner.md) | Turns a spec into a file-by-file plan with non-overlapping steps, order shared → supabase → mobile/web, platform scope per mobile step. Writes only the plan. | `Read, Grep, Glob, Bash, Write` |
 | [implementer](implementer.md) | Implements ONE plan step (mobile / supabase / shared) in an isolated worktree; launched in parallel per non-overlapping step. | `Read, Write, Edit, Bash, Grep, Glob` |
 | [test-writer](test-writer.md) | Tests for existing code: Jest + RNTL (mobile), pgTAP/Deno (supabase), vitest (shared), Maestro (e2e). Runs what it writes. | `Read, Write, Edit, Bash, Grep, Glob` |

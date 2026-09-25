@@ -24,6 +24,7 @@ E2E: Maestro.
 - E2E: `./scripts/e2e.sh <flow> [--locale ru|en] [--metro-url URL]` (needs Maestro + booted iOS sim; not yet run — see `e2e/AGENTS.md`).
 - Backend: `supabase start -x vector` (`-x vector` needed on Rancher Desktop; app env from `supabase status` → `mobile/.env`, see `supabase/README.md`) · `supabase migration new <name>` · `supabase db reset` · `supabase test db`.
 - Types: `supabase gen types typescript --local > shared/src/db/database.types.ts` after each migration.
+- Claude Design: changed `mobile/src/lib/theme` or `design/` → `node .design-sync/build.mjs`, then `/design-sync` (pinned project, tokens-only; see `.design-sync/NOTES.md`).
 
 ## Where things live
 - `mobile/`   — `@tripplanner/mobile`: Expo app. Screens in `app/`, features in `src/features/`.
