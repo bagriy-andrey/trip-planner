@@ -32,42 +32,64 @@ function seg(id: string, from: string, to: string, departureAt: string, arrivalA
 
 const NOW = new Date("2026-01-01T00:00:00Z");
 
-describe("firstSegmentPrefill (AC-38)", () => {
-  it("a city trip with its own airport pre-fills 'from' with the city's main airport", () => {
-    const trip: Pick<Trip, "place" | "startDate"> = {
-      place: { kind: "city", placeId: "city-porto", countryCode: "PT", timeZone: "Europe/Lisbon", airportCode: "OPO" },
-      startDate: "2026-06-01" as CalendarDate,
-    };
-    const result = firstSegmentPrefill(trip);
-    expect(result.fromAirport?.iata).toBe("OPO");
-    expect(result.departureDate).toBe("2026-06-01");
+describe("firstSegmentPrefill (AC-33, AC-34)", () => {
+  const start = "2026-06-01" as CalendarDate;
+  const city: Pick<Trip, "place" | "startDate"> = {
+    place: { kind: "city", placeId: "city-porto", countryCode: "PT", timeZone: "Europe/Lisbon", airportCode: "OPO" },
+    startDate: start,
+  };
+  const country: Pick<Trip, "place" | "startDate"> = {
+    place: { kind: "country", placeId: "country-pt", countryCode: "PT" },
+    startDate: start,
+  };
+  const custom: Pick<Trip, "place" | "startDate"> = { place: { kind: "custom" }, startDate: null };
+
+  it("home + city trip: both sides filled", () => {
+    const r = firstSegmentPrefill(city, "KRK");
+    expect(r.fromAirport?.iata).toBe("KRK");
+    expect(r.toAirport?.iata).toBe("OPO");
+    expect(r.departureDate).toBe("2026-06-01");
   });
 
-  it("a country trip pre-fills nothing for 'from' (no single airport)", () => {
-    const trip: Pick<Trip, "place" | "startDate"> = {
-      place: { kind: "country", placeId: "country-pt", countryCode: "PT" },
-      startDate: "2026-06-01" as CalendarDate,
-    };
-    const result = firstSegmentPrefill(trip);
-    expect(result.fromAirport).toBeNull();
-    expect(result.departureDate).toBe("2026-06-01");
+  it("home + country trip: only home", () => {
+    const r = firstSegmentPrefill(country, "KRK");
+    expect(r.fromAirport?.iata).toBe("KRK");
+    expect(r.toAirport).toBeNull();
   });
 
-  it("a free-text (custom) trip pre-fills nothing for 'from'", () => {
-    const trip: Pick<Trip, "place" | "startDate"> = { place: { kind: "custom" }, startDate: null };
-    const result = firstSegmentPrefill(trip);
-    expect(result.fromAirport).toBeNull();
-    expect(result.departureDate).toBeNull();
+  it("home + free-text trip: only home, no date", () => {
+    const r = firstSegmentPrefill(custom, "KRK");
+    expect(r.fromAirport?.iata).toBe("KRK");
+    expect(r.toAirport).toBeNull();
+    expect(r.departureDate).toBeNull();
+  });
+
+  it("no home + city trip: only the destination", () => {
+    const r = firstSegmentPrefill(city, null);
+    expect(r.fromAirport).toBeNull();
+    expect(r.toAirport?.iata).toBe("OPO");
+  });
+
+  it("no home + country / free-text trip: nothing", () => {
+    expect(firstSegmentPrefill(country, null).fromAirport).toBeNull();
+    expect(firstSegmentPrefill(country, null).toAirport).toBeNull();
+    expect(firstSegmentPrefill(custom, null).toAirport).toBeNull();
+  });
+
+  it("home outside the directory behaves like no home", () => {
+    const r = firstSegmentPrefill(city, "ZZZ");
+    expect(r.fromAirport).toBeNull();
+    expect(r.toAirport?.iata).toBe("OPO");
+  });
+
+  it("destination equal to home leaves the destination empty (AC-34)", () => {
+    const r = firstSegmentPrefill(city, "OPO");
+    expect(r.fromAirport?.iata).toBe("OPO");
+    expect(r.toAirport).toBeNull();
   });
 
   it("a trip without dates never guesses a departure date", () => {
-    const trip: Pick<Trip, "place" | "startDate"> = {
-      place: { kind: "city", placeId: "city-porto", countryCode: "PT", timeZone: "Europe/Lisbon", airportCode: "OPO" },
-      startDate: null,
-    };
-    const result = firstSegmentPrefill(trip);
-    expect(result.departureDate).toBeNull();
-    expect(result.fromAirport?.iata).toBe("OPO"); // the airport guess is independent of dates
+    expect(firstSegmentPrefill({ ...city, startDate: null }, "KRK").departureDate).toBeNull();
   });
 });
 
