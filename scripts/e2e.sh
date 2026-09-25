@@ -25,7 +25,7 @@ usage() {
   cat <<'EOF'
 Usage: scripts/e2e.sh <flow> [--locale ru|en] [--metro-url <url>]
 
-  <flow>              flow name in e2e/flows/ without .yaml (skeleton-smoke | auth-email | theme-persistence | trip-crud | segment-chain | profile-home-airport)
+  <flow>              flow name in e2e/flows/ without .yaml (skeleton-smoke | auth-email | theme-persistence | trip-crud | segment-chain | profile-home-airport | car-rental)
   --locale ru|en      UI language of the run (default: ru). Sent to the app as the launch argument
                       -AppleLanguages "(<locale>)" and used to pick the selector strings.
   --metro-url <url>   dev-client builds only: Metro URL to open after launch, e.g.
@@ -207,6 +207,20 @@ fi
 #   FIELD_NAME_PLACEHOLDER     auth:fields.name.placeholder      (fields are typed by placeholder:
 #   FIELD_EMAIL_PLACEHOLDER    auth:fields.email.placeholder      the caption and the input share one
 #   FIELD_PASSWORD_PLACEHOLDER auth:fields.password.placeholder   label, see auth-email.yaml)
+#   CAR_ADD                    tripDetail:a11y.addCar (== tripDetail:empty.car)
+#   CAR_FIELD_BOOKING_REF /
+#   CAR_FIELD_PICKUP_PLACE     car:form.field.bookingRef|pickupPlace (caption + input share the label: `index: 1`)
+#   CAR_DATES_PLACEHOLDER      car:form.field.datesPlaceholder (the dates button while empty)
+#   CAR_NEXT_MONTH             car:form.datesSheet.nextMonth
+#   CAR_DAY_PICK_1/_2          regex for calendar day 10 / 12 of the month: car:dates.dayMonth is
+#                              "{{day}} {{month}}" (ru) / "{{month}} {{day}}" (en), hence per-locale
+#   CAR_DATES_DONE             car:form.datesSheet.done
+#   CAR_PICKUP_TIME/RETURN_TIME car:form.field.pickupTime|returnTime (caption + empty button share it)
+#   TIME_DONE                  common:actions.done (time sheet confirm)
+#   CAR_SAVE                   car:form.save
+#   CAR_CARD_UNTITLED          car:card.untitled (S7 card label prefix while no company is given)
+#   CAR_VIEW_EDIT              car:view.edit
+#   CAR_DELETE_LINK/CONFIRM    car:form.delete.link|confirm
 #   SYSTEM_NOT_NOW             NOT an app string: iOS's "Not Now" button on the save-password prompt
 locale_strings() {
   case "$1" in
@@ -269,6 +283,22 @@ FIELD_NAME_PLACEHOLDER=Andrew
 FIELD_EMAIL_PLACEHOLDER=you@example.com
 FIELD_PASSWORD_PLACEHOLDER=Введите пароль
 SYSTEM_NOT_NOW=Не сейчас
+CAR_ADD=Добавить автомобиль
+CAR_FIELD_BOOKING_REF=Номер брони
+CAR_FIELD_PICKUP_PLACE=Место получения
+CAR_DATES_PLACEHOLDER=Выберите даты
+CAR_NEXT_MONTH=Следующий месяц
+CAR_DAY_PICK_1=10 .*
+CAR_DAY_PICK_2=12 .*
+CAR_DATES_DONE=Готово
+CAR_PICKUP_TIME=Время получения
+CAR_RETURN_TIME=Время возврата
+TIME_DONE=Готово
+CAR_SAVE=Сохранить
+CAR_CARD_UNTITLED=Аренда авто
+CAR_VIEW_EDIT=Изменить
+CAR_DELETE_LINK=Удалить аренду
+CAR_DELETE_CONFIRM=Удалить
 EOF
       ;;
     en)
@@ -330,6 +360,22 @@ FIELD_NAME_PLACEHOLDER=Andrew
 FIELD_EMAIL_PLACEHOLDER=you@example.com
 FIELD_PASSWORD_PLACEHOLDER=Enter your password
 SYSTEM_NOT_NOW=Not Now
+CAR_ADD=Add car
+CAR_FIELD_BOOKING_REF=Booking reference
+CAR_FIELD_PICKUP_PLACE=Pick-up location
+CAR_DATES_PLACEHOLDER=Choose dates
+CAR_NEXT_MONTH=Next month
+CAR_DAY_PICK_1=.* 10
+CAR_DAY_PICK_2=.* 12
+CAR_DATES_DONE=Done
+CAR_PICKUP_TIME=Pick-up time
+CAR_RETURN_TIME=Return time
+TIME_DONE=Done
+CAR_SAVE=Save
+CAR_CARD_UNTITLED=Car rental
+CAR_VIEW_EDIT=Edit
+CAR_DELETE_LINK=Delete rental
+CAR_DELETE_CONFIRM=Delete
 EOF
       ;;
   esac
@@ -358,6 +404,9 @@ AIRPORT_FROM_CODE="LIS"
 AIRPORT_TO_CODE="OPO"
 # profile-home-airport.yaml: the home airport typed into the profile picker (directory data).
 HOME_AIRPORT_CODE="KRK"
+# car-rental.yaml: booking reference (uppercase alnum: the field auto-capitalizes) and pick-up place.
+E2E_CAR_REF="E2ECAR${RUN_ID}"
+E2E_CAR_PLACE="E2E Depot ${RUN_ID}"
 
 MAESTRO_ARGS=(
   -e "LOCALE=$LOCALE_ARG"
@@ -370,6 +419,8 @@ MAESTRO_ARGS=(
   -e "AIRPORT_FROM_CODE=$AIRPORT_FROM_CODE"
   -e "AIRPORT_TO_CODE=$AIRPORT_TO_CODE"
   -e "HOME_AIRPORT_CODE=$HOME_AIRPORT_CODE"
+  -e "E2E_CAR_REF=$E2E_CAR_REF"
+  -e "E2E_CAR_PLACE=$E2E_CAR_PLACE"
 )
 while IFS= read -r line; do
   [ -n "$line" ] || continue
