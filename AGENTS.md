@@ -40,7 +40,7 @@ E2E: Maestro.
 - Clients call Supabase only through `lib/supabase` + feature `api/` modules; map rows with `shared/` Zod schemas.
 - Product logic identical on every client (conflict detection, date/money math) lives in `shared/`, not in a client.
 - Каждая запись (рейс, отель, авто, документ) имеет `source`: `manual` | `imported_pending` | `imported_confirmed`.
-- Время — UTC + отдельное поле IANA-таймзоны места. Валюта — на уровне записи, не пользователя.
+- Время — UTC + отдельное поле IANA-таймзоны места. Валюта — на уровне записи; домашняя валюта профиля — лишь умолчание для НОВОЙ записи.
 - Поездка принадлежит одному пользователю; попутчиков в первой фазе нет.
 - iOS-first, Android-ready: no `Platform.OS` forks in feature code; platform code in `mobile/src/platform/`.
 - Never put secrets in `EXPO_PUBLIC_*`. Session/tokens: SecureStore-backed (LargeSecureStore pattern).
@@ -78,7 +78,7 @@ Tasks/ideas live on the GitHub Projects board "TripPlanner" — use the `task-bo
   и названий городов, Bold 700 для заголовков секций и кнопок, Medium 500
   для основного текста. SemiBold 600 не использовать.
 - IBM Plex Mono — только «билетные» данные: коды аэропортов, даты в карточках,
-  номера рейсов, билетов, полисов, места. Нигде больше. Число пассажиров,
+  номера рейсов, билетов, полисов, места, коды стран и валют. Нигде больше. Число пассажиров,
   заголовки и кнопки — не моно.
 - Иконки — `@expo/vector-icons`, набор Feather. Текстовые символы вместо
   иконок (`<`, `…`, `+`, `-`, `→`) не использовать. Эмодзи как иконки запрещены.
@@ -104,7 +104,7 @@ Tasks/ideas live on the GitHub Projects board "TripPlanner" — use the `task-bo
 - У каждой записи (рейс, отель, авто, документ) есть поле `source`:
   `manual` | `imported_pending` | `imported_confirmed`.
 - Время хранится в UTC плюс отдельным полем таймзона места.
-- Валюта — на уровне записи, не пользователя.
+- Валюта — на уровне записи. Домашняя валюта профиля — только умолчание для НОВОЙ записи; конвертации нет.
 - Поездка принадлежит одному пользователю, попутчиков в первой фазе нет.
 
 ## Чего не делать в первой фазе
