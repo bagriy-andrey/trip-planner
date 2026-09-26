@@ -1,19 +1,19 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { AppText, Icon, IconButton } from "@/components";
 import { useTranslation } from "@/lib/i18n";
-import { family, layout, spacing } from "@/lib/theme";
+import { layout, spacing } from "@/lib/theme";
 
 /** `IconButton`'s default visible circle. */
 const BACK_CIRCLE = 36;
 
 export interface CarViewHeaderProps {
   onBack: () => void;
-  /** Absent while there is no rental to edit (loading / error / not found). */
-  onEdit?: () => void;
+  /** Opens the actions sheet; absent while there is no rental to act on (loading / error / not found). */
+  onMore?: () => void;
 }
 
-export function CarViewHeader({ onBack, onEdit }: CarViewHeaderProps) {
+export function CarViewHeader({ onBack, onMore }: CarViewHeaderProps) {
   const { t } = useTranslation("car");
   return (
     <View style={styles.row}>
@@ -26,18 +26,10 @@ export function CarViewHeader({ onBack, onEdit }: CarViewHeaderProps) {
         {t("view.title")}
       </AppText>
       <View style={[styles.side, styles.end]}>
-        {onEdit === undefined ? null : (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t("view.edit")}
-            onPress={onEdit}
-            testID="car-view-edit"
-            style={styles.edit}
-          >
-            <AppText color="accent" style={styles.editText}>
-              {t("view.edit")}
-            </AppText>
-          </Pressable>
+        {onMore === undefined ? null : (
+          <IconButton accessibilityLabel={t("view.more")} onPress={onMore} style={styles.more} testID="car-view-more">
+            <Icon name="more" />
+          </IconButton>
         )}
       </View>
     </View>
@@ -51,6 +43,5 @@ const styles = StyleSheet.create({
   back: { marginLeft: -(layout.minTouch - BACK_CIRCLE) / 2 },
   end: { alignItems: "flex-end" },
   title: { flex: 1, textAlign: "center" },
-  edit: { minHeight: layout.minTouch, minWidth: layout.minTouch, alignItems: "center", justifyContent: "center" },
-  editText: { fontFamily: family.bold },
+  more: { marginRight: -(layout.minTouch - BACK_CIRCLE) / 2 },
 });

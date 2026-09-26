@@ -145,6 +145,7 @@ export const car = {
   },
   view: {
     title: "Car rental",
+    more: "More actions",
     edit: "Edit",
     bookingRef: "Booking reference",
     copy: "Copy",

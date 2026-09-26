@@ -101,6 +101,7 @@ describe("S7 car card -> S17 -> S16b (AC-31, AC-41)", () => {
   it("Edit opens S16b; deleting there lands on S7 with S17 gone from the stack (R-2)", async () => {
     const current = renderRouter("./app", { initialUrl: "/trips/trip-1" });
     fireEvent.press(await screen.findByTestId("car-block-car-car-42"));
+    fireEvent.press(await screen.findByTestId("car-view-more"));
     fireEvent.press(await screen.findByTestId("car-view-edit"));
     await waitFor(() => expect(current.getPathname()).toBe("/trips/trip-1/cars/car-42"));
     fireEvent.press(await screen.findByTestId("car-form-delete"));

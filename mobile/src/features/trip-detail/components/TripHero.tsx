@@ -3,12 +3,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CalendarDate } from "@tripplanner/shared";
 
 import { AppText, GlassSurface, Icon, IconButton } from "@/components";
-import type { IconName } from "@/components";
 import { TripStatusPill } from "@/features/trips";
 import type { TripStatusKind } from "@/features/trips";
 import { formatTripDateLine, useTranslation } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
-import { coverColors, layout, radius, spacing, useTheme } from "@/lib/theme";
+import { coverColors, layout, spacing, useTheme } from "@/lib/theme";
 
 export interface TripHeroProps {
   /** The place in the UI language; never mono (AC-68). */
@@ -27,26 +26,10 @@ export interface TripHeroProps {
   onMore: () => void;
 }
 
-/** A round glass button sitting on the cover; the scrim keeps its glyph legible in both themes (AC-22). */
-function RoundGlassButton({
-  label,
-  icon,
-  onPress,
-  testID,
-}: {
-  label: string;
-  icon: IconName;
-  onPress: () => void;
-  testID: string;
-}) {
-  return (
-    <GlassSurface strengthen style={styles.round}>
-      <IconButton filled={false} accessibilityLabel={label} onPress={onPress} testID={testID}>
-        <Icon name={icon} />
-      </IconButton>
-    </GlassSurface>
-  );
-}
+/** The visible circle of `IconButton` (same as the car view's back button). */
+const CIRCLE = 36;
+/** The circle sits centred in a 44pt hit area: pull it out so the circle, not the hit area, meets the content edge. */
+const EDGE_PULL = (layout.minTouch - CIRCLE) / 2;
 
 /**
  * Cover placeholder (no images yet) with the back / "…" buttons and the glass info panel: place,
@@ -74,8 +57,12 @@ export function TripHero({
     <View testID="trip-hero" style={[styles.hero, { backgroundColor: backing, paddingTop: insets.top + spacing.sm }]}>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tokens.coverScrim }]} />
       <View style={styles.topRow}>
-        <RoundGlassButton label={backLabel} icon="back" onPress={onBack} testID="trip-hero-back" />
-        <RoundGlassButton label={moreLabel} icon="more" onPress={onMore} testID="trip-hero-more" />
+        <IconButton accessibilityLabel={backLabel} onPress={onBack} size={CIRCLE} style={styles.back} testID="trip-hero-back">
+          <Icon name="chevronLeft" />
+        </IconButton>
+        <IconButton accessibilityLabel={moreLabel} onPress={onMore} size={CIRCLE} style={styles.more} testID="trip-hero-more">
+          <Icon name="more" />
+        </IconButton>
       </View>
       <GlassSurface strengthen style={styles.panel}>
         <AppText variant="cityHero" numberOfLines={1} ellipsizeMode="tail" accessibilityRole="header">
@@ -106,7 +93,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  round: { width: layout.minTouch, height: layout.minTouch, borderRadius: radius.pill },
+  back: { marginLeft: -EDGE_PULL },
+  more: { marginRight: -EDGE_PULL },
   panel: { padding: spacing.md, gap: spacing.xs },
   meta: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: spacing.sm, rowGap: spacing.xs },
   dates: { flexShrink: 1 },

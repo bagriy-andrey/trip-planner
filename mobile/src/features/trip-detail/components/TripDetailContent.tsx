@@ -177,6 +177,7 @@ export function TripDetailContent({ trip, refetch }: TripDetailContentProps) {
               onArchive={actions.archive}
               onUnarchive={actions.unarchive}
               onDelete={actions.askDelete}
+              onClose={actions.closeSheet}
             />
           ) : (
             <ConfirmDeleteSheet

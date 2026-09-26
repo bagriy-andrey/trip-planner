@@ -1,8 +1,9 @@
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import type { Car } from "@tripplanner/shared";
 
-import { EmptyState, Screen, SecondaryButton } from "@/components";
+import { ConfirmOverlay, EmptyState, PrimaryButton, Screen, SecondaryButton } from "@/components";
 import { CarNotFound, useCarQuery } from "@/features/cars";
 import { resolveLocale, useTranslation } from "@/lib/i18n";
 import { spacing, useTheme } from "@/lib/theme";
@@ -30,9 +31,12 @@ export function CarViewScreen({ tripId, carId }: CarViewScreenProps) {
   const query = useCarQuery(tripId, carId);
   const locale = resolveLocale([i18n.language]);
 
+  const [menuOpen, setMenuOpen] = useState(false);
   const onBack = () => router.back();
-  const onEdit = () =>
+  const onEdit = () => {
+    setMenuOpen(false);
     router.push({ pathname: "/trips/[tripId]/cars/[carId]", params: { tripId, carId } });
+  };
   const car: Car | undefined = query.car;
 
   let body;
@@ -87,14 +91,33 @@ export function CarViewScreen({ tripId, carId }: CarViewScreenProps) {
   }
 
   return (
-    <Screen scroll={false} testID="car-view-screen" contentStyle={styles.content}>
-      <CarViewHeader onBack={onBack} onEdit={car === undefined ? undefined : onEdit} />
-      {body}
-    </Screen>
+    <View style={styles.root}>
+      <Screen scroll={false} testID="car-view-screen" contentStyle={styles.content}>
+        <CarViewHeader onBack={onBack} onMore={car === undefined ? undefined : () => setMenuOpen(true)} />
+        {body}
+      </Screen>
+      {menuOpen ? (
+        <ConfirmOverlay closeLabel={tCommon("actions.cancel")} onClose={() => setMenuOpen(false)} testID="car-view-menu">
+          <PrimaryButton
+            label={t("view.edit")}
+            accessibilityLabel={t("view.edit")}
+            onPress={onEdit}
+            testID="car-view-edit"
+          />
+          <SecondaryButton
+            label={tCommon("actions.cancel")}
+            accessibilityLabel={tCommon("actions.cancel")}
+            onPress={() => setMenuOpen(false)}
+            testID="car-view-menu-cancel"
+          />
+        </ConfirmOverlay>
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   content: { gap: spacing.md },
   body: { gap: spacing.gap, paddingBottom: spacing.xl },
   centered: { alignItems: "center", justifyContent: "center", padding: spacing.xl },
