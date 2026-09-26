@@ -29,6 +29,8 @@ import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 import {
   EMPTY_SEGMENT_FORM,
   airportDisplayText,
+  arrivalPartsOf,
+  clockToDuration,
   segmentFormEquals,
   segmentFormFromNextPrefill,
 } from "./formState";
@@ -55,14 +57,15 @@ export type CarrierInfo =
 export type DeleteSheet = "closed" | "confirm";
 
 function toSegmentFormInput(state: SegmentFormState): SegmentFormInput {
+  const arrival = arrivalPartsOf(state);
   return {
     flightNumber: state.flightNumber,
     from: state.fromAirport?.iata ?? "",
     to: state.toAirport?.iata ?? "",
     departureDate: state.departureDate,
     departureTime: state.departureTime,
-    arrivalDate: state.arrivalDate,
-    arrivalTime: state.arrivalTime,
+    arrivalDate: arrival === null ? null : arrival.date,
+    arrivalTime: arrival === null ? null : arrival.time,
     baggageIncluded: state.baggageIncluded,
     passengers: state.passengers,
     seat: state.seat,
@@ -202,8 +205,12 @@ export function useSegmentForm(target: SegmentFormTarget, initial: SegmentFormSt
   const changeDepartureTime = (time: ClockTime) => patch({ departureTime: time }, ["departureTime"]);
   const clearDepartureDate = () => patch({ departureDate: null }, ["departureDate"]);
   const clearDepartureTime = () => patch({ departureTime: null }, ["departureTime"]);
-  const changeArrivalDate = (date: CalendarDate | null) => patch({ arrivalDate: date }, ["arrival"]);
-  const changeArrivalTime = (time: ClockTime | null) => patch({ arrivalTime: time }, ["arrival"]);
+  // "00:00" is not a duration: it clears the field.
+  const changeDuration = (time: ClockTime) => {
+    const minutes = clockToDuration(time);
+    patch({ durationMinutes: minutes === 0 ? null : minutes }, ["arrival"]);
+  };
+  const clearDuration = () => patch({ durationMinutes: null }, ["arrival"]);
   const changeBaggage = (value: boolean) => patch({ baggageIncluded: value });
   const incrementPassengers = () =>
     patch({ passengers: Math.min(SEGMENT_PASSENGERS_MAX, state.passengers + 1) }, ["passengers"]);
@@ -386,8 +393,8 @@ export function useSegmentForm(target: SegmentFormTarget, initial: SegmentFormSt
     clearDepartureDate,
     clearDepartureTime,
     departureMinDate,
-    changeArrivalDate,
-    changeArrivalTime,
+    changeDuration,
+    clearDuration,
     changeBaggage,
     incrementPassengers,
     decrementPassengers,

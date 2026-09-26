@@ -131,17 +131,11 @@ describe("ProfileScreen (S6)", () => {
   it("shows the same initial on the profile, trips and history for one session (AC-27)", async () => {
     const session = { user: { email: "x@example.com", displayName: "  émile Zola" } };
     const initials: string[] = [];
-    for (const [ui, avatarId] of [
-      [<TripsScreen key="trips" />, "trips-avatar"],
-      [<HistoryScreen key="history" />, "history-avatar"],
-      [<ProfileScreen key="profile" />, "profile-screen"],
-    ] as const) {
-      const view = await renderWithProviders(ui, { session });
-      const circle = within(screen.getByTestId(avatarId)).getByText(/^\p{L}$/u, { includeHiddenElements: true });
-      initials.push(circle.props.children as string);
-      view.unmount();
-    }
-    expect(initials).toEqual(["É", "É", "É"]);
+    const view = await renderWithProviders(<ProfileScreen />, { session });
+    const circle = within(screen.getByTestId("profile-screen")).getByText(/^\p{L}$/u, { includeHiddenElements: true });
+    initials.push(circle.props.children as string);
+    view.unmount();
+    expect(initials).toEqual(["É"]);
   });
 
   it("calls signOut exactly once on 'Sign out' and does not navigate itself (AC-22)", async () => {

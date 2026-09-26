@@ -15,6 +15,8 @@ export interface SecondaryButtonProps extends AccessibleProps {
   disabled?: boolean;
   /** Optional node before the label (e.g. a provider glyph). */
   leading?: ReactNode;
+  /** "danger": same button, `danger` border and text (destructive actions such as "Delete"). */
+  tone?: "default" | "danger";
   style?: StyleProp<ViewStyle>;
 }
 
@@ -23,6 +25,7 @@ export function SecondaryButton({
   onPress,
   disabled = false,
   leading,
+  tone = "default",
   style,
   accessibilityLabel,
   accessibilityHint,
@@ -45,7 +48,7 @@ export function SecondaryButton({
           ? { backgroundColor: tokens.divider, borderColor: tokens.divider }
           : {
               backgroundColor: tokens.surface,
-              borderColor: tokens.surfaceBorder,
+              borderColor: tone === "danger" ? tokens.danger : tokens.surfaceBorder,
               opacity: pressed ? 0.8 : 1,
             },
         style,
@@ -53,7 +56,7 @@ export function SecondaryButton({
     >
       <View style={styles.content}>
         {leading}
-        <AppText variant="button" color={disabled ? "textTertiary" : "text"} style={styles.label}>
+        <AppText variant="button" color={disabled ? "textTertiary" : tone === "danger" ? "danger" : "text"} style={styles.label}>
           {label}
         </AppText>
       </View>

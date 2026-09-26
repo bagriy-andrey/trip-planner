@@ -159,8 +159,8 @@ describe("HistoryScreen (S5) — states", () => {
     const empty = await screen.findByTestId("history-empty");
     expect(within(empty).getByText("No past trips yet")).toBeOnTheScreen();
     expect(within(empty).queryByRole("button")).not.toBeOnTheScreen();
-    // The only button on the screen is the avatar.
-    expect(screen.getAllByRole("button")).toHaveLength(1);
+    // No buttons at all: no avatar, no create.
+    expect(screen.queryByRole("button")).not.toBeOnTheScreen();
     expect(screen.queryByTestId("trips-empty")).not.toBeOnTheScreen();
   });
 
@@ -238,11 +238,11 @@ describe("HistoryScreen (S5) — interaction", () => {
     });
   });
 
-  it("gives the avatar and every card a non-empty accessibility label (AC-19, AC-70)", async () => {
+  it("gives every card a non-empty accessibility label (AC-19, AC-70)", async () => {
     await renderHistory(MIXED);
     await screen.findByTestId("trip-card-rome");
     const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(4);
+    expect(buttons).toHaveLength(3);
     for (const button of buttons) {
       expect(String(button.props.accessibilityLabel ?? "").length).toBeGreaterThan(0);
     }
@@ -250,23 +250,10 @@ describe("HistoryScreen (S5) — interaction", () => {
     expect(screen.getByRole("button", { name: /^Vienna, archived, /u })).toBeOnTheScreen();
   });
 
-  it("switches to the profile tab from the avatar (Q1)", async () => {
-    const user = userEvent.setup();
+  it("has no profile avatar", async () => {
     await renderHistory([rome]);
-    await user.press(screen.getByRole("button", { name: "Open profile" }));
-    expect(mockRouter.navigate).toHaveBeenCalledWith("/profile");
-    expect(mockRouter.push).not.toHaveBeenCalled();
-  });
-
-  it("takes the avatar initial from the session's display name, upper-cased (AC-27)", async () => {
-    await renderHistory([], { session: { user: { displayName: "  zoe Adler " } } });
-    const avatar = screen.getByTestId("history-avatar");
-    expect(within(avatar).getByText("Z", { includeHiddenElements: true })).toBeOnTheScreen();
-  });
-
-  it("falls back to the email's local part for the initial (AC-26)", async () => {
-    await renderHistory([], { session: { user: { email: "bruno.k@example.com", displayName: null } } });
-    const avatar = screen.getByTestId("history-avatar");
-    expect(within(avatar).getByText("B", { includeHiddenElements: true })).toBeOnTheScreen();
+    await screen.findByTestId("trip-card-rome");
+    expect(screen.queryByTestId("history-avatar")).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Open profile" })).not.toBeOnTheScreen();
   });
 });

@@ -43,6 +43,9 @@ export const hotel = {
       remove: "Прибрати посилання",
       openFailed: "Не вдалося відкрити посилання",
     },
+    datesSheet: {
+      title: "Дати проживання",
+    },
     a11y: {
       clear: "Очистити",
       decreaseGuests: "Менше гостей",

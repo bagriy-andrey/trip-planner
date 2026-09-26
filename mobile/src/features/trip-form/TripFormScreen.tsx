@@ -1,15 +1,24 @@
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AccessibilityInfo, ActivityIndicator, StyleSheet, View } from "react-native";
 
-import { AppText, EmptyState, PrimaryButton, Screen, SecondaryButton, TextField } from "@/components";
+import {
+  AppText,
+  ConfirmOverlay,
+  EmptyState,
+  ModalHeader,
+  PrimaryButton,
+  Screen,
+  SecondaryButton,
+  TextField,
+} from "@/components";
 import { useTripQuery } from "@/features/trips";
 import { placeLanguageOf, resolveLocale, useTranslation } from "@/lib/i18n";
 import { spacing, useTheme } from "@/lib/theme";
 
 import { DatesBlock } from "./components/DatesBlock";
-import { FormHeader } from "./components/FormHeader";
 import { PlaceField } from "./components/PlaceField";
+import { TripDatesSheet } from "./components/TripDatesSheet";
 import { PlaceSuggestions } from "./components/PlaceSuggestions";
 import { EMPTY_TRIP_FORM, formStateFromTrip } from "./hooks/formState";
 import type { TripFormState } from "./hooks/formState";
@@ -48,10 +57,11 @@ function EditTripLoader({ tripId }: { tripId: string }) {
   }
 
   const header = (
-    <FormHeader
+    <ModalHeader
       title={t("form.editTitle")}
       cancelLabel={tCommon("actions.cancel")}
       onCancel={() => router.back()}
+      hideDone
     />
   );
 
@@ -126,6 +136,7 @@ function TripFormBody({ target, initial }: TripFormBodyProps) {
   const { t } = useTranslation("trips");
   const { t: tCommon } = useTranslation("common");
   const form = useTripForm(target, initial);
+  const [datesOpen, setDatesOpen] = useState(false);
   const isCreate = target.mode === "create";
   const submitLabel = isCreate ? t("form.create") : t("form.save");
 
@@ -139,80 +150,125 @@ function TripFormBody({ target, initial }: TripFormBodyProps) {
   }, [submitMessage]);
 
   return (
-    <Screen testID="trip-form-screen" contentStyle={styles.content}>
-      <FormHeader
-        title={isCreate ? t("form.createTitle") : t("form.editTitle")}
-        cancelLabel={tCommon("actions.cancel")}
-        onCancel={form.cancel}
-      />
-      <View style={styles.fields}>
-        <View style={styles.place}>
-          <PlaceField
-            label={t("form.destination.label")}
-            placeholder={t("form.destination.placeholder")}
-            value={form.state.destination}
-            onChangeText={form.changeDestination}
-            onClear={form.clearDestination}
-            clearLabel={t("form.a11y.clearDestination")}
-            selected={form.placeSelected}
-            errorText={errorText(form.errors.destination)}
-            autoFocus={isCreate}
-            testID="trip-form-destination"
-          />
-          {form.suggestions === null ? null : (
-            <PlaceSuggestions
-              places={form.suggestions}
-              lang={form.lang}
-              onSelect={form.selectPlace}
-              testID="trip-form-suggestions"
+    <View style={styles.root}>
+      <Screen testID="trip-form-screen" contentStyle={styles.content}>
+        <ModalHeader title={isCreate ? t("form.createTitle") : t("form.editTitle")} hideCancel hideDone />
+        <View style={styles.fields}>
+          <View style={styles.place}>
+            <PlaceField
+              label={t("form.destination.label")}
+              placeholder={t("form.destination.placeholder")}
+              value={form.state.destination}
+              onChangeText={form.changeDestination}
+              onClear={form.clearDestination}
+              clearLabel={t("form.a11y.clearDestination")}
+              selected={form.placeSelected}
+              errorText={errorText(form.errors.destination)}
+              testID="trip-form-destination"
             />
-          )}
-        </View>
-        <View style={styles.title}>
-          <TextField
-            label={t("form.title.label")}
-            placeholder={t("form.title.placeholder")}
-            value={form.state.title}
-            onChangeText={form.changeTitle}
-            errorText={errorText(form.errors.title)}
-            testID="trip-form-title"
+            {form.suggestions === null ? null : (
+              <PlaceSuggestions
+                places={form.suggestions}
+                lang={form.lang}
+                onSelect={form.selectPlace}
+                testID="trip-form-suggestions"
+              />
+            )}
+          </View>
+          <View style={styles.title}>
+            <TextField
+              label={t("form.title.label")}
+              placeholder={t("form.title.placeholder")}
+              value={form.state.title}
+              onChangeText={form.changeTitle}
+              errorText={errorText(form.errors.title)}
+              testID="trip-form-title"
+            />
+            <AppText variant="small" color="textSecondary">
+              {t("form.title.hint")}
+            </AppText>
+          </View>
+          <DatesBlock
+            startDate={form.state.startDate}
+            endDate={form.state.endDate}
+            noDates={form.state.noDates}
+            onOpen={() => setDatesOpen(true)}
+            open={datesOpen}
+            onChangeNoDates={form.changeNoDates}
+            errorText={errorText(form.errors.dates)}
+            testID="trip-form-dates"
           />
-          <AppText variant="small" color="textSecondary">
-            {t("form.title.hint")}
-          </AppText>
         </View>
-        <DatesBlock
-          startDate={form.state.startDate}
-          endDate={form.state.endDate}
-          noDates={form.state.noDates}
-          onChangeRange={form.changeRange}
-          onChangeNoDates={form.changeNoDates}
-          startFallback={form.startFallback}
-          errorText={errorText(form.errors.dates)}
-          testID="trip-form-dates"
+        {submitMessage === undefined ? null : (
+          <AppText color="danger" accessibilityRole="alert" testID="trip-form-error">
+            {submitMessage}
+          </AppText>
+        )}
+        <PrimaryButton
+          label={submitLabel}
+          accessibilityLabel={form.submitting ? t("form.a11y.saving") : submitLabel}
+          disabled={!form.canSubmit}
+          loading={form.submitting}
+          onPress={() => void form.submit()}
+          testID="trip-form-submit"
         />
-      </View>
-      {submitMessage === undefined ? null : (
-        <AppText color="danger" accessibilityRole="alert" testID="trip-form-error">
-          {submitMessage}
-        </AppText>
-      )}
-      <PrimaryButton
-        label={submitLabel}
-        accessibilityLabel={form.submitting ? t("form.a11y.saving") : submitLabel}
-        disabled={!form.canSubmit}
-        loading={form.submitting}
-        onPress={() => void form.submit()}
-        testID="trip-form-submit"
-      />
-    </Screen>
+        <SecondaryButton
+          label={tCommon("actions.cancel")}
+          accessibilityLabel={tCommon("actions.cancel")}
+          onPress={form.cancel}
+          testID="trip-form-cancel"
+        />
+      </Screen>
+      {datesOpen ? (
+        <TripDatesSheet
+          start={form.state.startDate}
+          end={form.state.endDate}
+          initialMonthOf={form.startFallback}
+          onDone={(start, end) => {
+            form.changeRange(start, end);
+            setDatesOpen(false);
+          }}
+          onClose={() => setDatesOpen(false)}
+          testID="trip-form-dates-sheet"
+        />
+      ) : null}
+      {form.guard.confirmOpen ? (
+        <ConfirmOverlay
+          closeLabel={tCommon("actions.cancel")}
+          onClose={form.guard.cancelConfirm}
+          testID="trip-form-unsaved"
+        >
+          <AppText variant="h2" accessibilityRole="header">
+            {t("form.unsaved.title")}
+          </AppText>
+          <AppText color="textSecondary">{t("form.unsaved.message")}</AppText>
+          <PrimaryButton
+            label={t("form.unsaved.discard")}
+            accessibilityLabel={t("form.unsaved.discard")}
+            onPress={form.guard.confirmDiscard}
+            testID="trip-form-unsaved-discard"
+          />
+          <SecondaryButton
+            label={tCommon("actions.cancel")}
+            accessibilityLabel={tCommon("actions.cancel")}
+            onPress={form.guard.cancelConfirm}
+            testID="trip-form-unsaved-cancel"
+          />
+        </ConfirmOverlay>
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   content: { gap: spacing.xl, paddingBottom: spacing.xl },
   fields: { gap: spacing.block },
   place: { gap: spacing.sm },
   title: { gap: spacing.xs },
-  centered: { alignItems: "center", justifyContent: "center", padding: spacing.xl },
+  centered: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.xl,
+  },
 });

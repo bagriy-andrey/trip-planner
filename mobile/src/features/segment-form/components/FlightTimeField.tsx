@@ -2,63 +2,60 @@ import type { ClockTime } from "@tripplanner/shared";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText, Icon, IconButton } from "@/components";
-import { useTranslation } from "@/lib/i18n";
 import { layout, radius, spacing, useTheme } from "@/lib/theme";
 
-export interface StayTimeFieldProps {
-  /** "Время заезда" / "Время выезда". */
+export interface FlightTimeFieldProps {
   label: string;
   time: ClockTime | null;
-  /** Tap anywhere on the field: the screen opens the time sheet (an empty field stays empty until confirmed). */
+  /** A tap anywhere opens the time sheet; an empty field stays empty until the user confirms. */
   onOpen: () => void;
-  /** "x": back to "not set". */
-  onClear: () => void;
+  /** Optional fields only: a × next to the value puts the field back to "not chosen". */
+  onClear?: () => void;
+  clearLabel?: string;
   errorText?: string;
   testID: string;
 }
 
-/** One OPTIONAL time of the stay: a tap opens the time sheet at once, "×" clears it back to "not set". */
-export function StayTimeField({ label, time, onOpen, onClear, errorText, testID }: StayTimeFieldProps) {
-  const { t } = useTranslation("hotel");
+/** A time-shaped field of the flight (departure time, duration): mono value or a clock icon while empty. */
+export function FlightTimeField({ label, time, onOpen, onClear, clearLabel, errorText, testID }: FlightTimeFieldProps) {
   const { tokens } = useTheme();
+  const hasError = errorText !== undefined && errorText !== "";
   return (
-    <View testID={testID} style={styles.block}>
+    <View style={styles.block}>
       <AppText variant="small" color="textSecondary">
         {label}
       </AppText>
-      <View style={styles.control}>
+      <View style={styles.row}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={time === null ? label : `${label}: ${time}`}
           onPress={onOpen}
-          testID={time === null ? `${testID}-empty` : `${testID}-value`}
-          style={[styles.field, { backgroundColor: tokens.surface, borderColor: tokens.surfaceBorder }]}
+          testID={testID}
+          style={[
+            styles.field,
+            { backgroundColor: tokens.surface, borderColor: hasError ? tokens.danger : tokens.surfaceBorder },
+          ]}
         >
           {time === null ? <Icon name="clock" color="textSecondary" /> : <AppText variant="mono">{time}</AppText>}
         </Pressable>
-        {time !== null ? (
-          <IconButton
-            filled={false}
-            accessibilityLabel={`${t("form.a11y.clear")}: ${label}`}
-            onPress={onClear}
-            testID={`${testID}-clear`}
-          >
+        {time !== null && onClear !== undefined ? (
+          <IconButton filled={false} accessibilityLabel={clearLabel ?? label} onPress={onClear} testID={`${testID}-clear`}>
             <Icon name="close" color="textSecondary" />
           </IconButton>
         ) : null}
       </View>
-      {errorText === undefined ? null : (
+      {hasError ? (
         <AppText variant="small" color="danger" accessibilityRole="alert">
           {errorText}
         </AppText>
-      )}
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   block: { flex: 1, gap: spacing.xs },
-  control: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  row: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   field: {
     flex: 1,
     minHeight: layout.minTouch,

@@ -19,7 +19,7 @@ export const trips = {
   },
   list: {
     emptyTitle: "Поездок пока нет",
-    emptyHint: "Добавьте первую кнопкой справа внизу",
+    emptyHint: "Добавьте первую кнопкой «плюс» справа вверху",
     loadError: "Не удалось загрузить поездки",
     a11y: {
       loading: "Загружаем поездки",
@@ -89,6 +89,14 @@ export const trips = {
     },
     // Field errors of the shared trip form schema, keyed by the stable `TRIP_FIELD_ERROR` ids
     // ("destination.empty" -> validation.destination.empty).
+    unsaved: {
+      title: "Отменить изменения?",
+      message: "Введённые данные будут потеряны.",
+      discard: "Отменить",
+    },
+    datesSheet: {
+      title: "Даты поездки",
+    },
     validation: {
       destination: {
         empty: "Укажите, куда едем",

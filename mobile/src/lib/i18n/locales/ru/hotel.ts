@@ -43,6 +43,9 @@ export const hotel = {
       remove: "Убрать ссылку",
       openFailed: "Не удалось открыть ссылку",
     },
+    datesSheet: {
+      title: "Даты проживания",
+    },
     a11y: {
       clear: "Очистить",
       decreaseGuests: "Меньше гостей",

@@ -18,4 +18,7 @@ i18n keys) in the plan itself, and give the step that creates a namespace/hooks 
 its later leaf needs (root insights.md 2026-09-23 lesson). PLAN-06 added two more ordering
 rules worth reusing: a `shared` contract change goes in the SAME step as its mobile consumer (else
 tests go red between steps), and an i18n key is deleted by the step that deletes its last consumer
-(typed i18n breaks typecheck otherwise).
+(typed i18n breaks typecheck otherwise). PLAN-07 added: locales are now ru/en/uk (three files per
+namespace); when a spec says "extract shared from feature X, don't copy", the extraction step owns the
+donor feature dir (`features/X/**`) whole, with a "no behaviour/testID change" criterion; route files +
+`_layout` + route tests stay in ONE step, so sibling feature steps (form/view) are written route-less.

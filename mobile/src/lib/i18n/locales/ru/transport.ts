@@ -12,9 +12,8 @@ export const transport = {
     from: "Откуда",
     to: "Куда",
     departureDate: "Дата вылета",
-    departureTime: "Вылет",
-    arrivalDate: "Дата прилёта",
-    arrivalTime: "Прилёт",
+    departureTime: "Время вылета",
+    duration: "Длительность полёта",
     baggageIncluded: "Багаж включён",
     passengers: "Пассажиры",
     seat: "Место",
@@ -24,7 +23,7 @@ export const transport = {
     flightNumberPlaceholder: "LO 1234",
   },
   caption: {
-    arrivalOptional: "Необязательно, нужно только для расчёта стыковок",
+    durationOptional: "Необязательно, нужно только для расчёта стыковок",
     flightNumber: "Код авиакомпании и номер, например LO 1234",
     perPassenger: "По одному на пассажира, через запятую",
     airportFromDirectory: "Выберите аэропорт из списка, можно искать по коду",
@@ -94,6 +93,12 @@ export const transport = {
   // the form needs (labels, captions, carrier line, delete label, not-found title) already exists
   // above or in `common`/`bookingForm`/`trips` and is reused as-is.
   form: {
+    dateSheet: {
+      title: "Дата вылета",
+      prevMonth: "Предыдущий месяц",
+      nextMonth: "Следующий месяц",
+    },
+    durationSheetTitle: "Длительность полёта (часы:минуты)",
     clear: "Очистить",
     save: "Сохранить",
     saveAndNext: "Сохранить и добавить следующий",

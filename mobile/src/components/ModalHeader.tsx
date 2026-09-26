@@ -18,6 +18,8 @@ export interface ModalHeaderProps {
   doneDisabled?: boolean;
   /** Draw the left action as a "×" icon (its `cancelLabel` stays the spoken name) instead of text. */
   cancelAsIcon?: boolean;
+  /** No Cancel on the left (the form has its own Cancel at the bottom): the slot stays to keep the title centred. */
+  hideCancel?: boolean;
   /** No Done on the right (the form has its own Save button): the slot stays to keep the title centred. */
   hideDone?: boolean;
 }
@@ -32,20 +34,25 @@ export function ModalHeader({
   doneDisabled = false,
   cancelAsIcon = false,
   hideDone = false,
+  hideCancel = false,
 }: ModalHeaderProps) {
   const { t } = useTranslation();
   const cancel = cancelLabel ?? t("actions.cancel");
   const done = doneLabel ?? t("actions.done");
   return (
     <View style={styles.bar}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={cancel}
-        onPress={onCancel}
-        style={[styles.side, styles.left]}
-      >
-        {cancelAsIcon ? <Icon name="close" color="textSecondary" /> : <AppText color="textSecondary">{cancel}</AppText>}
-      </Pressable>
+      {hideCancel ? (
+        <View style={[styles.side, styles.left]} />
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={cancel}
+          onPress={onCancel}
+          style={[styles.side, styles.left]}
+        >
+          {cancelAsIcon ? <Icon name="close" color="textSecondary" /> : <AppText color="textSecondary">{cancel}</AppText>}
+        </Pressable>
+      )}
       <AppText variant="h2" accessibilityRole="header" numberOfLines={1} style={styles.title}>
         {title}
       </AppText>

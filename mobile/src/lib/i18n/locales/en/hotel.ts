@@ -40,6 +40,9 @@ export const hotel = {
       remove: "Remove link",
       openFailed: "Couldn't open the link",
     },
+    datesSheet: {
+      title: "Stay dates",
+    },
     a11y: {
       clear: "Clear",
       decreaseGuests: "Fewer guests",

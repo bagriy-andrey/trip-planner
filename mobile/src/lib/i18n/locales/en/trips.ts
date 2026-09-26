@@ -18,7 +18,7 @@ export const trips = {
   },
   list: {
     emptyTitle: "No trips yet",
-    emptyHint: "Add your first one with the button at the bottom right",
+    emptyHint: "Add your first one with the plus button at the top right",
     loadError: "Could not load your trips",
     a11y: {
       loading: "Loading trips",
@@ -80,6 +80,14 @@ export const trips = {
       pickEnd: "Now tap the last day",
       noDates: "No dates yet",
       noDatesHint: "The trip is saved as a draft. You can add dates later",
+    },
+    unsaved: {
+      title: "Discard changes?",
+      message: "Your entries will be lost.",
+      discard: "Discard",
+    },
+    datesSheet: {
+      title: "Trip dates",
     },
     validation: {
       destination: {

@@ -4,6 +4,9 @@ import { AppText, Icon, IconButton } from "@/components";
 import { useTranslation } from "@/lib/i18n";
 import { family, layout, spacing } from "@/lib/theme";
 
+/** `IconButton`'s default visible circle. */
+const BACK_CIRCLE = 36;
+
 export interface CarViewHeaderProps {
   onBack: () => void;
   /** Absent while there is no rental to edit (loading / error / not found). */
@@ -15,7 +18,7 @@ export function CarViewHeader({ onBack, onEdit }: CarViewHeaderProps) {
   return (
     <View style={styles.row}>
       <View style={styles.side}>
-        <IconButton accessibilityLabel={t("view.back")} onPress={onBack} testID="car-view-back">
+        <IconButton accessibilityLabel={t("view.back")} onPress={onBack} style={styles.back} testID="car-view-back">
           <Icon name="chevronLeft" />
         </IconButton>
       </View>
@@ -43,7 +46,9 @@ export function CarViewHeader({ onBack, onEdit }: CarViewHeaderProps) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", minHeight: layout.minTouch, gap: spacing.sm },
-  side: { minWidth: layout.minTouch * 2, flexShrink: 0 },
+  side: { minWidth: layout.minTouch * 2, flexShrink: 0, alignItems: "flex-start" },
+  // The 36pt circle sits centred in its 44pt hit area: pull it left so the circle, not the hit area, meets the content edge.
+  back: { marginLeft: -(layout.minTouch - BACK_CIRCLE) / 2 },
   end: { alignItems: "flex-end" },
   title: { flex: 1, textAlign: "center" },
   edit: { minHeight: layout.minTouch, minWidth: layout.minTouch, alignItems: "center", justifyContent: "center" },

@@ -19,7 +19,7 @@ export const trips = {
   },
   list: {
     emptyTitle: "Подорожей поки немає",
-    emptyHint: "Додайте першу кнопкою праворуч унизу",
+    emptyHint: "Додайте першу кнопкою «плюс» праворуч угорі",
     loadError: "Не вдалося завантажити подорожі",
     a11y: {
       loading: "Завантажуємо подорожі",
@@ -89,6 +89,14 @@ export const trips = {
     },
     // Field errors of the shared trip form schema, keyed by the stable `TRIP_FIELD_ERROR` ids
     // ("destination.empty" -> validation.destination.empty).
+    unsaved: {
+      title: "Скасувати зміни?",
+      message: "Введені дані буде втрачено.",
+      discard: "Скасувати",
+    },
+    datesSheet: {
+      title: "Дати подорожі",
+    },
     validation: {
       destination: {
         empty: "Вкажіть, куди їдемо",

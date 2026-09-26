@@ -100,11 +100,22 @@ beforeEach(() => {
   deleteSegmentMock.mockResolvedValue({ ok: true, data: { id: "segment-1" } });
 });
 
-/** An EMPTY date/time field is a button that opens a sheet: press it, confirm the wheel's value, press Done. */
-async function pickEmpty(testID: string) {
+/** The date field opens a calendar sheet: tap the first selectable day of the shown month, press Done. */
+async function pickDate() {
+  await userEvent.press(screen.getByTestId("segment-form-departure-date"));
+  const days = screen.getAllByTestId(/^segment-form-date-sheet-calendar-day-/);
+  const first = days.find((day) => day.props.accessibilityState?.disabled !== true);
+  await userEvent.press(first!);
+  await userEvent.press(screen.getByTestId("segment-form-date-sheet-done"));
+  await waitFor(() => expect(screen.queryByTestId("segment-form-date-sheet")).not.toBeOnTheScreen());
+}
+
+/** A time field opens the time sheet: confirm the wheel's value, press Done. */
+async function pickTime(testID: string) {
   await userEvent.press(screen.getByTestId(testID));
-  await userEvent.press(screen.getByTestId(`${testID}-sheet-picker`));
-  await userEvent.press(screen.getByTestId(`${testID}-sheet-done`));
+  await userEvent.press(screen.getByTestId("time-sheet-picker"));
+  await userEvent.press(screen.getByTestId("time-sheet-done"));
+  await waitFor(() => expect(screen.queryByTestId("time-sheet")).not.toBeOnTheScreen());
 }
 
 async function renderCreate(tripOverrides: Partial<Trip> = {}, segments: Segment[] = []) {
@@ -131,8 +142,9 @@ describe("SegmentFormScreen — field order and composition (AC-25)", () => {
       "segment-form-flight-number",
       "segment-form-from",
       "segment-form-to",
-      "segment-form-departure",
-      "segment-form-arrival",
+      "segment-form-departure-date",
+      "segment-form-departure-time",
+      "segment-form-duration",
       "segment-form-baggage",
       "segment-form-passengers",
       "segment-form-seat",
@@ -161,10 +173,10 @@ describe("SegmentFormScreen — save button gating (AC-26)", () => {
     await userEvent.press(await screen.findByTestId("airport-suggestion-airport-opo"));
     expect(saveButton()).toBeDisabled();
 
-    await pickEmpty("segment-form-departure-date");
+    await pickDate();
     expect(saveButton()).toBeDisabled();
 
-    await pickEmpty("segment-form-departure-time");
+    await pickTime("segment-form-departure-time");
     expect(saveButton()).toBeEnabled();
   });
 });
@@ -268,8 +280,8 @@ async function fillMinimalSegment() {
   await userEvent.press(await screen.findByTestId("airport-suggestion-airport-krk"));
   await userEvent.type(screen.getByTestId("segment-form-to"), "OPO");
   await userEvent.press(await screen.findByTestId("airport-suggestion-airport-opo"));
-  await pickEmpty("segment-form-departure-date");
-  await pickEmpty("segment-form-departure-time");
+  await pickDate();
+  await pickTime("segment-form-departure-time");
 }
 
 describe("SegmentFormScreen — Save (AC-45)", () => {
@@ -283,7 +295,7 @@ describe("SegmentFormScreen — Save (AC-45)", () => {
 });
 
 describe("SegmentFormScreen — header and buttons", () => {
-  it("has a close cross and no Done in the header; Save is the primary and add-next the secondary", async () => {
+  it("has Cancel at the bottom and no Done or cross in the header; Save is the primary and add-next the secondary", async () => {
     await renderCreate();
     expect(screen.queryByRole("button", { name: "Done" })).not.toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeOnTheScreen();
@@ -301,19 +313,14 @@ describe("SegmentFormScreen — departure rules", () => {
     expect(saveButton()).toBeEnabled();
   });
 
-  it("clears a chosen departure time and disables Save again", async () => {
+  it("has no arrival fields; the optional duration can be set and cleared again", async () => {
     await renderCreate();
-    await fillMinimalSegment();
-    expect(saveButton()).toBeEnabled();
-    await userEvent.press(screen.getByTestId("segment-form-departure-time-clear"));
-    expect(saveButton()).toBeDisabled();
-  });
-
-  it("clears an arrival time again", async () => {
-    await renderCreate();
-    await pickEmpty("segment-form-arrival-time");
-    await userEvent.press(screen.getByTestId("segment-form-arrival-time-clear"));
-    expect(screen.queryByTestId("segment-form-arrival-time-clear")).toBeNull();
+    expect(screen.queryByText("Arrival date")).not.toBeOnTheScreen();
+    expect(screen.queryByTestId("segment-form-arrival-date")).not.toBeOnTheScreen();
+    await pickTime("segment-form-duration");
+    expect(screen.getByTestId("segment-form-duration-clear")).toBeOnTheScreen();
+    await userEvent.press(screen.getByTestId("segment-form-duration-clear"));
+    expect(screen.queryByTestId("segment-form-duration-clear")).toBeNull();
   });
 
   it("accepts a departure on or after the trip start", async () => {
@@ -375,8 +382,8 @@ describe("SegmentFormScreen — edit mode (AC-76, AC-77)", () => {
     expect(screen.getByTestId("segment-form-to").props.value).toBe("Porto Airport · OPO");
     expect(screen.getByTestId("segment-form-seat").props.value).toBe("12A");
     expect(screen.getByTestId("segment-form-ticket").props.value).toBe("1234567890");
-    // The empty-state button, not a resolved DatePicker: its label carries no date value.
-    expect(screen.getByTestId("segment-form-arrival-date").props.accessibilityLabel).toBe("Arrival date");
+    // No arrival = no duration: the field is the empty clock button.
+    expect(screen.getByTestId("segment-form-duration").props.accessibilityLabel).toBe("Flight duration");
   });
 
   it("saves through update, not create, even for a segment that already departed, and has no 'add next'", async () => {
