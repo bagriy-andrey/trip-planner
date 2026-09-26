@@ -41,7 +41,7 @@ export const ICONS = {
   navigation: { set: "feather", glyph: "navigation" },
   chevronLeft: { set: "feather", glyph: "chevron-left" },
   chevronDown: { set: "feather", glyph: "chevron-down" },
-  more: { set: "feather", glyph: "more-horizontal" },
+  more: { set: "feather", glyph: "more-vertical" },
 } as const satisfies Record<string, IconDefinition>;
 
 export type IconName = keyof typeof ICONS;

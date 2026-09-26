@@ -83,6 +83,8 @@ describe("CarViewScreen header and layout (AC-43, AC-44, AC-53)", () => {
   it("shows the header, edits via S16b and goes back", async () => {
     await open(FULL);
     expect(screen.getByText("Car rental")).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Edit" })).not.toBeOnTheScreen();
+    await userEvent.press(screen.getByRole("button", { name: "More actions" }));
     await userEvent.press(screen.getByRole("button", { name: "Edit" }));
     expect(mockRouter.push).toHaveBeenCalledWith({
       pathname: "/trips/[tripId]/cars/[carId]",
@@ -121,7 +123,7 @@ describe("CarViewScreen header and layout (AC-43, AC-44, AC-53)", () => {
 
   it("keeps every control at least 44pt", async () => {
     await open(FULL);
-    for (const name of ["Copy", "Directions", "Call", "Edit"]) {
+    for (const name of ["Copy", "Directions", "Call", "More actions", "Back"]) {
       const style = screen.getByRole("button", { name }).props.style;
       const flat = Array.isArray(style) ? Object.assign({}, ...style.flat(2).filter(Boolean)) : style;
       expect(flat.minHeight).toBeGreaterThanOrEqual(44);

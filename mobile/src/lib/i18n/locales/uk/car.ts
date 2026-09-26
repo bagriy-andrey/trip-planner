@@ -145,6 +145,7 @@ export const car = {
   },
   view: {
     title: "Оренда авто",
+    more: "Додаткові дії",
     edit: "Змінити",
     bookingRef: "Номер броні",
     copy: "Скопіювати",
